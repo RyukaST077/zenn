@@ -205,6 +205,29 @@ fi
 command -v "$CLAUDE_BIN" >/dev/null || { echo "claude コマンドが見つからない" >&2; exit 2; }
 HAS_GH=0; command -v gh >/dev/null && HAS_GH=1
 
+# publish 段は最終的に「/pull/N の実PR」を要求する（publish-pr は gh が無い/未認証だと compare
+# URL のフォールバックしか出せず、その URL は publish ゲート(下記の PR_URL 抽出)を通過できない）。
+# gh が使えないと何度 resume しても必ず publish 段で死ぬので、長いパイプラインを走らせる前に
+# ここで即中止して原因を明示する（45分先で紛らわしく失敗する事故の防止）。
+if [ "$HAS_GH" = 0 ]; then
+  cat >&2 <<'EOF'
+ERROR: gh CLI が見つからない。このパイプラインは publish 段で実PR(/pull/N)の作成に gh を使う。
+       gh 無しでは publish-pr が compare URL のフォールバックしか出せず、公開ゲートで必ず失敗する。
+  対処: brew install gh && gh auth login
+       その後 --resume で publish 段から再開できる（それ以前の成果物は再利用される）。
+EOF
+  exit 2
+fi
+if ! gh auth status >/dev/null 2>&1; then
+  cat >&2 <<'EOF'
+ERROR: gh CLI は入っているが GitHub 未認証。この状態だと publish-pr は gh pr create できず、
+       compare URL のフォールバックしか出せないため、公開ゲート(/pull/N 抽出)で必ず失敗する。
+  対処: gh auth login   （GitHub.com → HTTPS → ブラウザ/トークンで認証）
+       その後 --resume で publish 段から再開できる。
+EOF
+  exit 2
+fi
+
 LOCK="$ROOT/.auto-publish.lock"
 if ! mkdir "$LOCK" 2>/dev/null; then
   echo "別のパイプラインが実行中（$LOCK が存在）。前回異常終了なら手で削除する。" >&2
@@ -299,7 +322,7 @@ if [ -z "${DONE_publish:-}" ]; then
   if [ -z "$PR_URL" ] && [ "$HAS_GH" = 1 ]; then
     PR_URL="$(gh pr list --head "publish/$SLUG" --json url --jq '.[0].url' 2>/dev/null || true)"
   fi
-  [ -n "$PR_URL" ] || die "publish-pr: PR を確認できなかった（公開ゲートで中止した可能性）。ログ: $publog"
+  [ -n "$PR_URL" ] || die "publish-pr: 実PR(/pull/N)を確認できなかった。publish-pr が公開ゲートで中止した(blocker)か gh pr create が失敗した可能性。ログ: $publog"
   save_state PR_URL "$PR_URL"; save_state DONE_publish 1
   log "   PR 作成: $PR_URL"
 else log "skip: publish-pr (実行済み → $PR_URL)"; fi
