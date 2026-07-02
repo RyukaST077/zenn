@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 .claude/.cache/
+# run-practice: 検証で生成した成果物コードは重いので除外（検証ログ・スクショは残す）
+logs/**/workspace/

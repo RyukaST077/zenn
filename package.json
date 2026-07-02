@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/RyukaST077/zenn#readme",
   "devDependencies": {
+    "playwright": "^1.49.0",
     "zenn-cli": "^0.5.2"
   }
 }
