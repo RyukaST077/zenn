@@ -1,0 +1,28 @@
+All phases complete. Here's the summary.
+
+## /run-practice 実行完了
+
+- **保存した execution-log.md**: `logs/run-vite8-rolldown-20260702-2116/execution-log.md`
+- **対象タスクファイル**: `practice/practice-vite8-rolldown-20260702-2113.md`
+- **完了条件の判定**: **達成**（Vite 7/8 両方で build・dev を cold/warm 各3回計測 → 比較表・倍率算出 → 両版を Playwright でスクショ）
+- **所要時間**: 見積もり 約4.0h → 実測 約0.5h（AIエージェント自動実行のため短縮）
+- **スクショ**: 6枚（`screenshots/`）／ **未解決・撤退**: 0件
+
+### 実測のハイライト（記事の核）
+| 指標 | Vite 7.3.6 | Vite 8.1.3 | 倍率 |
+|---|---|---|---|
+| build（vite `built in`, cold中央値） | 1.39s | 0.173s | **約8.0x** |
+| `pnpm build` 全体 real（tsc込み） | 2.59s | 1.36s | **約1.9x** |
+| dev ready | 107ms | 102ms | 約1.05x |
+
+**「10〜30x」とのギャップの正体**: バンドル処理は約8倍速いが、`pnpm build` は `tsc -b` の型チェック（両版共通で約1.1〜1.2秒）が律速になり、ビルド全体では約1.9倍止まり。dev はこの規模ではほぼ差なし。
+
+### 詰まった点（3件・すべて解決）
+1. Vite 7 固定で `@vitejs/plugin-react` の peer 不一致 → `plugin-react@5.2.0`（v7/v8両対応）で解消
+2. `TS7016` で build 失敗（lodash-es の型なし）→ `@types/lodash-es` 追加
+3. 予測していた `Invalid key` 警告は**出なかった**（素の react-ts では未発生）— 予測と実測の差を正直に記録。おまけで `rolldown-vite` overrides も検証し、現在は `deprecated` 表示になっていることを確認。
+
+### 次の工程（記事化）
+記事本文は未作成です。`execution-log.md` の「記事への写像」をもとに `/draft-article` で `articles/*.md` を書いてください。スクショは `images/<slug>/` へ移して参照します。
+
+補足: 検証コード（`workspace/`）は `.gitignore` 済み。全コマンドの生ログ（350行・16エントリ）は追跡対象の `commands.log` に統合済みです。

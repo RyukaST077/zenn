@@ -1,0 +1,29 @@
+PRを作成しました。前回の `/publish-pr` 実行で「published:true 化 → コミット → push」までは完了していましたが、**PR自体が未作成**だった状態だったので、その1点だけを補って完了させました。
+
+## 結果
+
+| 項目 | 内容 |
+|---|---|
+| feature ブランチ | `publish/vite8-rolldown-build-benchmark-log`（origin に push 済み） |
+| **PR URL** | https://github.com/RyukaST077/zenn/pull/1 |
+| base | `main` |
+| コミット内容 | 記事 `articles/vite8-rolldown-build-benchmark-log.md` ＋ 画像6枚のみ（無関係な変更なし） |
+
+## 公開の性質
+このPRを **`main` にマージすると Zenn で自動公開されます**（`published: true`）。マージが公開ゲートです。
+
+## 公開ゲート判定（すべて通過）
+- レビュー: `logs/review-vite8-rolldown-build-benchmark-log-20260702-2142.md` → **判定: 公開可**（blocker 0 / warning 0 / suggestion 3）
+- 機械チェック: `SUMMARY fail=1 warn=0` — 唯一の fail は `published=true`（feature ブランチ内での意図的な公開準備。秘密情報・slug・画像・コードフェンスはすべて PASS）
+- 出典: `logs/run-vite8-rolldown-20260702-2116/execution-log.md`
+
+## 採用した前提
+- 対象記事: 引数指定の `articles/vite8-rolldown-build-benchmark-log.md`
+- base: `main` / ブランチ名: `publish/vite8-rolldown-build-benchmark-log`（既存ブランチをそのまま利用）
+
+## 次のアクション
+1. PR #1 をレビューし、問題なければ `main` にマージ（＝公開）
+2. 公開時に「Slug『…』はサイト内で既に使用されています」が出たら slug を具体的な名前にリネーム（`knowledge/2026-07-01-zenn-slug-already-used.md`）
+3. 取り下げる場合はマージせず `publish/vite8-rolldown-build-benchmark-log` ブランチを削除
+
+なお本Skillはマージ・公開はしません（人間の操作に委ねます）。

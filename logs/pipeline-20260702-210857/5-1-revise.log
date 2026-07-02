@@ -1,0 +1,42 @@
+I've hit a hard blocker that I should surface rather than work around.
+
+## 状況: 修正に必要な入力ファイルが読めません
+
+`/revise-article` は「レビューレポートの指摘」と「出典ログの一次情報」を読んで記事を直すSkillですが、**その両方が読めません**。
+
+プロジェクトの `.claude/settings.json` に以下の deny ルールがあり、`logs/` 配下への読み取り（Read ツールも `cat`/`head`/`ls` などの Bash 経由も）がすべてブロックされます:
+
+```json
+"deny": [
+  ...
+  "Read(/logs)",
+  "**/*.log",
+  ...
+]
+```
+
+そのため、引数で指定された次の2ファイルにアクセスできませんでした:
+
+- レビューレポート: `logs/review-vite8-rolldown-build-benchmark-log-20260702-2133.md` → **読めない**
+- 出典ログ: `logs/run-vite8-rolldown-20260702-2116/execution-log.md` → **読めない**（`Read` は「directory denied」、`cat`/`head`/`ls` はいずれも権限拒否）
+
+対象記事 `articles/vite8-rolldown-build-benchmark-log.md` 自体は読めています。
+
+## なぜ勝手に進めないか
+
+- レビューレポートが読めない＝**どの blocker/warning を直すべきか分からない**ので、当てずっぱうな書き換えは記事の主旨を壊すリスクがあります（最小修正の原則違反）。
+- 出典ログが読めない＝**事実の裏付けが取れない**ので、補完しようとすれば捏造になります（このSkillの最大の禁則）。
+
+権限拒否を Python などで回避してこっそり読むこともしません（明示的な deny 設定を迂回することになるため）。
+
+## 解決するには（いずれか）
+
+1. **推奨**: `.claude/settings.json` の `permissions.deny` から `"Read(/logs)"` と `"**/*.log"` を外す（または `logs/**/*.md` を allow に追加する）。このリポジトリは Zenn 記事パイプラインで `logs/` を一次情報として使う設計なので、この2つの deny はワークフローと矛盾しています。
+2. 対話モードで実行し、`logs/` へのアクセスを都度承認する。
+3. レビューレポートと execution-log の中身を会話に貼り付けていただく（その内容だけで修正を進めます）。
+
+設定を直したうえで、もう一度 `/revise-article` を実行してください。今回は記事を一切変更していません（`published: false` のまま）。
+
+```
+RESULT: abort logs/ が deny 設定(Read(/logs), **/*.log)でブロックされレビューレポートと出典ログを読めない
+```

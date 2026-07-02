@@ -1,0 +1,86 @@
+[21:08:57] === auto-publish 開始 (pipeline: logs/pipeline-20260702-210857)
+[21:08:57] ── search 開始 (timeout=2400s, max-turns=80)
+[21:08:57]    prompt: /search-topic
+[21:08:57] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:13:01]    search 完了 → research/search-topic-20260702-2109.md
+[21:13:01] ── plan 開始 (timeout=1800s, max-turns=60)
+[21:13:01]    prompt: /plan-practice 対象レポート: research/search-topic-20260702-2109.md
+[21:13:01] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:15:57]    plan 完了 → practice/practice-vite8-rolldown-20260702-2113.md
+[21:15:57] ── run 開始 (timeout=14400s, max-turns=300)
+[21:15:57]    prompt: /run-practice 対象タスクファイル: practice/practice-vite8-rolldown-20260702-2113.md
+[21:15:57] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:26:53]    run 完了 → logs/run-vite8-rolldown-20260702-2116/execution-log.md
+[21:26:53] ── draft 開始 (timeout=1800s, max-turns=60)
+[21:26:53]    prompt: /draft-article 対象ログ: logs/run-vite8-rolldown-20260702-2116/execution-log.md
+[21:26:53] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:31:04]    draft 完了 → articles/vite8-rolldown-build-benchmark-log.md
+[21:31:04] ── review 開始 (timeout=1200s, max-turns=50)
+[21:31:04]    prompt: /review-article 対象記事: articles/vite8-rolldown-build-benchmark-log.md 出典ログ: logs/run-vite8-rolldown-20260702-2116/execution-log.md
+[21:31:04] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:35:09]    review 完了 → logs/review-vite8-rolldown-build-benchmark-log-20260702-2133.md
+[21:35:09]    レビュー判定 (round 1/3): fix
+[21:35:09] ── revise 開始 (timeout=1800s, max-turns=60)
+[21:35:09]    prompt: /revise-article 対象記事: articles/vite8-rolldown-build-benchmark-log.md レビューレポート: logs/review-vite8-rolldown-build-benchmark-log-20260702-2133.md 出典ログ: logs/run-vite8-rolldown-20260702-2116/execution-log.md
+[21:35:09] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:36:45] ERROR: revise-article が中止した: logs/ が deny 設定(Read(/logs), **/*.log)でブロックされレビューレポートと出典ログを読めない
+[21:36:45] パイプラインディレクトリ: logs/pipeline-20260702-210857 (各段のログあり)
+[21:36:45] 再開するには: bash scripts/auto-publish.sh --resume logs/pipeline-20260702-210857 --auto-merge
+[21:41:39] === auto-publish 開始 (pipeline: logs/pipeline-20260702-210857) [resume]
+[21:41:39] skip: search-topic (実行済み → research/search-topic-20260702-2109.md)
+[21:41:39] skip: plan-practice (実行済み → practice/practice-vite8-rolldown-20260702-2113.md)
+[21:41:39] skip: run-practice (実行済み → logs/run-vite8-rolldown-20260702-2116/execution-log.md)
+[21:41:39] skip: draft-article (実行済み → articles/vite8-rolldown-build-benchmark-log.md)
+[21:41:39] ── review 開始 (timeout=1200s, max-turns=50)
+[21:41:39]    prompt: /review-article 対象記事: articles/vite8-rolldown-build-benchmark-log.md 出典ログ: logs/run-vite8-rolldown-20260702-2116/execution-log.md
+[21:41:39] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:43:39]    review 完了 → logs/review-vite8-rolldown-build-benchmark-log-20260702-2142.md
+[21:43:39]    レビュー判定 (round 1/3): pass
+[21:43:39] ── publish 開始 (timeout=900s, max-turns=40)
+[21:43:39]    prompt: /publish-pr 対象記事: articles/vite8-rolldown-build-benchmark-log.md
+[21:43:39] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:45:01] ERROR: publish-pr: PR を確認できなかった（公開ゲートで中止した可能性）。ログ: logs/pipeline-20260702-210857/6-publish.log
+[21:45:01] パイプラインディレクトリ: logs/pipeline-20260702-210857 (各段のログあり)
+[21:45:01] 再開するには: bash scripts/auto-publish.sh --resume logs/pipeline-20260702-210857 --auto-merge
+[21:53:46] === auto-publish 開始 (pipeline: logs/pipeline-20260702-210857) [resume]
+[21:53:46] skip: search-topic (実行済み → research/search-topic-20260702-2109.md)
+[21:53:46] skip: plan-practice (実行済み → practice/practice-vite8-rolldown-20260702-2113.md)
+[21:53:46] skip: run-practice (実行済み → logs/run-vite8-rolldown-20260702-2116/execution-log.md)
+[21:53:46] skip: draft-article (実行済み → articles/vite8-rolldown-build-benchmark-log.md)
+[21:53:46] skip: review ループ（実行済み・公開可）
+[21:53:46] ── publish 開始 (timeout=900s, max-turns=40)
+[21:53:46]    prompt: /publish-pr 対象記事: articles/vite8-rolldown-build-benchmark-log.md
+[21:53:46] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[21:54:53] ERROR: publish-pr: PR を確認できなかった（公開ゲートで中止した可能性）。ログ: logs/pipeline-20260702-210857/6-publish.log
+[21:54:53] パイプラインディレクトリ: logs/pipeline-20260702-210857 (各段のログあり)
+[21:54:53] 再開するには: bash scripts/auto-publish.sh --resume logs/pipeline-20260702-210857 --auto-merge
+[22:21:01] === auto-publish 開始 (pipeline: logs/pipeline-20260702-210857) [resume]
+[22:21:01] skip: search-topic (実行済み → research/search-topic-20260702-2109.md)
+[22:21:01] skip: plan-practice (実行済み → practice/practice-vite8-rolldown-20260702-2113.md)
+[22:21:01] skip: run-practice (実行済み → logs/run-vite8-rolldown-20260702-2116/execution-log.md)
+[22:21:01] skip: draft-article (実行済み → articles/vite8-rolldown-build-benchmark-log.md)
+[22:21:01] skip: review ループ（実行済み・公開可）
+[22:21:01] ── publish 開始 (timeout=900s, max-turns=40)
+[22:21:01]    prompt: /publish-pr 対象記事: articles/vite8-rolldown-build-benchmark-log.md
+[22:21:01] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[22:23:10] ERROR: publish-pr: 実PR(/pull/N)を確認できなかった。publish-pr が公開ゲートで中止した(blocker)か gh pr create が失敗した可能性。ログ: logs/pipeline-20260702-210857/6-publish.log
+[22:23:10] パイプラインディレクトリ: logs/pipeline-20260702-210857 (各段のログあり)
+[22:23:10] 再開するには: bash scripts/auto-publish.sh --resume logs/pipeline-20260702-210857 --auto-merge
+[22:27:17] === auto-publish 開始 (pipeline: logs/pipeline-20260702-210857) [resume]
+[22:27:17] skip: search-topic (実行済み → research/search-topic-20260702-2109.md)
+[22:27:17] skip: plan-practice (実行済み → practice/practice-vite8-rolldown-20260702-2113.md)
+[22:27:17] skip: run-practice (実行済み → logs/run-vite8-rolldown-20260702-2116/execution-log.md)
+[22:27:17] skip: draft-article (実行済み → articles/vite8-rolldown-build-benchmark-log.md)
+[22:27:17] skip: review ループ（実行済み・公開可）
+[22:27:17] ── publish 開始 (timeout=900s, max-turns=40)
+[22:27:17]    prompt: /publish-pr 対象記事: articles/vite8-rolldown-build-benchmark-log.md
+[22:27:17] WARN: timeout/gtimeout が無いためタイムアウト無しで実行する
+[22:28:42]    PR 作成: https://github.com/RyukaST077/zenn/pull/1
+[22:28:46] auto-merge を予約した（必須チェック通過後にマージ→公開される）
+[22:28:47] === auto-publish 完了
+
+  記事        : articles/vite8-rolldown-build-benchmark-log.md
+  PR          : https://github.com/RyukaST077/zenn/pull/1
+  マージ      : 実行/予約済み（マージ＝Zenn公開）
+  次のアクション: 公開後に zenn.dev で表示確認（slug 衝突時は revise でリネーム→再PR）
+  ログ一式    : logs/pipeline-20260702-210857
