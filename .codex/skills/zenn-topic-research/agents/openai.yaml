@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn Topic Research"
+  short_description: "Zenn記事向けの技術トレンド調査"
+  default_prompt: "Use $zenn-topic-research to find current technology topics I can test and write about on Zenn."
