@@ -1,0 +1,350 @@
+## 21:17 pnpm create vite@latest vite-bench --template react-ts
+.../19f22c2f67c-febd                     | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../19f22c2f67c-febd                     |   +1 +
+.../19f22c2f67c-febd                     | Progress: resolved 1, reused 0, downloaded 1, added 1, done
+│
+◇  Scaffolding project in /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench...
+│
+└  Done. Now run:
+
+  cd vite-bench
+  pnpm install
+  pnpm dev
+
+exit=0
+
+# ==== (continued: commands run from vite-bench/) ====
+## 21:17 pnpm install (scaffold defaults)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+   ╭─────────────────────────────────────────╮
+   │                                         │
+   │   Update available! 10.13.1 → 11.9.0.   │
+   │   Changelog: https://pnpm.io/v/11.9.0   │
+   │    To update, run: pnpm add -g pnpm     │
+   │                                         │
+   ╰─────────────────────────────────────────╯
+
+Packages: +28
+++++++++++++++++++++++++++++
+Progress: resolved 76, reused 10, downloaded 23, added 28, done
+
+dependencies:
++ react 19.2.7
++ react-dom 19.2.7
+
+devDependencies:
++ @types/node 24.13.2 (26.1.0 is available)
++ @types/react 19.2.17
++ @types/react-dom 19.2.3
++ @vitejs/plugin-react 6.0.3
++ oxlint 1.72.0
++ typescript 6.0.3
++ vite 8.1.3
+
+Done in 1.2s using pnpm v10.13.1
+exit=0
+## 21:17 pnpm add -D vite@7
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +7
++++++++
+Progress: resolved 107, reused 25, downloaded 5, added 7, done
+ WARN  Issues with peer dependencies found
+.
+└─┬ @vitejs/plugin-react 6.0.3
+  └── ✕ unmet peer vite@^8.0.0: found 7.3.6
+
+devDependencies:
+- vite 8.1.3
++ vite 7.3.6 (8.1.3 is available)
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild.                                            │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 890ms using pnpm v10.13.1
+exit=0
+## 21:17 pnpm add -D @vitejs/plugin-react@5
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +48
+++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 153, reused 69, downloaded 6, added 47
+Progress: resolved 153, reused 69, downloaded 7, added 48, done
+
+devDependencies:
+- @vitejs/plugin-react 6.0.3
++ @vitejs/plugin-react 5.2.0 (6.0.3 is available)
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild.                                            │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 1.4s using pnpm v10.13.1
+exit=0
+## 21:17 pnpm add react-router-dom zustand dayjs recharts lodash-es
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +46
+++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 199, reused 97, downloaded 24, added 43
+Progress: resolved 199, reused 97, downloaded 25, added 45
+Progress: resolved 199, reused 97, downloaded 25, added 46, done
+
+dependencies:
++ dayjs 1.11.21
++ lodash-es 4.18.1
++ react-router-dom 7.18.1
++ recharts 3.9.1
++ zustand 5.0.14
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild.                                            │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 2.5s using pnpm v10.13.1
+exit=0
+## 21:18 initial build smoke test (vite7)
+
+> vite-bench@0.0.0 build /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench
+> tsc -b && vite build
+
+src/pages/About.tsx(2,28): error TS7016: Could not find a declaration file for module 'lodash-es'. '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench/node_modules/.pnpm/lodash-es@4.18.1/node_modules/lodash-es/lodash.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/lodash-es` if it exists or add a new declaration (.d.ts) file containing `declare module 'lodash-es';`
+src/pages/Dashboard.tsx(3,23): error TS7016: Could not find a declaration file for module 'lodash-es'. '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench/node_modules/.pnpm/lodash-es@4.18.1/node_modules/lodash-es/lodash.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/lodash-es` if it exists or add a new declaration (.d.ts) file containing `declare module 'lodash-es';`
+src/pages/Dashboard.tsx(5,32): error TS7006: Parameter 'm' implicitly has an 'any' type.
+ ELIFECYCLE  Command failed with exit code 2.
+exit=2
+## 21:18 pnpm add -D @types/lodash-es (fix TS7016)
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 997ms using pnpm v10.13.1
+exit=0
+## 21:18 build retry
+
+> vite-bench@0.0.0 build /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench
+> tsc -b && vite build
+
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 1267 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-BlUYNHUE.css    4.15 kB │ gzip:   1.49 kB
+dist/assets/index-BpsJcZ0m.js   598.82 kB │ gzip: 183.99 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 1.47s
+exit=0
+## 21:19 pnpm add -D playwright
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 1s using pnpm v10.13.1
+## 21:19 npx playwright install chromium
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                                |  60% of 93.5 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 93.5 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 93.5 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 93.5 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 93.5 MiB
+Chrome Headless Shell 149.0.7827.55 (playwright chromium-headless-shell v1228) downloaded to /Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium_headless_shell-1228
+exit=0
+## 21:20 MEASURE vite7
+======================================================
+MEASURE label=vite7  vite=7.3.6
+======================================================
+### BUILD COLD x3 (rm -rf node_modules/.vite dist before each) ###
+--- build cold #1 ---
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-BlUYNHUE.css    4.15 kB │ gzip:   1.49 kB
+dist/assets/index-BpsJcZ0m.js   598.82 kB │ gzip: 183.99 kB
+✓ built in 1.47s
+real 3.00
+--- build cold #2 ---
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-BlUYNHUE.css    4.15 kB │ gzip:   1.49 kB
+dist/assets/index-BpsJcZ0m.js   598.82 kB │ gzip: 183.99 kB
+✓ built in 1.39s
+real 2.59
+--- build cold #3 ---
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-BlUYNHUE.css    4.15 kB │ gzip:   1.49 kB
+dist/assets/index-BpsJcZ0m.js   598.82 kB │ gzip: 183.99 kB
+✓ built in 1.39s
+real 2.57
+### BUILD WARM x3 (keep cache, no rm) ###
+--- build warm #1 ---
+✓ built in 1.39s
+real 2.57
+--- build warm #2 ---
+✓ built in 1.36s
+real 2.55
+--- build warm #3 ---
+✓ built in 1.41s
+real 2.59
+### DEV COLD ready x3 (rm .vite before each) ###
+  VITE v7.3.6  ready in 108 ms
+  VITE v7.3.6  ready in 107 ms
+  VITE v7.3.6  ready in 107 ms
+### DEV WARM ready x3 (keep .vite) ###
+  VITE v7.3.6  ready in 103 ms
+  VITE v7.3.6  ready in 108 ms
+  VITE v7.3.6  ready in 108 ms
+### DONE vite7 ###
+## 21:21 MIGRATE: pnpm add -D vite@8
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +6
+++++++
+Progress: resolved 201, reused 134, downloaded 0, added 2, done
+
+devDependencies:
+- vite 7.3.6
++ vite 8.1.3
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild.                                            │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 736ms using pnpm v10.13.1
+exit=0
+## 21:21 vite8 first build
+
+> vite-bench@0.0.0 build /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench
+> tsc -b && vite build
+
+vite v8.1.3 building client environment for production...
+[2Ktransforming...✓ 1235 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:   1.47 kB
+dist/assets/index-ssQcG5Dh.js   592.47 kB │ gzip: 180.11 kB
+
+✓ built in 455ms
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+exit=0
+## 21:22 MEASURE vite8
+======================================================
+MEASURE label=vite8  vite=8.1.3
+======================================================
+### BUILD COLD x3 (rm -rf node_modules/.vite dist before each) ###
+--- build cold #1 ---
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:   1.47 kB
+dist/assets/index-ssQcG5Dh.js   592.47 kB │ gzip: 180.11 kB
+
+✓ built in 185ms
+real 1.49
+--- build cold #2 ---
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:   1.47 kB
+dist/assets/index-ssQcG5Dh.js   592.47 kB │ gzip: 180.11 kB
+
+✓ built in 173ms
+real 1.36
+--- build cold #3 ---
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:   1.47 kB
+dist/assets/index-ssQcG5Dh.js   592.47 kB │ gzip: 180.11 kB
+
+✓ built in 167ms
+real 1.33
+### BUILD WARM x3 (keep cache, no rm) ###
+--- build warm #1 ---
+✓ built in 175ms
+real 1.32
+--- build warm #2 ---
+✓ built in 164ms
+real 1.34
+--- build warm #3 ---
+✓ built in 165ms
+real 1.33
+### DEV COLD ready x3 (rm .vite before each) ###
+  VITE v8.1.3  ready in 100 ms
+  VITE v8.1.3  ready in 106 ms
+  VITE v8.1.3  ready in 102 ms
+### DEV WARM ready x3 (keep .vite) ###
+  VITE v8.1.3  ready in 95 ms
+  VITE v8.1.3  ready in 95 ms
+  VITE v8.1.3  ready in 94 ms
+### DONE vite8 ###
+## 21:23 rolldown-vite overrides install (vite7 path)
+Progress: resolved 0, reused 1, downloaded 0, added 0
+ WARN  deprecated rolldown-vite@7.3.1: Use this package to migrate from Vite 7 to Vite 8. For the most recent updates, migrate to Vite 8 once you're ready.
+Progress: resolved 170, reused 124, downloaded 5, added 0
+Packages: +10
+++++++++++
+Progress: resolved 173, reused 127, downloaded 5, added 9
+Progress: resolved 173, reused 127, downloaded 6, added 10, done
+
+dependencies:
++ vite <- rolldown-vite 7.3.1 deprecated
+
+devDependencies:
+- vite 7.3.6
+
+╭ Warning ─────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│   Ignored build scripts: esbuild.                                            │
+│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
+│   to run scripts.                                                            │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Done in 3s using pnpm v10.13.1
+exit=0
+## 21:23 rolldown-vite build (vite7 overrides)
+
+> vite-bench@0.0.0 build /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vite8-rolldown-20260702-2116/workspace/vite-bench
+> tsc -b && vite build
+
+rolldown-vite v7.3.1 building client environment for production...
+[2Ktransforming...✓ 1234 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.46 kB │ gzip:   0.29 kB
+dist/assets/index-DgyAqz26.css    4.13 kB │ gzip:   1.47 kB
+dist/assets/index-dqQeran-.js   592.71 kB │ gzip: 180.24 kB
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 214ms
+real 2.48
+user 2.76
+sys 0.46
+exit=0

@@ -1,0 +1,14 @@
+調査完了しました。
+
+**保存先:** `research/search-topic-20260702-2109.md`
+
+**上位3テーマ（AIエージェント単独・無料・ローカル完結で足切り通過済み）:**
+1. **Vite 8 + Rolldownに移行してビルド時間を実測してみた**（27点・最推奨）
+2. **SQLite書き直しのTurso Databaseを触ってSQLiteと比較**（26点）
+3. **ESLint+Prettierしか知らない新人がBiome v2に乗り換え**（25点）
+
+**最初の1本:** Vite 8（Rolldown）移行の実測記事。`pnpm create vite`＋依存更新だけで半日で検証でき、公式の「10-30x高速化」を自分の手元の実測値に置き換えられる＝数値がそのまま記事の核になる点を評価しました。
+
+国内3件・海外7件（公式/一次情報4件: Vite公式blog, Turso GitHub, Hono docs, Biome blog）を確認し、いずれも直近1〜4か月の情報です。次は `/plan-practice` で#1の実践タスクに落とし込めます。
+
+Sources: [Vite 8 公式](https://vite.dev/blog/announcing-vite8) / [Turso GitHub](https://github.com/tursodatabase/turso) / [Hono RPC](https://hono.dev/docs/guides/rpc) / [Biome v2](https://biomejs.dev/blog/biome-v2/) / [Qiita 2026フロント技術ガイド](https://qiita.com/YushiYamamoto/items/9845784d14428db90fce)

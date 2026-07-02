@@ -1,0 +1,19 @@
+レビュー完了。
+
+**対象記事**: `articles/vite8-rolldown-build-benchmark-log.md`
+**判定: 公開可** ✅
+
+- blocker: **0** / warning: **0** / suggestion: **3**
+- レポート: `logs/review-vite8-rolldown-build-benchmark-log-20260702-2142.md`
+
+**最優先で見るべき点（すべて任意の suggestion）**
+1. line 9 の前提コメントに内部ログパスが残る → 公開直前に削除を検討（Zennでは非表示だがGitHubで見える）
+2. タイトル「8倍速のはず」はやや煽り気味（数値自体はログ裏付けあり、期待値ギャップ狙いとして有効）
+3. line 170 の起動ログ `167 ms` と計測値 `108/107/107 ms` の関係を一言補足すると混乱減
+
+**チェック要点**
+- 公開安全: `published: false`・slug妥当(34字/汎用でない/重複なし)・秘密情報/個人パスなし
+- 事実整合: 比較表・各計測値(8.0x/1.9x)・コマンド・エラー全文・所要時間・rolldown-vite節すべて出典ログと**完全一致**。創作・ログ超えの断定なし
+- 画像6枚すべて実在・孤立なし、機械チェック `fail=0 warn=0`
+
+**次のアクション**: blocker/warning が0のため、suggestion は任意対応で構いません。Front Matter を `published: true` にして `git push`、または `/publish-pr` でPR作成 → main マージで公開できます。
