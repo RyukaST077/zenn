@@ -1,0 +1,16 @@
+Research complete. Report saved.
+
+**保存先:** `research/search-topic-20260705-0212.md`
+
+**上位3テーマ:**
+1. `node app.ts` が普通に動く時代を新人が試す（Node 24 ネイティブTypeScript / type stripping）— 28点
+2. React Compiler v1.0 で useMemo/useCallback を全部消してみた（Profiler実測＋壊れた箇所）— 27点
+3. Next.js経験の新人が TanStack Start で server functions 小アプリを作ってみた — 24点
+
+**要点:**
+- 国内5件・海外7件を調査（公式一次情報4件: react.dev / TanStack / Node.js docs / GitHub Releases）。直近情報を優先。
+- 過去記事（Vite8ビルド / Zenn×GitHub）および前回候補（Turso / Hono RPC / Biome v2 / Oxlint / Ollama / Deno・Bun）と**重複しない新規テーマ**に絞った。
+- 全候補が**AIエージェント単独で検証可**（CLI・無料・認証不要・ローカル完結）。課金LLMキーが要る Pi coding agent は足切り。
+- **最初の1本は候補#1**（Node 24 ネイティブTS）を推奨。トレンド性・検証コスト・執筆しやすさが最も高い。
+
+次は `/plan-practice` にこのレポートを渡すと、推奨1本の実践タスクを組み立てられます。

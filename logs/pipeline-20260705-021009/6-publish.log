@@ -1,0 +1,31 @@
+PR を作成しました。公開準備が完了しています。
+
+## 結果
+
+| 項目 | 内容 |
+|---|---|
+| **feature ブランチ** | `publish/node-native-typescript-strip-only-gotchas` |
+| **PR URL** | https://github.com/RyukaST077/zenn/pull/2 |
+| **base** | `main` |
+| **コミット** | `docs(article): publish node-native-typescript-strip-only-gotchas`（記事1ファイルのみ） |
+
+### 公開ゲート（すべて通過）
+- ✅ 対象ドラフトは `published: false` だった
+- ✅ レビュー `logs/review-...-20260705-0228.md` の判定「**公開可**」（blocker 0 / warning 0）
+- ✅ 機械チェック `SUMMARY fail=0 warn=0`
+
+### 公開の性質
+⚠️ **このPRを `main` にマージすると Zenn で記事が自動公開されます**（`published: true` へ変更済み）。マージ＝公開ゲートです。公開そのものは人間の操作に委ねています。
+
+### 採用した前提
+- 対象記事: 引数指定 `articles/node-native-typescript-strip-only-gotchas.md`
+- base: `main` / ブランチ名: `publish/node-native-typescript-strip-only-gotchas`
+- レビュー結果: 「公開可」を採用
+- 画像なし記事（CLI検証のためスクショ0枚。`git add` は記事1ファイルのみに限定）
+
+### 次のアクション
+1. PR #2 をレビューし、問題なければ `main` にマージ（＝公開）
+2. 公開時に「Slug『…』はサイト内で既に使用されています」が出たら、slug を具体的な名前にリネーム（`knowledge/2026-07-01-zenn-slug-already-used.md`）
+3. 取り下げる場合はブランチ `publish/node-native-typescript-strip-only-gotchas` を削除
+
+なお、レビューの suggestion 4件（title のバッククォート、topics `"tsnode"`、decorator 行の「未計測」明示、冒頭コメント）は公開をブロックしないため未対応のまま PR 本文に明記しています。反映したい場合はマージ前に対応可能です。
