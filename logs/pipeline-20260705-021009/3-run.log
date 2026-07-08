@@ -1,0 +1,32 @@
+All phases complete. Here's the summary.
+
+## `/run-practice` 完了
+
+**Node ネイティブ TypeScript（type stripping）** の検証を、AIエージェント単独・非対話で実行しました。
+
+### 保存した成果物
+- **execution-log.md**: `logs/run-node-native-typescript-20260705-0217/execution-log.md`（242行）
+- 検証コード: `.../workspace/node-native-ts-lab/`（12個の `.ts`/`.tsx`）＋ 生ログ13本（`logs/*.txt`, `commands.log`）
+- 対象タスク: `practice/practice-node-native-typescript-20260705-0214.md`
+
+### 完了条件の判定: **達成**（4/4）
+| # | 完了条件 | 判定 |
+|---|---|---|
+| 1 | `node app.ts` フラグなしで実行 | 達成（stable=Docker v24.18.0）|
+| 2 | 非対応構文4種のエラー全文 | 達成（+ 型import/.tsx/decorator も）|
+| 3 | 型エラーは node 素通り / tsc で検出 | 達成（exit0 vs TS2322 exit2）|
+| 4 | node vs tsx 起動時間の比較表 | 達成（0.05s vs 0.61s）|
+
+### 所要時間: 見積もり 約3.8h → 実測 約0.4h（AI単独・非対話）
+
+### 特筆すべき発見（記事の独自性）
+1. **バージョン境界を実演**: 手元 Node が **v22.17.0**（既定化 22.18 の直前）で flagless が `SyntaxError`。フラグ運用＋Docker `node:24`(v24.18.0=stable) で両側を記録 → 22.18/24.12/25.2 の3境界が記事ネタに。
+2. **`npx tsc` スクワッター罠**: TS未インストール環境で `npx tsc` が別パッケージ `tsc@2.0.4`（"This is not the tsc command..."）に解決され型チェック不可。`npx -p typescript tsc` で解決 → **knowledge に新規記録**（`knowledge/2026-07-05-npx-tsc-resolves-squatter-package.md`, INDEX更新済み）。
+3. `.tsx` は strip 対象外、値namespaceだけNG（型のみは動く）など、誤解しやすい境界を実測。
+
+### スクショ / 撤退
+- スクショ 0 枚（ブラウザ非発生の CLI タスク・仕様どおり）
+- 未達・撤退: 0 件（詰まった点3件はすべて解決）
+
+### 次の工程
+記事本文は未作成です。この execution-log.md の「記事への写像」（6見出しにログを割当済み）をもとに `/draft-article` で `articles/*.md` を書けます。

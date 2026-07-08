@@ -1,0 +1,25 @@
+レビュー完了。レポートを保存しました。
+
+## レビュー結果
+
+**対象記事**: `articles/node-native-typescript-strip-only-gotchas.md`
+**判定**: 🟢 **公開可**
+
+- **blocker: 0 件 / warning: 0 件 / suggestion: 4 件**
+- レポート: `logs/review-node-native-typescript-strip-only-gotchas-20260705-0228.md`
+
+### 最優先で直すべき指摘（上位3件 / いずれも任意）
+
+1. **[suggestion]** `title`（2行目） — バッククォート `` `node app.ts` `` は Zenn タイトルでは装飾されず素の記号として表示される。意図どおりか確認。
+2. **[suggestion]** `topics`（5行目） — `"tsnode"` はトピックとして弱い（ts-node はハイフンで崩れる）。差し替え／削除を検討。
+3. **[suggestion]** 比較表 decorator 行（301行目） — tsx 列「設定次第」はログ上「未計測」。計測有無を明記するとより誠実。
+
+### 判定の根拠
+
+- **公開安全**: `published: false`、slug は一意で妥当、秘密情報・個人パスなし（`/Users/...` は `/.../` に匿名化済み）— すべてクリア。
+- **事実整合**: バージョン境界・全エラー全文・速度表・カバー範囲表・`npx tsc` スクワッター罠まで、記事の全主張が出典ログに一次情報として裏付けあり。**創作・誇大・ログ超えの断定は検出なし**。
+- **機械チェック**: fail=0 / warn=0。
+
+### 次のアクション
+
+blocker/warning が無いため、そのまま公開可能な状態です。suggestion 4件は任意対応（公開はブロックしません）。公開する場合は Front Matter を `published: true` にして `/publish-pr` へ。

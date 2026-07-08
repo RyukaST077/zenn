@@ -1,0 +1,4 @@
+[17:39:34] === auto-publish 開始 (pipeline: logs/pipeline-20260708-173933)
+[17:39:34] ERROR: 追跡ファイルに未コミットの変更がある。コミットか退避をしてから実行する
+[17:39:34] パイプラインディレクトリ: logs/pipeline-20260708-173933 (各段のログあり)
+[17:39:34] 再開するには: bash scripts/auto-publish.sh --resume logs/pipeline-20260708-173933 --auto-merge

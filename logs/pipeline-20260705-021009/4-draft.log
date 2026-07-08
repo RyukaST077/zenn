@@ -1,0 +1,23 @@
+Draft written. Here's the summary.
+
+## 完了
+
+- **保存先**: `articles/node-native-typescript-strip-only-gotchas.md`
+- **slug**: `node-native-typescript-strip-only-gotchas`（ログの汎用 slug `node-native-typescript` を技術名＋切り口で具体化。`articles/` にローカル重複なし）
+- **published**: `false`（ドラフト。公開判断は人間に委ねる）
+- **スクショ**: 0枚（CLI 検証タスクのため画像なし。`images/` は作成不要）
+- **要素材マーカー**: 0件（6見出しすべてログの一次情報で埋まった）
+
+### 内容
+ログの「記事への写像」の6見出しに沿って構成し、以下をログの記録どおりに反映しました。
+- `node app.ts` の flagless 失敗（v22.17.0 / `SyntaxError: Unexpected token ':'`）→ フラグ → Docker v24.18.0 の3段と 22.18/24.12/25.2 のバージョン境界
+- 非対応構文のエラー全文（enum / namespace / パラメータプロパティ / import拡張子・型import / .tsx / decorator）＋ workspace のコード抜粋
+- 型エラー素通り（exit0）vs `tsc --noEmit`（TS2322 / exit2）と `npx tsc` スクワッター罠（`-p typescript`）
+- node vs tsx の速度・カバー範囲の比較表（npx込の注記つき）
+
+内部メタデータ（AI単独実行 / 無料・認証不要 / AI実測0.4h）は本文に持ち込まず、新人が手を動かした経験談トーンで書きました。
+
+### 次の手順
+1. プレビュー: `npx zenn preview`（http://localhost:8000）
+2. レビュー: `/review-article` で公開前チェック
+3. 公開: 内容を確認後、Front Matter を `published: true` に変えて `git push`。「サイト内で既に使用されています」が出たら slug を具体名に変更（`knowledge/2026-07-01-zenn-slug-already-used.md` 参照）
