@@ -203,7 +203,7 @@ run_stage() {
   cmd+=("-c" "model_reasoning_effort=\"$CODEX_REASONING_EFFORT\"")
   [ -n "$CODEX_MODEL" ] && cmd+=("--model" "$CODEX_MODEL")
   cmd+=("-C" "$ROOT" "--json" "--output-schema" "$SCHEMA" "-o" "$result")
-  cmd+=("Use \$$skill. $prompt Do not ask questions. Obey AGENTS.md. Your final response must be only the schema-conforming stage result JSON.")
+  cmd+=("Use \$$skill. $prompt Do not ask questions. Obey AGENTS.md. Your final response must be only the schema-conforming stage result JSON. When status is \"ok\", set \"reason\" to an empty string; use \"reason\" only when status is \"abort\".")
   log "$stage start (timeout=${seconds}s, skill=$skill)"
   set +e
   "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
