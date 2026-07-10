@@ -1,0 +1,414 @@
+## 17:49 pnpm create vite my-app --template react-ts
+.../19f40eb1740-c74e                     | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../19f40eb1740-c74e                     |   +1 +
+.../19f40eb1740-c74e                     | Progress: resolved 1, reused 1, downloaded 0, added 1, done
+│
+◇  Scaffolding project in /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app...
+│
+└  Done. Now run:
+
+  cd my-app
+  pnpm install
+  pnpm dev
+
+exit=0
+## 17:49 pnpm install
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 10.13.1 → 11.10.0.   │
+   │   Changelog: https://pnpm.io/v/11.10.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Packages: +28
+++++++++++++++++++++++++++++
+Progress: resolved 76, reused 30, downloaded 4, added 28, done
+
+dependencies:
++ react 19.2.7
++ react-dom 19.2.7
+
+devDependencies:
++ @types/node 24.13.3 (26.1.1 is available)
++ @types/react 19.2.17
++ @types/react-dom 19.2.3
++ @vitejs/plugin-react 6.0.3
++ oxlint 1.73.0
++ typescript 6.0.3
++ vite 8.1.3
+
+Done in 817ms using pnpm v10.13.1
+exit=0
+## 17:49 pnpm add -D vitest@4 @vitest/browser-playwright vitest-browser-react
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +42
+++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 118, reused 54, downloaded 22, added 42, done
+
+devDependencies:
++ @vitest/browser-playwright 4.1.10
++ vitest 4.1.10
++ vitest-browser-react 2.2.0
+
+Done in 1s using pnpm v10.13.1
+exit=0
+## 17:49 npx playwright install chromium
+exit=0
+## 17:50 npx vitest run --browser.headless (0 tests, correct config)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+No test files found, exiting with code 1
+
+
+|chromium|
+
+include: **/*.{test,spec}.?(c|m)[jt]s?(x)
+exclude:  **/node_modules/**, **/.git/**
+
+exit=1
+## 17:50 [GOTCHA] provider: 'playwright' (string, v3 style)
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: The `browser.provider` configuration was changed to accept a factory instead of a string. Add an import of "playwright" from "@vitest/browser-playwright" instead. See: https://vitest.dev/config/browser/provider
+    at resolveConfig$1 (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/coverage.DM_a_rWm.js:508:9)
+    at Vitest._setServer (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:13096:20)
+    at BasicMinimalPluginContext.handler (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:14191:18)
+    at _createServer (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vite@8.1.3_@types+node@24.13.3/node_modules/vite/dist/node/chunks/node.js:25575:95)
+    at async createViteServer (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:8835:17)
+    at async createVitest (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:14221:18)
+    at async prepareVitest (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:14588:14)
+    at async startVitest (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:14531:14)
+    at async start (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cac.DdICfEr1.js:2340:15)
+    at async CAC.run (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/node_modules/.pnpm/vitest@4.1.10_@types+node@24.13.3_@vitest+browser-playwright@4.1.10_vite@8.1.3_@types+node@24.13.3_/node_modules/vitest/dist/chunks/cac.DdICfEr1.js:2318:2)
+
+
+
+exit=1
+## 17:51 npx vitest run --browser.headless (render test)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+ ❯ |chromium| src/Card.test.tsx (1 test | 1 failed) 96ms
+   × Card renders title and body text 95ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |chromium| src/Card.test.tsx > Card renders title and body text
+TypeError: screen.getByText is not a function
+
+Failure screenshot:
+  - src/__screenshots__/Card.test.tsx/Card-renders-title-and-body-text-1.png
+
+ ❯ src/Card.test.tsx:8:30
+      6|   const screen = render(<Card title="Hello Vitest" body="ブラウザモードのレンダリン…
+      7|
+      8|   await expect.element(screen.getByText('Hello Vitest')).toBeVisible()
+       |                              ^
+      9|   await expect.element(screen.getByText('ブラウザモードのレンダリングテスト')).toBeVisi…
+     10| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  17:51:41
+   Duration  1.22s (transform 0ms, setup 0ms, import 76ms, tests 96ms, environment 0ms)
+
+exit=1
+## 17:52 npx vitest run --browser.headless (render test, awaited)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  17:52:07
+   Duration  1.10s (transform 0ms, setup 0ms, import 78ms, tests 22ms, environment 0ms)
+
+exit=0
+## 17:52 npx vitest run --browser.headless (FIRST toMatchScreenshot run - expect baseline-creation failure)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+ DEPRECATED  /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/src/Card.test.tsx tries to load a deprecated "@vitest/browser/context" module. This import will stop working in the next major version. Please, use "vitest/browser" instead.
+ ❯ |chromium| src/Card.test.tsx (2 tests | 1 failed) 140ms
+   × Card matches the visual baseline 117ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |chromium| src/Card.test.tsx > Card matches the visual baseline
+Error: [2mexpect([22m[31melement[39m[2m).[22mtoMatchScreenshot[2m()[22m
+
+No existing reference screenshot found; a new one was created. Review it before running tests again.
+
+Reference screenshot:
+  [32m/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/src/__screenshots__/Card.test.tsx/card-chromium-darwin.png[39m
+
+ ❯ src/Card.test.tsx:16:2
+     14|   await render(<Card title="Hello Vitest" body="ブラウザモードのレンダリングテスト" />)
+     15|
+     16|   await expect(page.getByTestId('card')).toMatchScreenshot('card')
+       |  ^
+     17| })
+     18|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  17:52:23
+   Duration  1.22s (transform 0ms, setup 0ms, import 82ms, tests 140ms, environment 0ms)
+
+exit=1
+## 17:52 npx vitest run --browser.headless (SECOND run - expect GREEN baseline match, vitest/browser import)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:52:49
+   Duration  1.18s (transform 0ms, setup 0ms, import 82ms, tests 94ms, environment 0ms)
+
+exit=0
+## 17:53 npx vitest run --browser.headless (CSS changed border blue->red, expect RED + diff)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+ ❯ |chromium| src/Card.test.tsx (2 tests | 1 failed) 146ms
+   × Card matches the visual baseline 121ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |chromium| src/Card.test.tsx > Card matches the visual baseline
+Error: [2mexpect([22m[31melement[39m[2m).[22mtoMatchScreenshot[2m()[22m
+
+Screenshot does not match the stored reference.
+2088 pixels (ratio 0.12) differ.
+
+Reference screenshot:
+  [32m/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/src/__screenshots__/Card.test.tsx/card-chromium-darwin.png[39m
+
+Actual screenshot:
+  [31m/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/.vitest-attachments/src/Card.test.tsx/card-actual-chromium-darwin.png[39m
+[2m
+Diff image:
+  /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/.vitest-attachments/src/Card.test.tsx/card-diff-chromium-darwin.png[22m
+
+ ❯ src/Card.test.tsx:16:2
+     14|   await render(<Card title="Hello Vitest" body="ブラウザモードのレンダリングテスト" />)
+     15|
+     16|   await expect(page.getByTestId('card')).toMatchScreenshot('card')
+       |  ^
+     17| })
+     18|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  17:53:08
+   Duration  1.23s (transform 0ms, setup 0ms, import 81ms, tests 146ms, environment 0ms)
+
+exit=1
+## 17:53 [Phase4] same red-border diff (ratio 0.12) with allowedMismatchedPixelRatio:0.2 -> expect GREEN
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+ ❯ |chromium| src/Card.test.tsx (2 tests | 1 failed) 140ms
+   × Card matches the visual baseline 116ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |chromium| src/Card.test.tsx > Card matches the visual baseline
+Error: [2mexpect([22m[31melement[39m[2m).[22mtoMatchScreenshot[2m()[22m
+
+Screenshot does not match the stored reference.
+2088 pixels (ratio 0.12) differ.
+
+Reference screenshot:
+  [32m/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/src/__screenshots__/Card.test.tsx/card-chromium-darwin.png[39m
+
+Actual screenshot:
+  [31m/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/.vitest-attachments/src/Card.test.tsx/card-actual-chromium-darwin.png[39m
+[2m
+Diff image:
+  /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app/.vitest-attachments/src/Card.test.tsx/card-diff-chromium-darwin.png[22m
+
+ ❯ src/Card.test.tsx:16:2
+     14|   await render(<Card title="Hello Vitest" body="ブラウザモードのレンダリングテスト" />)
+     15|
+     16|   await expect(page.getByTestId('card')).toMatchScreenshot('card', {
+       |  ^
+     17|     // 直前の実測 ratio 0.12 を許容してみる（同じ差分が緑になるか検証）
+     18|     allowedMismatchedPixelRatio: 0.2,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  17:53:51
+   Duration  1.26s (transform 0ms, setup 0ms, import 91ms, tests 140ms, environment 0ms)
+
+exit=1
+## 17:54 [Phase4-fix] comparatorOptions.allowedMismatchedPixelRatio:0.2 -> expect GREEN (same red-border diff)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:54:45
+   Duration  1.27s (transform 0ms, setup 0ms, import 79ms, tests 99ms, environment 0ms)
+
+exit=0
+## 17:55 pnpm add -D jsdom @testing-library/react @testing-library/dom (for jsdom comparison)
+Progress: resolved 171, reused 101, downloaded 28, added 54, done
+
+devDependencies:
++ @testing-library/dom 10.4.1
++ @testing-library/react 16.3.2
++ jsdom 29.1.1
+
+Done in 1s using pnpm v10.13.1
+exit=0
+## 17:55 [Phase4-jsdom] npx vitest run --config vitest.jsdom.config.ts (jsdom render works, no layout)
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+ ❯ src/Card.jsdom.test.tsx (2 tests | 1 failed) 22ms
+   × [jsdom] JSDOM has no real layout/pixels (cannot do visual regression) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/Card.jsdom.test.tsx > [jsdom] JSDOM has no real layout/pixels (cannot do visual regression)
+TestingLibraryElementError: Found multiple elements by: [data-testid="card"]
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"card"[39m
+  [33mdata-testid[39m=[32m"card"[39m
+[36m>[39m
+  [36m<h2[39m
+    [33mclass[39m=[32m"card__title"[39m
+  [36m>[39m
+    [0mHello Vitest[0m
+  [36m</h2>[39m
+  [36m<p[39m
+    [33mclass[39m=[32m"card__body"[39m
+  [36m>[39m
+    [0mブラウザモードのレンダリングテスト[0m
+  [36m</p>[39m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"card"[39m
+  [33mdata-testid[39m=[32m"card"[39m
+[36m>[39m
+  [36m<h2[39m
+    [33mclass[39m=[32m"card__title"[39m
+  [36m>[39m
+    [0mHello Vitest[0m
+  [36m</h2>[39m
+  [36m<p[39m
+    [33mclass[39m=[32m"card__body"[39m
+  [36m>[39m
+    [0mブラウザモードのレンダリングテスト[0m
+  [36m</p>[39m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card"[39m
+      [33mdata-testid[39m=[32m"card"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"card__title"[39m
+      [36m>[39m
+        [0mHello Vitest[0m
+      [36m</h2>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"card__body"[39m
+      [36m>[39m
+        [0mブラウザモードのレンダリングテスト[0m
+      [36m</p>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"card"[39m
+      [33mdata-testid[39m=[32m"card"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"card__title"[39m
+      [36m>[39m
+        [0mHello Vitest[0m
+      [36m</h2>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"card__body"[39m
+      [36m>[39m
+        [0mブラウザモードのレンダリングテスト[0m
+      [36m</p>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/Card.jsdom.test.tsx:17:23
+     15| test('[jsdom] JSDOM has no real layout/pixels (cannot do visual regres…
+     16|   render(<Card title="Hello Vitest" body="ブラウザモードのレンダリングテスト" />)
+     17|   const card = screen.getByTestId('card')
+       |                       ^
+     18|
+     19|   const rect = card.getBoundingClientRect()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  17:55:38
+   Duration  773ms (transform 26ms, setup 0ms, import 117ms, tests 22ms, environment 546ms)
+
+exit=1
+## 17:55 [Phase4-jsdom-fix] with afterEach(cleanup) -> both jsdom tests green, rect.width=0 confirms no layout
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:55:55
+   Duration  729ms (transform 23ms, setup 0ms, import 107ms, tests 19ms, environment 522ms)
+
+exit=0
+## 17:56 [FINAL] clean state: blue CSS + plain toMatchScreenshot -> expect GREEN
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest-browser-mode-20260708-1748/workspace/my-app
+
+5:56:18 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  17:56:18
+   Duration  1.45s (transform 0ms, setup 0ms, import 81ms, tests 93ms, environment 0ms)
+
+exit=0
