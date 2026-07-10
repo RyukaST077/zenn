@@ -3,3 +3,9 @@ node_modules
 .claude/.cache/
 # run-practice: 検証で生成した成果物コードは重いので除外（検証ログ・スクショは残す）
 logs/**/workspace/
+# ローカル実行・監査ログはリポジトリへ含めない
+logs/launchd/
+logs/pipeline-*/
+logs/codex-pipeline-*/
+# このリポジトリは package-lock.json を正とする
+pnpm-lock.yaml
