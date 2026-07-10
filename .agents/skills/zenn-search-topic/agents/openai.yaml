@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn テーマ調査"
+  short_description: "最新技術を調査し、検証可能なZenn記事テーマを選定する"
+  default_prompt: "Use $zenn-search-topic to research and select a practical Zenn article topic."
