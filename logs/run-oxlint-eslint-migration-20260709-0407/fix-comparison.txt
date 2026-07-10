@@ -1,0 +1,35 @@
+===== 04:17:31 FIX COMPARISON =====
+--- oxlint --fix on fixcmp/ox ---
+fixcmp/ox/App.tsx:6:7: error eslint(no-unused-vars): Variable 'unused' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+fixcmp/ox/App.tsx:9:5: warning eslint(no-console): Unexpected console statement. help: Delete this console statement.
+fixcmp/ox/App.tsx:9:28: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'count' help: Either include it or remove the dependency array.
+fixcmp/ox/App.tsx:12:13: error eslint(eqeqeq): Expected === and instead saw == help: Prefer === operator
+fixcmp/ox/utils.ts:8:9: error eslint(no-unused-vars): Variable 'y' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+--- eslint --fix on fixcmp/es ---
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/fixcmp/es/App.tsx
+   6:9   error    'unused' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+   9:5   warning  Unexpected console statement                                                                              no-console
+  10:6   warning  React Hook useEffect has a missing dependency: 'count'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  12:13  error    Expected '===' and instead saw '=='                                                                       eqeqeq
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/fixcmp/es/utils.ts
+  8:9  error  'y' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 5 problems (3 errors, 2 warnings)
+
+===== 04:17:54 diff oxlint-fixed vs eslint-fixed =====
+### App.tsx diff (ox vs es)
+(identical)
+### utils.ts diff (ox vs es)
+(identical)
+### what changed vs original (App.tsx)
+6c6
+<   var unused = 42; // no-unused-vars / no-var 狙い
+---
+>   const unused = 42; // no-unused-vars / no-var 狙い
+### what changed vs original (utils.ts)
+2c2
+<   let result = a + b;
+---
+>   const result = a + b;

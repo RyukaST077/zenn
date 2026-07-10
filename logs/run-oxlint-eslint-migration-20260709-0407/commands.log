@@ -1,0 +1,405 @@
+===== 04:08:10 pnpm add -D eslint plugins =====
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 73, reused 0, downloaded 0, added 0
+Progress: resolved 107, reused 58, downloaded 17, added 0
+Progress: resolved 108, reused 59, downloaded 22, added 0
+Progress: resolved 110, reused 59, downloaded 25, added 0
+Progress: resolved 111, reused 60, downloaded 27, added 0
+Progress: resolved 122, reused 64, downloaded 29, added 0
+Progress: resolved 151, reused 88, downloaded 39, added 0
+Packages: +132
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 151, reused 88, downloaded 40, added 0
+Progress: resolved 151, reused 88, downloaded 41, added 54
+Progress: resolved 151, reused 88, downloaded 42, added 88
+Progress: resolved 151, reused 88, downloaded 43, added 125
+Progress: resolved 151, reused 88, downloaded 43, added 130
+Progress: resolved 151, reused 88, downloaded 44, added 132, done
+ WARN  Issues with peer dependencies found
+.
+├─┬ @typescript-eslint/parser 8.63.0
+│ ├── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+│ └─┬ @typescript-eslint/typescript-estree 8.63.0
+│   ├── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+│   ├─┬ @typescript-eslint/tsconfig-utils 8.63.0
+│   │ └── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+│   └─┬ @typescript-eslint/project-service 8.63.0
+│     └── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+└─┬ typescript-eslint 8.63.0
+  ├── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+  ├─┬ @typescript-eslint/utils 8.63.0
+  │ └── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+  └─┬ @typescript-eslint/eslint-plugin 8.63.0
+    ├── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+    └─┬ @typescript-eslint/type-utils 8.63.0
+      └── ✕ unmet peer typescript@">=4.8.4 <6.1.0": found 7.0.2
+
+devDependencies:
++ @eslint/js 10.0.1
++ eslint 10.6.0
++ eslint-plugin-react-hooks 7.1.1
++ globals 17.7.0
++ typescript 7.0.2
++ typescript-eslint 8.63.0
+
+Done in 17.5s using pnpm v10.13.1
+pnpm add -D eslint @eslint/js typescript-eslint eslint-plugin-react-hooks   2  6.16s user 4.88s system 57% cpu 19.365 total
+--- installed versions ---
+v10.6.0
+{
+  "@eslint/js": "^10.0.1",
+  "eslint": "^10.6.0",
+  "eslint-plugin-react-hooks": "^7.1.1",
+  "globals": "^17.7.0",
+  "typescript": "^7.0.2",
+  "typescript-eslint": "^8.63.0"
+}
+===== 04:08:56 npx eslint . =====
+
+Oops! Something went wrong! :(
+
+ESLint: 10.6.0
+
+TypeError: Cannot read properties of undefined (reading 'Cjs')
+    at Object.<anonymous> (/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/node_modules/.pnpm/@typescript-eslint+typescript-estree@8.63.0_typescript@7.0.2/node_modules/@typescript-eslint/typescript-estree/dist/create-program/shared.js:59:18)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.require (node:internal/modules/cjs/loader:1487:12)
+    at require (node:internal/modules/helpers:135:16)
+    at Object.<anonymous> (/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/node_modules/.pnpm/@typescript-eslint+typescript-estree@8.63.0_typescript@7.0.2/node_modules/@typescript-eslint/typescript-estree/dist/create-program/getWatchProgramsForProjects.js:45:18)
+exit=0
+===== 04:09:19 FIX: pin typescript@5.9 =====
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 98, reused 98, downloaded 0, added 0
+Packages: +10 -7
+++++++++++-------
+Progress: resolved 131, reused 131, downloaded 0, added 10, done
+
+devDependencies:
+- typescript 7.0.2
++ typescript 5.9.3 (7.0.2 is available)
+
+Done in 2.8s using pnpm v10.13.1
+--- tsc version ---
+Version 5.9.3
+===== 04:09:30 npx eslint . (after fix) =====
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/src/App.tsx
+   6:3   error    Unexpected var, use let or const instead                                                                  no-var
+   6:7   error    'unused' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+   9:5   warning  Unexpected console statement                                                                              no-console
+  10:6   warning  React Hook useEffect has a missing dependency: 'count'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  12:13  error    Expected '===' and instead saw '=='                                                                       eqeqeq
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/src/utils.ts
+  2:7  error  'result' is never reassigned. Use 'const' instead  prefer-const
+  8:9  error  'y' is assigned a value but never used             @typescript-eslint/no-unused-vars
+
+✖ 7 problems (5 errors, 2 warnings)
+  2 errors and 0 warnings potentially fixable with the `--fix` option.
+
+exit=
+===== 04:10:40 pnpm add -D oxlint =====
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 1, reused 1, downloaded 0, added 0
+Packages: +2
+++
+Progress: resolved 151, reused 133, downloaded 0, added 2, done
+
+devDependencies:
++ oxlint 1.73.0
+
+Done in 4.7s using pnpm v10.13.1
+pnpm add -D oxlint 2>&1  1.62s user 0.60s system 44% cpu 4.998 total
+===== 04:10:53 oxlint --version =====
+Version: 1.73.0
+
+===== 04:10:55 pnpm lint (pre-migration default) =====
+
+> oxlint-migration-sample@1.0.0 lint /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace
+> oxlint
+
+src/utils.ts:8:9: warning eslint(no-unused-vars): Variable 'y' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/App.tsx:6:7: warning eslint(no-unused-vars): Variable 'unused' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+exit=
+===== 04:11:05 npx @oxlint/migrate ./eslint.config.js =====
+
+✨ .oxlintrc.json created with 87 rules.
+
+   Skipped 4 rules:
+     -   2 Nursery         (Experimental: no-undef, no-useless-assignment)
+     -   2 Unsupported     (Won't be implemented: no-dupe-args, no-octal)
+
+👉 Re-run with flags to include more:
+     npx @oxlint/migrate eslint.config.js --with-nursery
+
+🚀 Next:
+     npx oxlint .
+
+exit=
+--- generated .oxlintrc.json ---
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "node_modules/**",
+    "dist/**"
+  ],
+  "rules": {
+    "constructor-super": "error",
+    "for-direction": "error",
+    "getter-return": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-class-assign": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-const-assign": "error",
+    "no-constant-binary-expression": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-else-if": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-empty-static-block": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-func-assign": "error",
+    "no-global-assign": "error",
+    "no-import-assign": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-new-native-nonconstructor": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-obj-calls": "error",
+    "no-prototype-builtins": "error",
+    "no-redeclare": "error",
+    "no-regex-spaces": "error",
+    "no-self-assign": "error",
+    "no-setter-return": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-this-before-super": "error",
+    "no-unassigned-vars": "error",
+    "no-unexpected-multiline": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-private-class-members": "error",
+    "no-unused-vars": "error",
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-useless-escape": "error",
+    "no-with": "error",
+    "preserve-caught-error": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "no-array-constructor": "error",
+    "no-unused-expressions": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/triple-slash-reference": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mts",
+        "**/*.cts"
+      ],
+      "rules": {
+        "constructor-super": "off",
+        "getter-return": "off",
+        "no-class-assign": "off",
+        "no-const-assign": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-new-native-nonconstructor": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-unreachable": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "error",
+        "no-with": "off",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "no-var": "error",
+        "eqeqeq": "error",
+        "no-console": "warn",
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn"
+      },
+      "env": {
+        "es2022": true,
+        "browser": true
+      },
+      "plugins": [
+        "react"
+      ]
+    }
+  ]
+}===== 04:11:41 pnpm lint (post-migration) =====
+
+> oxlint-migration-sample@1.0.0 lint /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace
+> oxlint
+
+src/utils.ts:8:9: error eslint(no-unused-vars): Variable 'y' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/utils.ts:2:7: error eslint(prefer-const): `result` is never reassigned. help: Use `const` instead.
+src/App.tsx:6:7: error eslint(no-unused-vars): Variable 'unused' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/App.tsx:6:3: error eslint(no-var): Unexpected var, use let or const instead. help: Replace var with let or const
+src/App.tsx:9:28: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'count' help: Either include it or remove the dependency array.
+src/App.tsx:9:5: warning eslint(no-console): Unexpected console statement. help: Delete this console statement.
+src/App.tsx:12:13: error eslint(eqeqeq): Expected === and instead saw == help: Prefer === operator
+ ELIFECYCLE  Command failed with exit code 1.
+exit=
+===== 04:12:21 TIMING (302 files / 2127 lines) =====
+--- ESLint: 3 runs ---
+run1: real 7.69
+run2: real 24.66
+run3: real 24.40
+--- oxlint: 3 runs ---
+run1: real 2.61
+run2: real 0.66
+run3: real 0.63
+===== 04:13:56 TIMING v2 (direct bin, 5 runs) =====
+--- ESLint: 5 runs ---
+run1: real 7.20
+run2: real 11.99
+run3: real 20.46
+run4: real 18.15
+run5: real 8.73
+--- oxlint: 5 runs ---
+run1: real 0.44
+run2: real 0.22
+run3: real 0.21
+run4: real 0.21
+run5: real 0.16
+===== 04:16:21 pnpm add -D eslint-plugin-jsdoc =====
+++++++++++++++++
+Progress: resolved 167, reused 133, downloaded 16, added 0
+Progress: resolved 167, reused 133, downloaded 16, added 16, done
+
+devDependencies:
++ eslint-plugin-jsdoc 63.0.12
+
+Done in 5.5s using pnpm v10.13.1
+--- plugin-test.ts ---
+/**
+ * 2つの数を足す。
+ * @param {number} a 最初の数
+ */
+export function addDocumented(a: number, b: number): number {
+  return a + b;
+}
+===== 04:16:48 oxlint src/plugin-test.ts (jsPlugins alpha, alias) =====
+src/plugin-test.ts:1:1: error jsdoc-js(require-param): Missing JSDoc @param "b" declaration.
+exit=
+===== 04:17:14 EXPERIMENT: direct form (no alias) jsPlugins=['eslint-plugin-jsdoc'], rule jsdoc/require-param =====
+Failed to parse oxlint configuration file.
+
+  x Plugin name 'jsdoc' is reserved, and cannot be used for JS plugins.
+  |
+  | The 'jsdoc' plugin is already implemented natively in Rust within oxlint.
+  | Using both the native and JS versions would create ambiguity about which rules to use.
+  |
+  | To use an external 'jsdoc' plugin instead, provide a custom alias:
+  |
+  | "jsPlugins": [{ "name": "jsdoc-js", "specifier": "eslint-plugin-jsdoc" }]
+  |
+  | Then reference rules using your alias:
+  |
+  | "rules": {
+  |   "jsdoc-js/rule-name": "error"
+  | }
+  |
+  | See: https://oxc.rs/docs/guide/usage/linter/js-plugins.html
+
+exit=
+--- restore alias config as canonical .oxlintrc.json (already set) ---
+===== 04:17:31 FIX COMPARISON =====
+--- oxlint --fix on fixcmp/ox ---
+fixcmp/ox/App.tsx:6:7: error eslint(no-unused-vars): Variable 'unused' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+fixcmp/ox/App.tsx:9:5: warning eslint(no-console): Unexpected console statement. help: Delete this console statement.
+fixcmp/ox/App.tsx:9:28: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'count' help: Either include it or remove the dependency array.
+fixcmp/ox/App.tsx:12:13: error eslint(eqeqeq): Expected === and instead saw == help: Prefer === operator
+fixcmp/ox/utils.ts:8:9: error eslint(no-unused-vars): Variable 'y' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+--- eslint --fix on fixcmp/es ---
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/fixcmp/es/App.tsx
+   6:9   error    'unused' is assigned a value but never used                                                               @typescript-eslint/no-unused-vars
+   9:5   warning  Unexpected console statement                                                                              no-console
+  10:6   warning  React Hook useEffect has a missing dependency: 'count'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  12:13  error    Expected '===' and instead saw '=='                                                                       eqeqeq
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace/fixcmp/es/utils.ts
+  8:9  error  'y' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 5 problems (3 errors, 2 warnings)
+
+exit_es=
+===== 04:17:54 diff oxlint-fixed vs eslint-fixed =====
+### App.tsx diff (ox vs es)
+(identical)
+### utils.ts diff (ox vs es)
+(identical)
+### what changed vs original (App.tsx)
+6c6
+<   var unused = 42; // no-unused-vars / no-var 狙い
+---
+>   const unused = 42; // no-unused-vars / no-var 狙い
+### what changed vs original (utils.ts)
+2c2
+<   let result = a + b;
+---
+>   const result = a + b;
