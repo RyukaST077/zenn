@@ -1,0 +1,12 @@
+
+> oxlint-migration-sample@1.0.0 lint /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-oxlint-eslint-migration-20260709-0407/workspace
+> oxlint
+
+src/utils.ts:8:9: error eslint(no-unused-vars): Variable 'y' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/utils.ts:2:7: error eslint(prefer-const): `result` is never reassigned. help: Use `const` instead.
+src/App.tsx:6:7: error eslint(no-unused-vars): Variable 'unused' is declared but never used. Unused variables should start with a '_'. help: Consider removing this declaration.
+src/App.tsx:6:3: error eslint(no-var): Unexpected var, use let or const instead. help: Replace var with let or const
+src/App.tsx:9:28: warning react-hooks(exhaustive-deps): React Hook useEffect has a missing dependency: 'count' help: Either include it or remove the dependency array.
+src/App.tsx:9:5: warning eslint(no-console): Unexpected console statement. help: Delete this console statement.
+src/App.tsx:12:13: error eslint(eqeqeq): Expected === and instead saw == help: Prefer === operator
+ ELIFECYCLE  Command failed with exit code 1.
