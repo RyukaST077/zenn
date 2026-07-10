@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn 記事執筆"
+  short_description: "検証ログの一次情報だけを使って再現可能なZenn記事を下書きする"
+  default_prompt: "Use $zenn-draft-article to draft a Zenn article from an execution log."
