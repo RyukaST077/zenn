@@ -1,0 +1,22 @@
+===== 04:12:21 TIMING (302 files / 2127 lines) =====
+--- ESLint: 3 runs ---
+run1: real 7.69
+run2: real 24.66
+run3: real 24.40
+--- oxlint: 3 runs ---
+run1: real 2.61
+run2: real 0.66
+run3: real 0.63
+===== 04:13:56 TIMING v2 (direct bin, 5 runs) =====
+--- ESLint: 5 runs ---
+run1: real 7.20
+run2: real 11.99
+run3: real 20.46
+run4: real 18.15
+run5: real 8.73
+--- oxlint: 5 runs ---
+run1: real 0.44
+run2: real 0.22
+run3: real 0.21
+run4: real 0.21
+run5: real 0.16

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<style>
+  body{font-family:-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;background:#0d1117;color:#e6edf3;margin:0;padding:32px;width:900px}
+  h1{font-size:22px;margin:0 0 4px;color:#7ee787}
+  .sub{color:#8b949e;font-size:13px;margin-bottom:20px}
+  table{border-collapse:collapse;width:100%;margin-bottom:22px;font-size:14px}
+  th,td{border:1px solid #30363d;padding:7px 10px;text-align:left}
+  th{background:#161b22;color:#79c0ff}
+  h2{font-size:16px;margin:18px 0 8px;color:#ffa657;border-left:3px solid #ffa657;padding-left:8px}
+  .ok{color:#7ee787;font-weight:bold}
+  .warn{color:#e3b341}
+  code{background:#161b22;padding:1px 5px;border-radius:4px;color:#ff7b72;font-size:13px}
+  .big{font-size:20px;font-weight:bold;color:#7ee787}
+</style>
+</head>
+<body>
+  <h1>ESLint → oxlint 移行 検証サマリ</h1>
+  <div class="sub">macOS 15 (arm64) / Node v22.17.0 / pnpm 10.13.1 / eslint 10.6.0 / oxlint 1.73.0 / 2026-07-09</div>
+
+  <h2>1. 移行結果（npx @oxlint/migrate）</h2>
+  <table>
+    <tr><th>項目</th><th>結果</th></tr>
+    <tr><td>生成ファイル</td><td><code>.oxlintrc.json</code></td></tr>
+    <tr><td>移行されたルール</td><td class="ok">87 ルール</td></tr>
+    <tr><td>スキップ（nursery）</td><td class="warn">2（no-undef, no-useless-assignment）</td></tr>
+    <tr><td>スキップ（未実装/不対応）</td><td class="warn">2（no-dupe-args, no-octal）</td></tr>
+  </table>
+
+  <h2>2. 検出差（同一サンプル）</h2>
+  <table>
+    <tr><th></th><th>ESLint</th><th>oxlint（移行後）</th></tr>
+    <tr><td>検出件数</td><td>7（error5 / warn2）</td><td class="ok">7（error5 / warn2）＝完全一致</td></tr>
+    <tr><td>検出ルール</td><td colspan="2">no-var / no-unused-vars / prefer-const / eqeqeq / no-console / react-hooks/exhaustive-deps</td></tr>
+  </table>
+
+  <h2>3. 実行速度（302ファイル / 2,127行・簡易計測）</h2>
+  <table>
+    <tr><th></th><th>ESLint (min〜median)</th><th>oxlint (min〜median)</th><th>比</th></tr>
+    <tr><td>real time (5回)</td><td>7.2s 〜 12.0s</td><td class="ok">0.16s 〜 0.21s</td><td class="big">約45〜57倍</td></tr>
+  </table>
+
+  <h2>4. JSプラグイン alpha（jsPlugins）</h2>
+  <table>
+    <tr><th>試行</th><th>結果</th></tr>
+    <tr><td>エイリアス記法 <code>{name:"jsdoc-js", specifier:"eslint-plugin-jsdoc"}</code></td><td class="ok">✅ 読込・発火成功（require-param）</td></tr>
+    <tr><td>直接指定 <code>"eslint-plugin-jsdoc"</code>（jsdoc名）</td><td class="warn">❌ 予約名エラー → エイリアス必須</td></tr>
+  </table>
+
+  <h2>5. --fix 自動修正範囲</h2>
+  <table>
+    <tr><th></th><th>結果</th></tr>
+    <tr><td>oxlint --fix と eslint --fix</td><td class="ok">修正後ファイルが完全一致（no-var, prefer-const を同様に修正）</td></tr>
+  </table>
+</body>
+</html>
