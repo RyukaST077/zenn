@@ -3,7 +3,7 @@ title: "Codexの新モデルGPT-5.6を調べて分かった、Sol・Terra・Luna
 emoji: "🌞"
 type: "tech"
 topics: ["codex", "openai", "gpt5", "ai", "aiagent"]
-published: false
+published: true
 ---
 
 ## はじめに
