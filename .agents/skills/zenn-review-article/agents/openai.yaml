@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn 記事レビュー"
+  short_description: "記事を検証ログと照合して品質と公開可否を厳格かつ安全に判定する"
+  default_prompt: "Use $zenn-review-article to review a Zenn draft against its evidence."

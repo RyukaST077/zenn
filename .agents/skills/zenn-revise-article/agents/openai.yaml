@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn 記事修正"
+  short_description: "レビュー指摘を証拠の範囲内で修正して再レビュー可能な状態にする"
+  default_prompt: "Use $zenn-revise-article to revise a Zenn draft from review feedback."

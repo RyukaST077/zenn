@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn 公開準備"
+  short_description: "レビュー済み記事を公開状態に切り替えて安全なPRメタデータを作る"
+  default_prompt: "Use $zenn-prepare-publish to prepare an approved Zenn draft for publication."

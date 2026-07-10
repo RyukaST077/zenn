@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn 実践計画"
+  short_description: "調査結果から再現可能で安全な実践・検証計画を具体的に作成する"
+  default_prompt: "Use $zenn-plan-practice to turn a research report into a practical verification plan."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Zenn ナレッジ検索"
+  short_description: "既知の障害と確認済み解決策をknowledgeディレクトリから検索する"
+  default_prompt: "Use $zenn-consult-knowledge to find relevant prior troubleshooting knowledge."

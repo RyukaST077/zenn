@@ -1,0 +1,2 @@
+# Repository-local default. The orchestrator passes sandbox=workspace-write explicitly.
+approval_policy = "never"
