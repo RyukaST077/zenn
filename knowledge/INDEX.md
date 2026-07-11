@@ -7,6 +7,8 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-07-11] [planステージがCodexサンドボックスで実行できない検証計画（実ブラウザ起動・deno upgrade等）を立ててしまう](./2026-07-11-codex-sandbox-infeasible-practice-plans.md) — `Environment` / tags: codex, sandbox, playwright, deno, docker
+- [2026-07-11] [gh pr merge --auto が branch protection の無いリポジトリで不安定に失敗する](./2026-07-11-gh-pr-merge-auto-unstable-without-protection.md) — `External Service` / tags: gh, github, AutoMergeSetupFailed
 - [2026-07-11] [Codexパイプラインが successful stage result must have an empty reason で失敗する](./2026-07-11-codex-stage-result-empty-reason-contract.md) — `Code/Logic` / tags: codex, bash, node, StageResultContractFailed
 - [2026-07-10] [CSS Anchor Positioningのposition-try-fallbacksが発火しないときはcontaining blockを確認する](./2026-07-10-css-anchor-position-try-fallbacks-containing-block.md) — `Config` / tags: css, anchor-positioning, position-try-fallbacks, containing-block
 - [2026-07-09] [typescript-eslint 8.x が TypeScript 7.x で `Cannot read properties of undefined (reading 'Cjs')` でクラッシュする](./2026-07-09-typescript-eslint-typescript7-cjs-crash.md) — `Dependency` / tags: typescript-eslint, typescript-7, Cjs, PeerDependencyMismatch
