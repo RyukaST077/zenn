@@ -66,7 +66,10 @@ reason を空文字にする」というルールがバリデータ（validate-s
 - 試したこと: knowledge/ 検索（該当なし）→ ログ・バリデータ・スキーマ・AGENTS.md・スキル定義を
   横断調査し、ルールの記載箇所がバリデータのみと特定（失敗した試行は特になし）。
 - 最終的な修正: run_stage のステージプロンプト末尾に成功時ルールを明示する1文を追加。
-- 変更ファイル: scripts/auto-publish-codex.sh（commit 77e8939）
+  さらに後日、abort 側でも同型の違反が発生（abort なのに artifact に途中成果物のパスを設定 →
+  「aborted stage must have an empty artifact and non-empty reason」で die）したため、
+  「abort 時は artifact を空文字にする」ルールも同じ文に追記した。
+- 変更ファイル: scripts/auto-publish-codex.sh（commit 77e8939 ほか）
 - Before / After:
 
   ```bash
