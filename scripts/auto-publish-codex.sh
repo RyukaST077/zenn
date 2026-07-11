@@ -334,7 +334,14 @@ else
 fi
 
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
-  GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch || die "auto-merge setup failed"
+  # branch protection があれば --auto（必須チェック通過後にマージ）、無ければ即時マージ
+  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch; then
+    log "auto-merge scheduled (merges after required checks pass)"
+  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch; then
+    log "PR merged immediately"
+  else
+    die "auto-merge setup failed"
+  fi
   state_set completed.merge true
 fi
 
