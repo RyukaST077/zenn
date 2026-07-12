@@ -1,0 +1,14 @@
+logs/run-playwright-passkey-20260710-2352/evidence/end-time.txt
+logs/run-playwright-passkey-20260710-2352/evidence/environment.txt
+logs/run-playwright-passkey-20260710-2352/evidence/file-list.txt
+logs/run-playwright-passkey-20260710-2352/evidence/knowledge-consult.txt
+logs/run-playwright-passkey-20260710-2352/evidence/npm-init.log
+logs/run-playwright-passkey-20260710-2352/evidence/npm-install-retry.exit
+logs/run-playwright-passkey-20260710-2352/evidence/npm-install-retry.log
+logs/run-playwright-passkey-20260710-2352/evidence/npm-install.exit
+logs/run-playwright-passkey-20260710-2352/evidence/npm-install.log
+logs/run-playwright-passkey-20260710-2352/evidence/sensitive-key-scan.exit
+logs/run-playwright-passkey-20260710-2352/evidence/sensitive-key-scan.txt
+logs/run-playwright-passkey-20260710-2352/execution-log.md
+logs/run-playwright-passkey-20260710-2352/work/.npm-cache/_update-notifier-last-checked
+logs/run-playwright-passkey-20260710-2352/work/package.json
