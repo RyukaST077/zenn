@@ -73,12 +73,13 @@ Claude版の成果物形式と安全策を引き継ぎつつ、Codexのスキル
 │   ├── auto-publish-codex-launchd.sh      # 定期実行ラッパー
 │   ├── check-article.sh                    # 共通の決定的記事検査
 │   ├── pipeline-state.mjs                  # JSON状態の読み書き
-│   └── schemas/
-│       └── codex-stage-result.schema.json  # 全段共通の最終応答Schema
+│   ├── stage-result-contract.mjs           # 段別Schema・prompt・検証契約
+│   └── validate-stage-result.mjs           # 成果物と段別契約の最終検証
 ├── logs/
 │   └── codex-pipeline-<timestamp>/
 │       ├── state.json
 │       ├── pipeline.log
+│       ├── 1-search.schema.json
 │       ├── 1-search.events.jsonl
 │       ├── 1-search.result.json
 │       └── ...
@@ -149,6 +150,12 @@ zenn-<action>/
 - 秘密情報らしい文字列の一次検査
 - JSON状態の安全な更新
 - commit対象ファイルの限定
+- 段ごとのstage result Schema・metadata規則の生成と検証
+
+stage result契約は`stage-result-contract.mjs`を唯一の定義元とする。同じ定義からCodexへ渡す
+段別Schema、プロンプトの明示規則、バリデータの判定を作り、生成側と検証側のずれを防ぐ。
+再開時は、当該段で禁止されているmetadataだけを`null`へ正規化して既存結果を再検証できる。
+review判定、slug、PRメタデータなどの必須値は自動生成・補完しない。
 
 ## 6. スキル一覧と契約
 
