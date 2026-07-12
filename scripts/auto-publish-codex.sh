@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Codex Zenn pipeline: research -> practice -> draft -> review/revise -> branch -> PR.
+# By default this matches the Claude pipeline's unattended host access. Run only on a
+# dedicated machine or inside an outer isolation boundary such as a dev container.
 set -euo pipefail
 
 : "${CODEX_BIN:=codex}"
 : "${CODEX_MODEL:=gpt-5.6-sol}"
 : "${CODEX_REASONING_EFFORT:=high}"
 : "${CODEX_SEARCH:=1}"
+: "${CODEX_SANDBOX_MODE:=danger-full-access}"
 : "${MAX_REVIEW_ROUNDS:=3}"
 : "${BASE_BRANCH:=main}"
 : "${MERGE_METHOD:=--squash}"
@@ -41,6 +44,10 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$MAX_REVIEW_ROUNDS" in *[!0-9]*|0) echo "MAX_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;; esac
+case "$CODEX_SANDBOX_MODE" in
+  workspace-write|danger-full-access) ;;
+  *) echo "CODEX_SANDBOX_MODE must be workspace-write or danger-full-access" >&2; exit 2 ;;
+esac
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -114,14 +121,14 @@ if [ "$DRY_RUN" = 1 ]; then
   root: $ROOT
   pipeline: $PIPE_DIR
   codex: $CODEX_BIN (model=${CODEX_MODEL:-CLI default}, reasoning=$CODEX_REASONING_EFFORT)
-  policy: approval=never, sandbox=workspace-write, ephemeral=true
+  policy: approval=never, sandbox=$CODEX_SANDBOX_MODE, ephemeral=true
   timeout: ${TIMEOUT_BIN:-MISSING (actual run will stop in preflight)}
   search: $CODEX_SEARCH
   review rounds: $MAX_REVIEW_ROUNDS
   base branch: $BASE_BRANCH
   auto merge: $AUTO_MERGE
   stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> branch -> zenn-prepare-publish -> commit/push -> PR
-  codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox workspace-write -C $ROOT --json --output-schema $SCHEMA -o <result> <prompt>
+  codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox $CODEX_SANDBOX_MODE -C $ROOT --json --output-schema $SCHEMA -o <result> <prompt>
 EOF
   exit 0
 fi
@@ -136,22 +143,23 @@ command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep (rg) is required"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
-if rg -n 'danger-full-access|default_permissions\s*=\s*":danger-full-access"' .codex/config.toml >/dev/null 2>&1; then
-  die ".codex/config.toml enables danger-full-access"
-fi
 [ -f "$SCHEMA" ] || die "result schema is missing"
-SANDBOX_PROBE=".codex-sandbox-probe-$$"
-OUTSIDE_PROBE="$HOME/.codex-sandbox-outside-probe-$$"
-rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-if ! "$CODEX_BIN" sandbox -P :workspace -C "$ROOT" sh -c 'touch "$1" || exit 2; if touch "$2" 2>/dev/null; then exit 3; fi' sh "$SANDBOX_PROBE" "$OUTSIDE_PROBE"; then
+if [ "$CODEX_SANDBOX_MODE" = "workspace-write" ]; then
+  SANDBOX_PROBE=".codex-sandbox-probe-$$"
+  OUTSIDE_PROBE="$HOME/.codex-sandbox-outside-probe-$$"
   rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-  die "Codex :workspace sandbox diagnostic failed"
-fi
-if [ ! -f "$SANDBOX_PROBE" ] || [ -f "$OUTSIDE_PROBE" ]; then
+  if ! "$CODEX_BIN" sandbox -P :workspace -C "$ROOT" sh -c 'touch "$1" || exit 2; if touch "$2" 2>/dev/null; then exit 3; fi' sh "$SANDBOX_PROBE" "$OUTSIDE_PROBE"; then
+    rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
+    die "Codex :workspace sandbox diagnostic failed"
+  fi
+  if [ ! -f "$SANDBOX_PROBE" ] || [ -f "$OUTSIDE_PROBE" ]; then
+    rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
+    die "Codex sandbox does not enforce the expected write boundary"
+  fi
   rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-  die "Codex sandbox does not enforce the expected write boundary"
+else
+  log "WARN: danger-full-access is enabled; generated commands can access the host without sandbox restrictions"
 fi
-rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
 
 LOCK="$ROOT/.auto-publish-codex.lock"
 if ! mkdir "$LOCK" 2>/dev/null; then die "another Codex pipeline holds $LOCK"; fi
@@ -198,12 +206,12 @@ run_stage() {
   seconds="$(stage_timeout "$stage")"
   local cmd=("$CODEX_BIN" "-a" "never")
   [ "$search" = 1 ] && cmd+=("--search")
-  cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "workspace-write")
-  cmd+=("-c" "sandbox_workspace_write.network_access=$network")
+  cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "$CODEX_SANDBOX_MODE")
+  [ "$CODEX_SANDBOX_MODE" != "workspace-write" ] || cmd+=("-c" "sandbox_workspace_write.network_access=$network")
   cmd+=("-c" "model_reasoning_effort=\"$CODEX_REASONING_EFFORT\"")
   [ -n "$CODEX_MODEL" ] && cmd+=("--model" "$CODEX_MODEL")
   cmd+=("-C" "$ROOT" "--json" "--output-schema" "$SCHEMA" "-o" "$result")
-  cmd+=("Use \$$skill. $prompt Do not ask questions. Obey AGENTS.md. Your final response must be only the schema-conforming stage result JSON. When status is \"ok\", set \"reason\" to an empty string; use \"reason\" only when status is \"abort\". When status is \"abort\", set \"artifact\" to an empty string and put the precise cause in \"reason\".")
+  cmd+=("Use \$$skill. $prompt The effective Codex sandbox mode for every pipeline stage, including run, is $CODEX_SANDBOX_MODE. If it is danger-full-access, override any workspace-write assumption in the skill: real-browser and Playwright verification are allowed, with a capability gate that stops rather than infers results when browser launch fails. Do not ask questions. Obey AGENTS.md. Your final response must be only the schema-conforming stage result JSON. When status is \"ok\", set \"reason\" to an empty string; use \"reason\" only when status is \"abort\". When status is \"abort\", set \"artifact\" to an empty string and put the precise cause in \"reason\".")
   log "$stage start (timeout=${seconds}s, skill=$skill)"
   set +e
   "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"

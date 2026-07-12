@@ -54,8 +54,17 @@ printf '%s\n' "{\"title\":\"Fixture PR\",\"body_file\":\"$PR_FIXTURE/pr-body.md\
 node scripts/validate-pr-metadata.mjs "$PR_FIXTURE/pr-metadata.json" "$PR_FIXTURE" >/dev/null
 
 bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run.txt"
-rg -q 'approval=never, sandbox=workspace-write' "$TMP/dry-run.txt"
+rg -q 'approval=never, sandbox=danger-full-access' "$TMP/dry-run.txt"
 rg -q 'model=gpt-5.6-sol, reasoning=high' "$TMP/dry-run.txt"
 rg -q 'zenn-search-topic.*zenn-prepare-publish' "$TMP/dry-run.txt"
+
+CODEX_SANDBOX_MODE=workspace-write bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-workspace.txt"
+rg -q 'approval=never, sandbox=workspace-write' "$TMP/dry-run-workspace.txt"
+
+if CODEX_SANDBOX_MODE=invalid bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-invalid.txt" 2>&1; then
+  echo "invalid CODEX_SANDBOX_MODE unexpectedly succeeded" >&2
+  exit 1
+fi
+rg -q 'CODEX_SANDBOX_MODE must be workspace-write or danger-full-access' "$TMP/dry-run-invalid.txt"
 
 echo "Codex pipeline tests passed"
