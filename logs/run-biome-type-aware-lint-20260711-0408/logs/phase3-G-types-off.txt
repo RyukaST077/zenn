@@ -1,0 +1,81 @@
+src/bugs.ts:12:2 lint/nursery/noFloatingPromises ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × A "floating" Promise was found, meaning it is not properly handled and could lead to ignored errors or unexpected behavior.
+  
+    11 │ function main(): void {
+  > 12 │ 	fetchUser(); // ← await/then/catch されていない floating promise
+       │ 	^^^^^^^^^^^^
+    13 │ }
+    14 │ 
+  
+  i This happens when a Promise is not awaited, lacks a `.catch` or `.then` rejection handler, or is not explicitly ignored using the `void` operator.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:22:10 lint/nursery/noUnsafePlusOperands ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Numeric + operations must use either two bigint values or two number values.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i This operation mixes number with bigint.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i Convert one side so both operands use the same numeric type before applying + or +=.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:31:2 lint/nursery/useExhaustiveSwitchCases  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The switch statement is not exhaustive.
+  
+    30 │ function render(status: Status): string {
+  > 31 │ 	switch (status) {
+       │ 	^^^^^^^^^^^^^^^^^
+  > 32 │ 		case "draft":
+        ...
+  > 36 │ 		// "archived" のケースが無い（網羅漏れ）
+  > 37 │ 	}
+       │ 	^
+    38 │ 	return "unknown";
+    39 │ }
+  
+  i Some variants of the union type are not handled here.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+  i These cases are missing:
+  
+  - "archived"
+  
+  i Unsafe fix: Add the missing cases to the switch statement.
+  
+    33 33 │         return "下書き";
+    34 34 │       case "published":
+    35    │ - → → → return·"公開";
+       35 │ + → → → return·"公開";
+       36 │ + → → case·"archived":·throw·new·Error("TODO:·Not·implemented·yet");
+    36 37 │       // "archived" のケースが無い（網羅漏れ）
+    37 38 │     }
+  
+
+Checked 1 file in 952ms. No fixes applied.
+Found 3 errors.
+lint ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

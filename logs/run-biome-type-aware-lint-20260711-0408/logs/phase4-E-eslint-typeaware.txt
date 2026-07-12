@@ -1,0 +1,15 @@
+(node:57819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/eslint.config.js?mtime=1783711320735 is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/src/bugs.ts
+   7:1   error  Async function 'fetchUser' has no 'await' expression                                                                                                                @typescript-eslint/require-await
+  12:2   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  22:9   error  This assertion is unnecessary since the receiver accepts the original type of the expression                                                                        @typescript-eslint/no-unnecessary-type-assertion
+  22:10  error  Numeric '+' operations must either be both bigints or both numbers. Got `number` + `bigint`                                                                         @typescript-eslint/restrict-plus-operands
+  31:10  error  Switch is not exhaustive. Cases not matched: "archived"                                                                                                             @typescript-eslint/switch-exhaustiveness-check
+
+✖ 5 problems (5 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

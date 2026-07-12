@@ -1,0 +1,577 @@
+===== PHASE2: npm init + install (@biomejs/biome typescript) =====
+$ node -v; npm -v
+v22.17.0
+10.9.2
+$ npm init -y
+Wrote to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/package.json:
+
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
+
+
+
+$ npm i -D -E @biomejs/biome typescript
+
+added 4 packages, and audited 5 packages in 15s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npx @biomejs/biome --version
+Version: 2.5.3
+
+$ npx tsc --version
+Version 7.0.2
+===== biome init =====
+$ npx @biomejs/biome init
+                       ▄
+                      ▄██
+                     ▄████
+                    ▄██████
+                   ▄████████
+                  ▄██████████
+                 ▄████████████
+                ▄██████████████
+               ▄████████████████                  ██████▄
+              ▄██████████████████                 ██   ██  ▄▄
+              ▀▀▀       ▀▀▀▀██████                ██   ██      ▄██████▄  ██▄    ▄██   ▄██████▄
+                             ██████               ██████▀  ██  ██    ██  ██ █  █ ██  ██      ██
+              ▄▄▄▄████▄▄▄    ███████              ██   ██  ██  ██    ██  ██  ██  ██  ██▀▀▀▀▀▀▀▀
+          ▄▄█████████████   █████████             ██   ██  ██  ██    ██  ██      ██  ██
+        ▄███████████████    ██████████            ██████▀  ██  ▀██████▀  ██      ██   ▀██████▀
+      ▄█████████████████   ▄███████████
+     ███████████▀▀▀▀▀▀▀▀   █████████████            T O O L C H A I N   O F   T H E   W E B
+   ▄█████████▀             ██████████████
+  ▄████████▀     ▄▄▄▄▄▄▄  ████████████████
+  ████████    ▄▄███████████████████████████
+ ████████▄   ▄██████████████████████████████
+ ████████████████████████████████████████████
+ █████████████████████████████████████████████
+ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+init ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Welcome to Biome! Let's get you started...
+    
+    Files created 
+    
+      - biome.json
+        Your project configuration. See https://biomejs.dev/reference/configuration
+    
+    Next Steps 
+    
+      1. Setup an editor extension
+         Get live errors as you type and format when you save.
+         Learn more at https://biomejs.dev/editors/first-party-extensions/
+    
+      2. Try a command
+         biome check  checks formatting, import sorting, and lint rules.
+         biome --help displays the available commands.
+    
+      3. Migrate from ESLint and Prettier
+         biome migrate eslint   migrates your ESLint configuration to Biome.
+         biome migrate prettier migrates your Prettier configuration to Biome.
+    
+      4. Read the documentation
+         Find guides and documentation at https://biomejs.dev/guides/getting-started/
+    
+      5. Get involved with the community
+         Ask questions and contribute on GitHub: https://github.com/biomejs/biome
+         Seek for help on Discord: https://biomejs.dev/chat
+  
+  
+
+--- generated biome.json ---
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended"
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}
+===== PHASE2: hello check (types未設定・素の状態) =====
+$ npx @biomejs/biome check src/hello.ts
+src/hello.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1 1 │   // フェーズ2 Hello World: Biome が動くか確認するだけの素直なファイル
+    2 2 │   export function greet(name: string): string {
+    3   │ - ··return·`Hello,·${name}`;
+      3 │ + → return·`Hello,·${name}`;
+    4 4 │   }
+    5 5 │   
+  
+
+Checked 1 file in 86ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+exit=0
+===== PHASE3: normalize formatting first (reduce noise) =====
+$ npx @biomejs/biome format --write src
+Formatted 2 files in 87ms. Fixed 2 files.
+===== PHASE3-A: baseline (types未設定=型認識なし) lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=0
+Checked 1 file in 140ms. No fixes applied.
+===== PHASE3-B: types=recommended (stableのみ) lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=0
+Checked 1 file in 162ms. No fixes applied.
+===== PHASE3-C: types=all (nursery含む) lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=0
+Checked 1 file in 278ms. No fixes applied.
+===== PHASE3-D: whole-project check + verbose (types=all) =====
+$ npx @biomejs/biome check --verbose .
+exit=1
+--- head 60 ---
+package-lock.json project  VERBOSE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i The file /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/package-lock.json is protected because is handled by another tool. Biome won't process it.
+  
+  Verbose advice
+  
+    i You can hide this diagnostic by using --diagnostic-level=warn to increase the diagnostic level shown by CLI.
+    
+
+package.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"name":·"workspace",
+     3    │ - ··"version":·"1.0.0",
+     4    │ - ··"main":·"index.js",
+     5    │ - ··"scripts":·{
+     6    │ - ····"test":·"echo·\"Error:·no·test·specified\"·&&·exit·1"
+     7    │ - ··},
+     8    │ - ··"keywords":·[],
+     9    │ - ··"author":·"",
+    10    │ - ··"license":·"ISC",
+    11    │ - ··"description":·"",
+    12    │ - ··"devDependencies":·{
+    13    │ - ····"@biomejs/biome":·"2.5.3",
+    14    │ - ····"typescript":·"7.0.2"
+    15    │ - ··}
+        2 │ + → "name":·"workspace",
+        3 │ + → "version":·"1.0.0",
+        4 │ + → "main":·"index.js",
+        5 │ + → "scripts":·{
+        6 │ + → → "test":·"echo·\"Error:·no·test·specified\"·&&·exit·1"
+        7 │ + → },
+        8 │ + → "keywords":·[],
+        9 │ + → "author":·"",
+       10 │ + → "license":·"ISC",
+       11 │ + → "description":·"",
+       12 │ + → "devDependencies":·{
+       13 │ + → → "@biomejs/biome":·"2.5.3",
+       14 │ + → → "typescript":·"7.0.2"
+       15 │ + → }
+    16 16 │   }
+    17 17 │   
+  
+
+tsconfig.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"compilerOptions":·{
+     3    │ - ····"target":·"ES2022",
+     4    │ - ····"module":·"ESNext",
+     5    │ - ····"moduleResolution":·"Bundler",
+     6    │ - ····"strict":·true,
+     7    │ - ····"esModuleInterop":·true,
+     8    │ - ····"skipLibCheck":·true,
+     9    │ - ····"noEmit":·true
+    10    │ - ··},
+===== PHASE3-E: types=all + 個別rule error指定 lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=1
+src/bugs.ts:12:2 lint/nursery/noFloatingPromises ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × A "floating" Promise was found, meaning it is not properly handled and could lead to ignored errors or unexpected behavior.
+  
+    11 │ function main(): void {
+  > 12 │ 	fetchUser(); // ← await/then/catch されていない floating promise
+       │ 	^^^^^^^^^^^^
+    13 │ }
+    14 │ 
+  
+  i This happens when a Promise is not awaited, lacks a `.catch` or `.then` rejection handler, or is not explicitly ignored using the `void` operator.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:29:2 lint/nursery/useExhaustiveSwitchCases  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The switch statement is not exhaustive.
+  
+    28 │ function render(status: Status): string {
+  > 29 │ 	switch (status) {
+       │ 	^^^^^^^^^^^^^^^^^
+  > 30 │ 		case "draft":
+        ...
+  > 34 │ 		// "archived" のケースが無い（網羅漏れ）
+  > 35 │ 	}
+       │ 	^
+    36 │ 	return "unknown";
+    37 │ }
+  
+  i Some variants of the union type are not handled here.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+  i These cases are missing:
+  
+  - "archived"
+  
+  i Unsafe fix: Add the missing cases to the switch statement.
+  
+    31 31 │         return "下書き";
+    32 32 │       case "published":
+    33    │ - → → → return·"公開";
+       33 │ + → → → return·"公開";
+       34 │ + → → case·"archived":·throw·new·Error("TODO:·Not·implemented·yet");
+    34 35 │       // "archived" のケースが無い（網羅漏れ）
+    35 36 │     }
+  
+
+Checked 1 file in 134ms. No fixes applied.
+Found 2 errors.
+lint ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+===== PHASE3-F: types=all + 個別rule error (bug2修正後) lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=1
+src/bugs.ts:12:2 lint/nursery/noFloatingPromises ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × A "floating" Promise was found, meaning it is not properly handled and could lead to ignored errors or unexpected behavior.
+  
+    11 │ function main(): void {
+  > 12 │ 	fetchUser(); // ← await/then/catch されていない floating promise
+       │ 	^^^^^^^^^^^^
+    13 │ }
+    14 │ 
+  
+  i This happens when a Promise is not awaited, lacks a `.catch` or `.then` rejection handler, or is not explicitly ignored using the `void` operator.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:22:10 lint/nursery/noUnsafePlusOperands ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Numeric + operations must use either two bigint values or two number values.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i This operation mixes number with bigint.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i Convert one side so both operands use the same numeric type before applying + or +=.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:31:2 lint/nursery/useExhaustiveSwitchCases  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The switch statement is not exhaustive.
+  
+    30 │ function render(status: Status): string {
+  > 31 │ 	switch (status) {
+       │ 	^^^^^^^^^^^^^^^^^
+  > 32 │ 		case "draft":
+        ...
+  > 36 │ 		// "archived" のケースが無い（網羅漏れ）
+  > 37 │ 	}
+       │ 	^
+    38 │ 	return "unknown";
+    39 │ }
+  
+  i Some variants of the union type are not handled here.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+  i These cases are missing:
+  
+  - "archived"
+  
+  i Unsafe fix: Add the missing cases to the switch statement.
+  
+    33 33 │         return "下書き";
+    34 34 │       case "published":
+    35    │ - → → → return·"公開";
+       35 │ + → → → return·"公開";
+       36 │ + → → case·"archived":·throw·new·Error("TODO:·Not·implemented·yet");
+    36 37 │       // "archived" のケースが無い（網羅漏れ）
+    37 38 │     }
+  
+
+Checked 1 file in 324ms. No fixes applied.
+Found 3 errors.
+lint ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+===== PHASE3-G: types=none (型認識OFF) + 同じrule指定のまま lint =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=1
+src/bugs.ts:12:2 lint/nursery/noFloatingPromises ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × A "floating" Promise was found, meaning it is not properly handled and could lead to ignored errors or unexpected behavior.
+  
+    11 │ function main(): void {
+  > 12 │ 	fetchUser(); // ← await/then/catch されていない floating promise
+       │ 	^^^^^^^^^^^^
+    13 │ }
+    14 │ 
+  
+  i This happens when a Promise is not awaited, lacks a `.catch` or `.then` rejection handler, or is not explicitly ignored using the `void` operator.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:22:10 lint/nursery/noUnsafePlusOperands ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Numeric + operations must use either two bigint values or two number values.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i This operation mixes number with bigint.
+  
+    20 │ function addAmount(count: number, big: bigint): number {
+    21 │ 	// number + bigint は TypeError: Cannot mix BigInt and other types
+  > 22 │ 	return (count + big) as unknown as number;
+       │ 	        ^^^^^^^^^^^
+    23 │ }
+    24 │ 
+  
+  i Convert one side so both operands use the same numeric type before applying + or +=.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+
+src/bugs.ts:31:2 lint/nursery/useExhaustiveSwitchCases  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × The switch statement is not exhaustive.
+  
+    30 │ function render(status: Status): string {
+  > 31 │ 	switch (status) {
+       │ 	^^^^^^^^^^^^^^^^^
+  > 32 │ 		case "draft":
+        ...
+  > 36 │ 		// "archived" のケースが無い（網羅漏れ）
+  > 37 │ 	}
+       │ 	^
+    38 │ 	return "unknown";
+    39 │ }
+  
+  i Some variants of the union type are not handled here.
+  
+  i This rule belongs to the nursery group, which means it is not yet stable and may change in the future. Visit https://biomejs.dev/linter/#nursery for more information.
+  
+  i These cases are missing:
+  
+  - "archived"
+  
+  i Unsafe fix: Add the missing cases to the switch statement.
+  
+    33 33 │         return "下書き";
+    34 34 │       case "published":
+    35    │ - → → → return·"公開";
+       35 │ + → → → return·"公開";
+       36 │ + → → case·"archived":·throw·new·Error("TODO:·Not·implemented·yet");
+    36 37 │       // "archived" のケースが無い（網羅漏れ）
+    37 38 │     }
+  
+
+Checked 1 file in 952ms. No fixes applied.
+Found 3 errors.
+lint ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+
+===== PHASE3-H: 型認識OFF(素のrecommended, domains/nursery無し) on 最終bugs.ts =====
+$ npx @biomejs/biome lint src/bugs.ts
+exit=0
+Checked 1 file in 252ms. No fixes applied.
+===== PHASE3-I: 型認識ON + --verbose でscanner起動を観察 =====
+$ npx @biomejs/biome lint --verbose src/bugs.ts
+exit=1
+--- scan/timing 抜粋 ---
+Scanned project folder in 100ms.
+Checked 1 file in 216ms. No fixes applied.
+===== PHASE4: install oxlint =====
+$ npm i -D oxlint
+
+added 2 packages, and audited 7 packages in 6s
+
+2 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npx oxlint --version
+Version: 1.73.0
+
+===== PHASE4: 素のoxlint（型認識なし・デフォルト）=====
+$ npx oxlint src/bugs.ts
+exit=0
+$ npx oxlint --help | grep -iA1 -E 'type-aware|tsgolint|type'
+                              * JavaScript/TypeScript config files are experimental and require
+        --tsconfig=<./tsconfig.json>  Override the TypeScript config used for import resolution.
+                              Oxlint automatically discovers the relevant `tsconfig.json` for each
+                              file. Use this only when your project uses a non-standard tsconfig
+        --disable-typescript-plugin  Disable TypeScript plugin, which is turned on by default
+        --type-aware          Enable rules that require type information
+        --type-check          Enable experimental type checking (includes TypeScript compiler
+---
+$ npx oxlint -A all -D correctness src/bugs.ts (素の全correctness)
+===== PHASE4: oxlint --type-aware を試す =====
+$ npx oxlint --type-aware src/bugs.ts (tsgolint未導入で試す)
+exit=1
+Failed to find tsgolint executable. You may need to add the `oxlint-tsgolint` package to your project?
+$ npm i -D oxlint-tsgolint
+
+added 2 packages, and audited 9 packages in 5s
+
+2 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npx oxlint --type-aware src/bugs.ts
+exit=0
+src/bugs.ts:12:2: warning typescript(no-floating-promises): Promises must be awaited, add void operator to ignore. help: The promise must end with a call to .catch, or end with a call to .then with a rejection handler, or be explicitly marked as ignored with the `void` operator.
+===== PHASE4: oxlint --type-aware で3ルール明示 =====
+$ npx oxlint --type-aware -D typescript/no-floating-promises -D typescript/restrict-plus-operands -D typescript/switch-exhaustiveness-check src/bugs.ts
+exit=1
+src/bugs.ts:12:2: error typescript(no-floating-promises): Promises must be awaited, add void operator to ignore. help: The promise must end with a call to .catch, or end with a call to .then with a rejection handler, or be explicitly marked as ignored with the `void` operator.
+src/bugs.ts:22:10: error typescript(restrict-plus-operands): Numeric '+' operations must either be both bigints or both numbers.
+src/bugs.ts:31:10: error typescript(switch-exhaustiveness-check): Switch is not exhaustive. Cases not matched: "archived"
+===== PHASE4: install eslint + typescript-eslint =====
+$ npm i -D eslint typescript-eslint
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: workspace@1.0.0
+npm error Found: typescript@7.0.2
+npm error node_modules/typescript
+npm error   dev typescript@"7.0.2" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer typescript@">=4.8.4 <6.1.0" from typescript-eslint@8.63.0
+npm error node_modules/typescript-eslint
+npm error   dev typescript-eslint@"*" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /Users/katayamaryuunosuke/.npm/_logs/2026-07-10T19_20_38_011Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /Users/katayamaryuunosuke/.npm/_logs/2026-07-10T19_20_38_011Z-debug-0.log
+$ npx eslint --version ; npx tsc --version
+npm warn exec The following package was not found and will be installed: eslint@10.6.0
+v10.6.0
+Version 7.0.2
+===== PHASE4: 既知の対処(knowledge 2026-07-09) TypeScriptをpeer範囲に固定 =====
+$ npm i -D -E typescript@5.9.3
+
+removed 1 package, changed 1 package, and audited 8 packages in 4s
+
+2 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npm i -D eslint typescript-eslint
+
+added 86 packages, and audited 94 packages in 23s
+
+31 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npx tsc --version
+Version 5.9.3
+===== PHASE4: eslint + typescript-eslint(型認識) 実行 =====
+$ npx eslint src/bugs.ts
+exit=1
+(node:57819) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/eslint.config.js?mtime=1783711320735 is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/src/bugs.ts
+   7:1   error  Async function 'fetchUser' has no 'await' expression                                                                                                                @typescript-eslint/require-await
+  12:2   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+  22:9   error  This assertion is unnecessary since the receiver accepts the original type of the expression                                                                        @typescript-eslint/no-unnecessary-type-assertion
+  22:10  error  Numeric '+' operations must either be both bigints or both numbers. Got `number` + `bigint`                                                                         @typescript-eslint/restrict-plus-operands
+  31:10  error  Switch is not exhaustive. Cases not matched: "archived"                                                                                                             @typescript-eslint/switch-exhaustiveness-check
+
+✖ 5 problems (5 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

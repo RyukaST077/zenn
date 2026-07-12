@@ -1,0 +1,10 @@
+npm error code ETARGET
+npm error notarget No matching version found for @simplewebauthn/browser@13.3.1.
+npm error notarget In most cases you or one of your dependencies are requesting
+npm error notarget a package version that doesn't exist.
+npm notice
+npm notice New major version of npm available! 10.9.2 -> 12.0.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.0
+npm notice To update run: npm install -g npm@12.0.0
+npm notice
+npm error A complete log of this run can be found in: /Users/<USER>/workspace/024_zenn/logs/run-playwright-passkey-20260710-2352/work/.npm-cache/_logs/2026-07-10T14_58_38_299Z-debug-0.log

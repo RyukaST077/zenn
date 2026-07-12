@@ -1,0 +1,102 @@
+package-lock.json project  VERBOSE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i The file /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-biome-type-aware-lint-20260711-0408/workspace/package-lock.json is protected because is handled by another tool. Biome won't process it.
+  
+  Verbose advice
+  
+    i You can hide this diagnostic by using --diagnostic-level=warn to increase the diagnostic level shown by CLI.
+    
+
+package.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"name":·"workspace",
+     3    │ - ··"version":·"1.0.0",
+     4    │ - ··"main":·"index.js",
+     5    │ - ··"scripts":·{
+     6    │ - ····"test":·"echo·\"Error:·no·test·specified\"·&&·exit·1"
+     7    │ - ··},
+     8    │ - ··"keywords":·[],
+     9    │ - ··"author":·"",
+    10    │ - ··"license":·"ISC",
+    11    │ - ··"description":·"",
+    12    │ - ··"devDependencies":·{
+    13    │ - ····"@biomejs/biome":·"2.5.3",
+    14    │ - ····"typescript":·"7.0.2"
+    15    │ - ··}
+        2 │ + → "name":·"workspace",
+        3 │ + → "version":·"1.0.0",
+        4 │ + → "main":·"index.js",
+        5 │ + → "scripts":·{
+        6 │ + → → "test":·"echo·\"Error:·no·test·specified\"·&&·exit·1"
+        7 │ + → },
+        8 │ + → "keywords":·[],
+        9 │ + → "author":·"",
+       10 │ + → "license":·"ISC",
+       11 │ + → "description":·"",
+       12 │ + → "devDependencies":·{
+       13 │ + → → "@biomejs/biome":·"2.5.3",
+       14 │ + → → "typescript":·"7.0.2"
+       15 │ + → }
+    16 16 │   }
+    17 17 │   
+  
+
+tsconfig.json format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+     1  1 │   {
+     2    │ - ··"compilerOptions":·{
+     3    │ - ····"target":·"ES2022",
+     4    │ - ····"module":·"ESNext",
+     5    │ - ····"moduleResolution":·"Bundler",
+     6    │ - ····"strict":·true,
+     7    │ - ····"esModuleInterop":·true,
+     8    │ - ····"skipLibCheck":·true,
+     9    │ - ····"noEmit":·true
+    10    │ - ··},
+    11    │ - ··"include":·["src/**/*.ts"]
+        2 │ + → "compilerOptions":·{
+        3 │ + → → "target":·"ES2022",
+        4 │ + → → "module":·"ESNext",
+        5 │ + → → "moduleResolution":·"Bundler",
+        6 │ + → → "strict":·true,
+        7 │ + → → "esModuleInterop":·true,
+        8 │ + → → "skipLibCheck":·true,
+        9 │ + → → "noEmit":·true
+       10 │ + → },
+       11 │ + → "include":·["src/**/*.ts"]
+    12 12 │   }
+    13 13 │   
+  
+
+ VERBOSE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Files processed:
+  
+  - biome.json
+  - package.json
+  - tsconfig.json
+  - src/bugs.ts
+  - src/hello.ts
+  
+
+ VERBOSE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Files fixed:
+  
+  ! The list is empty.
+  
+
+Scanned project folder in 44ms.
+Checked 5 files in 74ms. No fixes applied.
+Found 2 errors.
+Found 1 info.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

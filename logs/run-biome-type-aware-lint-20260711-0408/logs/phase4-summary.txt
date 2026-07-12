@@ -1,0 +1,45 @@
+=== フェーズ4 サマリー: 同一 src/bugs.ts を3ツールに通した比較 ===
+
+バージョン: Biome 2.5.3 / oxlint 1.73.0 (+ oxlint-tsgolint) / eslint 10.6.0 + typescript-eslint 8.63.0
+Node v22.17.0 / macOS 26.5
+
+3バグ:
+  line12 未awaitのPromise
+  line22 number + bigint の混在加算
+  line31 switch網羅漏れ("archived")
+
+--- 検出結果マトリクス ---
+| バグ / ツール | Biome(types) | oxlint 素 | oxlint --type-aware | ESLint+typescript-eslint |
+|---|---|---|---|---|
+| 未awaitPromise      | ✓ noFloatingPromises | ✗ | ✓ no-floating-promises | ✓ no-floating-promises |
+| number+bigint       | ✓ noUnsafePlusOperands | ✗ | ✓ restrict-plus-operands | ✓ restrict-plus-operands |
+| switch網羅漏れ      | ✓ useExhaustiveSwitchCases | ✗ | ✓ switch-exhaustiveness-check | ✓ switch-exhaustiveness-check |
+| 検出合計            | 3 (phase3-F) | 0 (phase4-A) | 3 (phase4-D) | 3 +おまけ2 (phase4-E) |
+
+※ESLintは追加で require-await / no-unnecessary-type-assertion も検出（計5件）。
+
+--- 各ツールの「型認識」の仕組み・前提の違い（記事の核） ---
+| 観点 | Biome | oxlint | ESLint(typescript-eslint) |
+|---|---|---|---|
+| 型情報の出どころ | 自前 inference engine（tsc非依存） | typescript-go（tsgolint 経由） | tsc（TypeScript本体） |
+| 追加で要る物 | @biomejs/biome のみ | oxlint + oxlint-tsgolint 別バイナリ | typescript + parser/plugin一式 |
+| デフォルトで型認識バグを拾うか | 拾わない（domain+ruleの有効化が要る） | 拾わない（--type-aware 必須） | recommendedTypeChecked を使えば拾う |
+| tsconfig 必須か | scanするが今回は無くても動いた（tsconfig有りで検証） | 必須 | 必須（projectService） |
+
+--- フェーズ4で踏んだ詰まり（knowledge 再利用） ---
+- `npm i -D eslint typescript-eslint` が ERESOLVE で失敗。
+  Found typescript@7.0.2 / peer typescript@">=4.8.4 <6.1.0" from typescript-eslint@8.63.0。
+  → 既存 knowledge/2026-07-09-typescript-eslint-typescript7-cjs-crash.md と同一原因
+    （typescript-eslint 8.x が TS7 未対応）。npm では runtime の Cjs クラッシュより前、
+    install の ERESOLVE で顕在化した。
+  → 対処: `npm i -D -E typescript@5.9.3`（peer範囲内に固定）で install 成功、eslint 完走。
+  → 記事の活かし方: 「Biome は自前エンジンなので TS7 でもこの罠に当たらない」＝
+    型認識lintの依存の軽さが実運用の効き目として出た例。
+- oxlint --type-aware は最初 `Failed to find tsgolint executable`（phase4-B）。
+  → `npm i -D oxlint-tsgolint` で解決（phase4-C）。別バイナリ導入が要る点が Biome と対照的。
+
+--- 一言まとめ ---
+「型認識lintが有るか無いか」で差別化する時代は終わりつつある（oxlintもESLintも持つ）。
+2026年時点の Biome の独自性は「tsc / typescript-go に依存せず、単一パッケージだけで
+型認識lintが動く」こと。TS本体のバージョン地雷（TS7×typescript-eslint）を踏まないのも
+その副次的なメリットとして体感できた。

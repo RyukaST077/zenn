@@ -1,0 +1,7 @@
+UTC=2026-07-10T14:58:08Z
+v22.17.0
+10.9.2
+Darwin 25.5.0 arm64
+ProductName:		macOS
+ProductVersion:		26.5
+BuildVersion:		25F71
