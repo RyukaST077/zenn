@@ -151,12 +151,14 @@ zenn-search-topic → zenn-plan-practice → zenn-run-practice → zenn-draft-ar
 Claude 版との主な違い:
 
 - 各段は `codex exec --json --output-schema` で実行され、**結果を JSON（stage result）で返す契約**
-  になっている。`scripts/validate-stage-result.mjs` が成果物パス・スラッグ・レビュー判定などを
-  機械検証し、契約違反は即中止する（成功時は `reason` を空にする決まり。経緯は
+  になっている。`scripts/stage-result-contract.mjs` が段ごとのSchemaとプロンプト規則を生成し、
+  `scripts/validate-stage-result.mjs` が同じ契約を使って成果物パス・スラッグ・レビュー判定などを
+  機械検証する。禁止されたmetadataだけが原因で前回結果が止まった場合は、必須値を捏造せず
+  `null`へ正規化して既存成果物を再検証する（成功時は `reason` を空にする決まり。経緯は
   `knowledge/2026-07-11-codex-stage-result-empty-reason-contract.md`）
-- 実行は `--sandbox workspace-write` で行い、ネットワークは段ごとに制御される
-  （search / run のみ許可）。起動時にサンドボックスの書き込み境界を診断し、
-  効いていなければ中止する。`.codex/config.toml` が `danger-full-access` の場合も中止
+- 実行は既定で `--sandbox danger-full-access` を使う。専用環境または外側の隔離境界でのみ実行する。
+  `CODEX_SANDBOX_MODE=workspace-write` を指定した場合は、起動時に書き込み境界を診断し、
+  search / run だけネットワークを許可する
 - `coreutils`（`timeout` / `gtimeout`）が**必須**（Claude 版は警告のみだが Codex 版は無いと開始しない）
 
 ### 前提

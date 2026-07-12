@@ -2,9 +2,12 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { contractFor, metadataError } from "./stage-result-contract.mjs";
 
 const [resultFile, allowedPrefix, markerFile, stage] = process.argv.slice(2);
 const fail = (message, code = 2) => { console.error(message); process.exit(code); };
+try { contractFor(stage); }
+catch (error) { fail(error.message); }
 let result;
 try { result = JSON.parse(fs.readFileSync(resultFile, "utf8")); }
 catch (error) { fail(`invalid stage result JSON: ${error.message}`); }
@@ -20,6 +23,7 @@ for (const key of ["slug", "pr_metadata"])
   if (result.metadata[key] !== null && typeof result.metadata[key] !== "string") fail(`invalid metadata.${key}`);
 if (result.status === "abort") {
   if (result.artifact !== "" || result.reason === "") fail("aborted stage must have an empty artifact and non-empty reason");
+  if (Object.values(result.metadata).some((value) => value !== null)) fail("aborted stage must leave all metadata values null");
   fail(`stage aborted: ${result.reason}`, 4);
 }
 if (result.reason !== "") fail("successful stage result must have an empty reason");
@@ -32,12 +36,7 @@ if (!absolute.startsWith(`${root}${path.sep}`) || !fs.existsSync(absolute) || !f
 const marker = fs.statSync(markerFile).mtimeMs;
 if (fs.statSync(absolute).mtimeMs < marker) fail("artifact was not created or updated by this stage");
 
-if (stage === "review" && !["pass", "fix", "blocker"].includes(result.metadata.verdict)) fail("review result requires a verdict");
-if (stage !== "review" && result.metadata.verdict !== null) fail("only review may set metadata.verdict");
-if (["search", "plan", "run"].includes(stage) && result.metadata.slug !== null) fail(`${stage} must leave metadata.slug null`);
-if (["draft", "review", "revise", "prepare_publish"].includes(stage) && !/^[a-z0-9-]{12,50}$/.test(result.metadata.slug || "")) fail(`${stage} requires a valid slug`);
-if (["draft", "revise", "prepare_publish"].includes(stage) && path.basename(result.artifact, ".md") !== result.metadata.slug) fail("artifact filename and metadata.slug differ");
-if (stage === "prepare_publish" && typeof result.metadata.pr_metadata !== "string") fail("prepare_publish requires metadata.pr_metadata");
-if (stage !== "prepare_publish" && result.metadata.pr_metadata !== null) fail("only prepare_publish may set metadata.pr_metadata");
+const stageMetadataError = metadataError(stage, result.metadata, result.artifact);
+if (stageMetadataError) fail(stageMetadataError);
 
 process.stdout.write(result.artifact);
