@@ -1,0 +1,3 @@
+src/bugs.ts:12:2: error typescript(no-floating-promises): Promises must be awaited, add void operator to ignore. help: The promise must end with a call to .catch, or end with a call to .then with a rejection handler, or be explicitly marked as ignored with the `void` operator.
+src/bugs.ts:22:10: error typescript(restrict-plus-operands): Numeric '+' operations must either be both bigints or both numbers.
+src/bugs.ts:31:10: error typescript(switch-exhaustiveness-check): Switch is not exhaustive. Cases not matched: "archived"

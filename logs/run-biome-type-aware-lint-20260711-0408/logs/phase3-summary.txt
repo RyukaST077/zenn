@@ -1,0 +1,31 @@
+=== フェーズ3 サマリー: types有効/無効の対比（bugs.ts 同一ファイル） ===
+
+対象バグ（src/bugs.ts）:
+  line12 fetchUser();          -> noFloatingPromises      （未awaitのPromise）
+  line22 count + big (num+bigint) -> noUnsafePlusOperands （number+bigint混在）
+  line31 switch(status)        -> useExhaustiveSwitchCases（"archived"網羅漏れ）
+
+| 設定 | ログ | 検出件数 | 備考 |
+|---|---|---|---|
+| A. domains無し / rules=recommended（素） | phase3-A / phase3-H | 0 | 型認識OFF。3バグとも素通り |
+| B. domains.types="recommended"(stableのみ) | phase3-B | 0 | 3バグは全部nurseryなので発火しない |
+| C. domains.types="all"（nursery含む・のはず） | phase3-C | 0 | ★予想外: allでも自動では発火しなかった |
+| E. C + rules.nursery で3ルールをerror明示 | phase3-E | 2 | noFloating/useExhaustive発火。noUnsafePlusは元コードが誤り(num+strは正当)で不発 |
+| F. bug2をnum+bigintに修正 + 明示 | phase3-F | 3 | ★3バグ全部発火（完了条件#1達成） |
+| G. domains.types="none" だがrule明示は残す | phase3-G | 3 | ★domainをnoneにしても発火。rule有効化がscannerを起動するため |
+| H. rule明示を外し素のrecommended（最終bugs.tsで） | phase3-H | 0 | ★型認識OFFの対比（完了条件#2達成） |
+| I. 型認識ON + --verbose | phase3-I | 3 | "Scanned project folder in 100ms" が出る＝scanner起動を確認 |
+
+学び:
+1) 今回の3バグは全て nursery ルール。types:"recommended" では拾えない。
+2) types:"all" にしても自分の環境では自動発火せず、rules.nursery で各ルールを
+   "error" 明示して初めて3つとも発火した（詰まりポイント#1が的中）。
+3) 型認識ルールを個別に有効化すると、domains.types を "none" にしても検出は消えない。
+   → ルールの有効化そのものが Biome Scanner（型推論エンジン）を起動する。
+   → 「型認識ON/OFFの対比」は domains トグルではなく、ルール自体のON/OFF（=素の
+     recommendedとの比較）で見るのが正確。
+4) 型認識ONのときだけ --verbose に "Scanned project folder" が出る。実行時間も
+   素recommended(約250ms) と scanあり(約950msまで振れる) で体感差があった。
+5) noUnsafePlusOperands は number+string を「文字列結合」として許容し、
+   number+bigint 等の混在だけを不正とする。typescript-eslintのrestrict-plus-operandsと
+   検出範囲が違う点に注意（最初 number+string で書いて発火せず気づいた）。

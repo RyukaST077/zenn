@@ -1,0 +1,19 @@
+src/hello.ts format ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Formatter would have printed the following content:
+  
+    1 1 │   // フェーズ2 Hello World: Biome が動くか確認するだけの素直なファイル
+    2 2 │   export function greet(name: string): string {
+    3   │ - ··return·`Hello,·${name}`;
+      3 │ + → return·`Hello,·${name}`;
+    4 4 │   }
+    5 5 │   
+  
+
+Checked 1 file in 86ms. No fixes applied.
+Found 1 error.
+check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  × Some errors were emitted while running checks.
+  
+

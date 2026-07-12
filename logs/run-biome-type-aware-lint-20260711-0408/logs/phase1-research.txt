@@ -1,0 +1,58 @@
+=== フェーズ1: 事前調査メモ（一次情報の出典つき） ===
+取得日: 2026-07-11
+
+--- Biome types ドメイン（出典: https://biomejs.dev/linter/domains/） ---
+types ドメインは「プロジェクト全体を scan し、inference engine が型を解決・平坦化する」。
+scan フェーズは lint 処理にパフォーマンス影響あり。
+
+types ドメインで有効になるルール:
+[Stable]
+- useArrayFind
+- useConsistentEnumValueType
+- noUnnecessaryConditions
+- useArraySortCompare
+[Nursery]
+- noBaseToString
+- noFloatingPromises          <- 未awaitのPromise検出（今回の主役）
+- noMisleadingReturnType
+- noMisusedPromises
+- noUnsafePlusOperands        <- number + string 誤用検出（今回の主役）
+- noUselessTypeConversion
+- useAwaitThenable
+- useDisposables
+- useExhaustiveSwitchCases    <- switch網羅漏れ検出（今回の主役）
+- useIncludes
+- useNullishCoalescing
+- useRegexpExec
+- useStringStartsEndsWith
+
+★重要: 今回仕込む3バグ(noFloatingPromises / noUnsafePlusOperands / useExhaustiveSwitchCases)は
+  すべて nursery 扱い。=> types: "recommended"(stable only) では発火しない。types: "all" が必要。
+  （詰まりポイント表 #1 の予測どおり）
+
+設定構文:
+  { "linter": { "domains": { "types": "recommended" } } }  // stable のみ
+  { "linter": { "domains": { "types": "all" } } }           // nursery 含む全部
+  { "linter": { "domains": { "types": "none" } } }          // 無効
+
+--- Biome の「tscに依存しない型認識」根拠（出典: https://biomejs.dev/blog/roadmap-2026/） ---
+直接引用:
+"First tool to ship type-aware lint rules that don't rely on the TypeScript compiler
+ (commonly known as `tsc`), thanks to its inference engine, sponsored by Vercel"
+=> Biome 独自の inference engine で型認識lintを実現。tsc非依存を明言。
+
+--- oxlint の型認識lint（出典: https://oxc.rs/docs/guide/usage/linter/type-aware.html
+    / https://voidzero.dev/posts/announcing-oxlint-type-aware-linting） ---
+★タスク前提(「oxlintは型認識ルールを持たない」)は 2026年時点で更新が必要:
+  oxlint も type-aware linting を持つようになった。ただし仕組みが違う。
+- oxlint の型認識は tsgolint(Go) が typescript-go を使って TypeScript program を構築し
+  型認識ルールを実行する。=> TypeScript の型システム(typescript-go)に依存。
+- 別バイナリ oxlint-tsgolint の導入が必要 (`npm add -D oxlint-tsgolint@latest`)、
+  TypeScript 7.0+ 前提、tsconfig.json 必須。
+- 位置づけ: "Rule coverage is incomplete (but very close)"（安定版だが網羅は途上）。
+- no-floating-promises / no-misused-promises / await-thenable 等を提供。
+
+=> 差別化ポイント（記事の核）:
+   「型認識lintがあるか無いか」ではなく「型認識lintを tsc(typescript-go) に依存せず
+    自前の inference engine でやるのが Biome」という点が Biome の独自性。
+   素の oxlint（デフォルト）は型認識ルールを実行しない点も検証で確認する。
