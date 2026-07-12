@@ -5,7 +5,7 @@ cause_category: "Code/Logic"
 tech: [codex, bash, node]
 error_type: [StageResultContractFailed]
 library: [codex-cli]
-keywords: [stage result, empty reason, 契約違反, output schema, LLM prompt contract, auto-publish]
+keywords: [stage result, empty reason, metadata verdict, metadata slug, 契約違反, output schema, LLM prompt contract, auto-publish]
 status: "resolved"
 ---
 
@@ -101,3 +101,59 @@ reason を空文字にする」というルールがバリデータ（validate-s
 - Error Type: StageResultContractFailed
 - Library: codex-cli
 - Keywords: stage result, empty reason, 契約違反, output schema, LLM prompt contract, auto-publish
+
+## 追記事例（2026-07-12）: run が review 用metadataを返す
+
+### 状況・環境
+
+Codex CLI版パイプラインのrunステージで、Deno 2.9の検証と`execution-log.md`生成は成功したが、
+stage resultの契約検証で停止した。macOS上の`danger-full-access`実行で、停止したパイプラインは
+`logs/codex-pipeline-20260712-225900`。
+
+### エラー
+
+```text
+only review may set metadata.verdict
+[23:14:52] ERROR: run result contract failed: logs/codex-pipeline-20260712-225900/3-run.result.json
+```
+
+返却JSONは次の形だった。
+
+```json
+{"status":"ok","artifact":"logs/run-deno29-lockfile-seed-20260712-231032/execution-log.md","reason":"","metadata":{"verdict":"pass","slug":"deno29-lockfile-seed","pr_metadata":null}}
+```
+
+### 試行と確定原因
+
+- 実行ログと証拠ファイルを確認し、run自体は成功していると切り分けた。
+- `metadata.verdict`だけを`null`にしても、次にrunでは禁止される非nullの`metadata.slug`で失敗することを確認した。
+- 両方を`null`にした一時結果は既存markerと成果物を含む全バリデーションを通過した。
+- 確定原因は前記事例と同じで、全段共通Schemaがmetadataの値を許可する一方、段別制約が
+  `validate-stage-result.mjs`だけにあり、生成側のSchemaとプロンプトへ反映されていなかったこと。
+
+### 最終修正
+
+- `scripts/stage-result-contract.mjs`を追加し、段別metadata契約を一か所へ集約した。
+- 同じ定義から段別output Schema、Codex向けプロンプト、最終バリデーションを構成するよう変更した。
+- 当該段で禁止されるmetadataだけを`null`へ正規化する回復処理を追加した。review判定、slug、
+  PRメタデータなどの必須値は捏造しない。
+- 再開時に既存resultとmarkerがあれば、正規化後の成果物検証を通して成功済みrunを再利用するようにした。
+- runの誤ったverdict/slug、reviewの欠落verdict、prepare_publishの欠落PRメタデータを回帰テストへ追加した。
+
+### 検証
+
+```text
+bash scripts/test-codex-pipeline.sh
+Codex pipeline tests passed
+```
+
+実際に失敗したrun resultのコピーへ正規化を適用すると、変更対象は
+`metadata.verdict,metadata.slug`だけで、`validate-stage-result.mjs`は既存の
+`execution-log.md`を正常に返した。パイプライン全体の再開・公開完走は未実施。
+
+### 制限と再発防止
+
+- 段別Schemaは、abort時に必須metadataを持たない可能性があるため、生成時には「禁止フィールドをnullに固定」し、
+  成功時の必須値はプロンプトと最終バリデータで強制する。
+- 新しいmetadata規則を追加するときは`stage-result-contract.mjs`へ追加し、Schema・prompt・validatorを別々に編集しない。
+- 回復処理は不要値のnull化だけに限定し、意味のある必須値を推測しない。
