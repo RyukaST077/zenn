@@ -196,6 +196,7 @@ if [ "$DRY_RUN" = 1 ]; then
     4. /draft-article <ログ>                    → articles/<slug>.md
     5. /review-article ⇄ /revise-article        → 判定「公開可」までループ
     6. /publish-pr <記事>                       → feature ブランチ + PR
+$([ "$AUTO_MERGE" = 1 ] && echo "    6.5 素材アーカイブ                          → research/practice/logs を同PRに別コミット")
     7. $([ "$AUTO_MERGE" = 1 ] && echo "gh pr merge (auto)" || echo "（マージは人間が行う）")
 EOF
   exit 0
@@ -326,6 +327,27 @@ if [ -z "${DONE_publish:-}" ]; then
   save_state PR_URL "$PR_URL"; save_state DONE_publish 1
   log "   PR 作成: $PR_URL"
 else log "skip: publish-pr (実行済み → $PR_URL)"; fi
+
+# auto-merge 時のみ: パイプライン素材(research/practice/logs)を、publish-pr が作った同じ
+# feature ブランチ/PR に別コミットで相乗りさせ、マージ後に作業ツリーをクリーンに保つ。
+# publish-pr 実行直後はまだ feature ブランチに居る（下の checkout で main へ戻す前）。
+# resume 等で既に main に居る場合は安全のためスキップする（main 直 push を避ける）。
+if [ "$AUTO_MERGE" = 1 ] && [ -z "${DONE_archive:-}" ]; then
+  cur_branch="$(git branch --show-current)"
+  if [ "$cur_branch" = "$BASE_BRANCH" ]; then
+    log "   archive: feature ブランチに居ないため素材コミットをスキップ"
+  else
+    git add -- research practice logs
+    if git diff --cached --quiet; then
+      log "   archive: コミットする素材が無い"
+    else
+      git commit -m "chore: archive pipeline artifacts for $SLUG" >>"$PLOG" 2>&1 || die "素材コミットに失敗"
+      git push >>"$PLOG" 2>&1 || die "素材 push に失敗"
+      log "   archive: パイプライン素材を PR に追加コミット・push した"
+    fi
+    save_state DONE_archive 1
+  fi
+fi
 
 # publish-pr は feature ブランチに残るため、次サイクルに備えて main へ戻す
 git checkout "$BASE_BRANCH" >/dev/null 2>&1 || true

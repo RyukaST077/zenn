@@ -127,7 +127,7 @@ if [ "$DRY_RUN" = 1 ]; then
   review rounds: $MAX_REVIEW_ROUNDS
   base branch: $BASE_BRANCH
   auto merge: $AUTO_MERGE
-  stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> branch -> zenn-prepare-publish -> commit/push -> PR
+  stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> branch -> zenn-prepare-publish -> commit/push -> $([ "$AUTO_MERGE" = 1 ] && echo "archive artifacts -> ")PR
   codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox $CODEX_SANDBOX_MODE -C $ROOT --json --output-schema <stage-schema> -o <result> <prompt>
 EOF
   exit 0
@@ -347,6 +347,25 @@ EOF
   state_set publish.commit "\"$COMMIT\""
   GIT_TERMINAL_PROMPT=0 git push --set-upstream origin "$BRANCH" || die "push failed"
   state_set completed.push true
+fi
+
+# auto-merge 時のみ: パイプライン素材(research/practice/logs)を同じ PR に別コミットで
+# 相乗りさせ、マージ後に作業ツリーがクリーンになるようにする。記事コミット(記事+画像のみ)
+# のガードは維持したいので、素材は必ず別コミットにする。.gitignore は git add が尊重する。
+if [ "$AUTO_MERGE" = 1 ] && ! is_done archive; then
+  if [ "$(git branch --show-current)" = "$BASE_BRANCH" ]; then
+    log "archive: feature ブランチに居ないため素材コミットをスキップ"
+  else
+    git add -- research practice logs
+    if git diff --cached --quiet; then
+      log "archive: コミットする素材が無い"
+    else
+      git commit -m "chore: archive pipeline artifacts for $SLUG" || die "artifact commit failed"
+      GIT_TERMINAL_PROMPT=0 git push || die "artifact push failed"
+      log "archive: パイプライン素材を PR に追加コミット・push した"
+    fi
+  fi
+  state_set completed.archive true
 fi
 
 if ! is_done pr; then
