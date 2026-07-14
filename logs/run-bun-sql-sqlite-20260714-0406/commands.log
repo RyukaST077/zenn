@@ -1,0 +1,147 @@
+===== [P2] bun install via npm (bun@1.3.14) Tue Jul 14 04:07:22 JST 2026 =====
+
+added 2 packages in 17s
+---- exit: 0 ----
+/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/bun
+1.3.14
+===== [P2] bun init -y Tue Jul 14 04:08:07 JST 2026 =====
+ + .gitignore
+ + CLAUDE.md
+ + index.ts
+ + tsconfig.json (for editor autocomplete)
+ + README.md
+
+To get started, run:
+
+    bun run index.ts
+
+bun install v1.3.14 (0d9b296a)
+Resolving dependencies
+Resolved, downloaded and extracted [19]
+Saved lockfile
+
++ @types/bun@1.3.14
++ typescript@5.9.3 (v7.0.2 available)
+
+5 packages installed [2.67s]
+
+===== [P2] bun run hello.ts Tue Jul 14 04:08:38 JST 2026 =====
+typeof rows: object
+Array.isArray(rows): true
+rows: [
+  {
+    n: 1,
+  }, count: 1, command: "SELECT", lastInsertRowid: null, affectedRows: null
+]
+rows[0]: {
+  n: 1,
+}
+---- exit:  ----
+===== [P3] bun run src/crud.ts Tue Jul 14 04:09:14 JST 2026 =====
+
+===== CREATE TABLE =====
+users テーブルを作成しました
+
+===== INSERT ... RETURNING * =====
+RETURNING で受け取った挿入行: {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+}
+インサート結果配列の付随メタ: count = 1 , lastInsertRowid = null
+
+===== SELECT WHERE id = ${id} (パラメータバインド) =====
+id=1 の取得結果: [
+  {
+    id: 1,
+    name: "Alice",
+    email: "alice@example.com",
+  }, count: 1, command: "SELECT", lastInsertRowid: null, affectedRows: null
+]
+戻り値は配列か: true 件数: 1
+
+===== SQLインジェクション試行: id に "1 OR 1=1" を渡す =====
+WHERE id = ${"1 OR 1=1"} の結果件数: 0
+→ 全件(3件)にならなければプレースホルダとして安全に渡っている
+
+===== トランザクション: 正常時は全件コミット =====
+コミット後の全件数: 5 (3 + 2 = 5 のはず)
+
+===== トランザクション: 途中で throw → ロールバック =====
+catch したエラー: 意図的なエラーでロールバックを発生させる
+ロールバック前後の件数: 5 -> 5 (増えていなければ成功)
+
+===== 最終的な users テーブルの中身 =====
+  #1 Alice <alice@example.com>
+  #2 Bob <bob@example.com>
+  #3 Carol <carol@example.com>
+  #4 Dave <dave@example.com>
+  #5 Erin <erin@example.com>
+
+全処理が正常終了しました
+---- exit:  ----
+==== ls -la (app.db 生成確認) ====
+-rw-r--r--@ 1 katayamaryuunosuke  staff  8192 Jul 14 04:09 app.db
+===== [P3] bun run src/error.ts (意図的エラー) Tue Jul 14 04:09:30 JST 2026 =====
+=== エラーメッセージ (err.message) ===
+table users has no column named age
+
+=== エラーの種類 (err.constructor.name) ===
+SQLiteError
+
+=== err.code ===
+SQLITE_ERROR
+
+=== err.errno ===
+1
+
+=== Object.keys(err) ===
+[ "name", "code", "errno", "byteOffset" ]
+
+=== String(err) 全文 ===
+SQLiteError: table users has no column named age
+---- exit:  ----
+===== [P3] bun run src/pitfall-adapter.ts (adapter明示の検証) Tue Jul 14 04:09:46 JST 2026 =====
+=== ケースA: new SQL('plain.db') プロトコル・adapter なし ===
+失敗: PostgresError - Connection closed
+
+=== ケースB: new SQL('plain2.db', { adapter: 'sqlite' }) 明示 ===
+成功: {
+  n: 1,
+}
+
+=== ケースC: new SQL({ adapter: 'sqlite', filename: 'plain3.db' }) ===
+成功: {
+  n: 1,
+}
+---- exit:  ----
+===== [P4] bun run src/compare-old.ts (旧 bun:sqlite 比較) Tue Jul 14 04:10:23 JST 2026 =====
+旧 bun:sqlite: テーブル作成完了（.run() は同期）
+insert.run() の戻り値(メタ): {
+  changes: 1,
+  lastInsertRowid: 1,
+}
+all(): [
+  {
+    id: 1,
+    name: "Alice",
+    email: "alice@example.com",
+  }, {
+    id: 2,
+    name: "Bob",
+    email: "bob@example.com",
+  }
+]
+get(1): {
+  id: 1,
+  name: "Alice",
+  email: "alice@example.com",
+}
+旧 bun:sqlite: 全処理完了（await 一切なし）
+---- exit:  ----
+===== [P4] bun run src/to-html.ts Tue Jul 14 04:11:20 JST 2026 =====
+result.html を出力しました（ 5 件）
+===== [P4] playwright chromium install (必要なら) =====
+===== [P4] node shot.mjs (Playwright スクショ) =====
+screenshot saved: /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-bun-sql-sqlite-20260714-0406/screenshots/01-bun-sql-users-table.png
+---- exit:  ----
