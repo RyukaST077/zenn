@@ -1,0 +1,4 @@
+(node:21883) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+abs(-42) = 42 / typeof = number / === 42: true
+exit=0

@@ -1,0 +1,5 @@
+(node:21858) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+strlen("hello") = 5n / typeof = bigint / === 5n: true
+STRING arg strlen("日本語") = 9n (=UTF-8バイト数)
+exit=0

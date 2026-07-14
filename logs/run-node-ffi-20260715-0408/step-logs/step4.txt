@@ -1,0 +1,9 @@
+(node:21887) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[1] return を i32 に誤宣言: strlen("hello") = 5 / typeof = number => 値は合うが型が number（u64 なら 5n のはず）
+[2] r + 1 を試す ...
+[2] BigInt + number: TypeError: Cannot mix BigInt and other types, use explicit conversions
+[3] strlen(12345) を試す ...
+[3] number を pointer に: TypeError: Argument 0 must be a buffer, an ArrayBuffer, a string, or a bigint
+[4] 未知の型名: TypeError: Unsupported FFI type: banana
+exit=0

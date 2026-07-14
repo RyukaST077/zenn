@@ -1,0 +1,4 @@
+(node:21891) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+calling strlen(0xdeadbeefn) — junk アドレスを参照します...
+exit=139
