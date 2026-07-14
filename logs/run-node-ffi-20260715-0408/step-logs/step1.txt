@@ -1,0 +1,20 @@
+node:internal/modules/esm/translators:478
+    throw new ERR_UNKNOWN_BUILTIN_MODULE(url);
+          ^
+
+Error [ERR_UNKNOWN_BUILTIN_MODULE]: No such built-in module: node:ffi
+    at ModuleLoader.builtinStrategy (node:internal/modules/esm/translators:478:11)
+    at #translate (node:internal/modules/esm/loader:441:20)
+    at afterLoad (node:internal/modules/esm/loader:509:29)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:514:12)
+    at #getOrCreateModuleJobAfterResolve (node:internal/modules/esm/loader:567:36)
+    at afterResolve (node:internal/modules/esm/loader:614:52)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:620:12)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:389:17)
+    at new ModuleJob (node:internal/modules/esm/module_job:368:26) {
+  code: 'ERR_UNKNOWN_BUILTIN_MODULE'
+}
+
+Node.js v26.5.0
+exit=1

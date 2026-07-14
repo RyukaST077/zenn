@@ -1,0 +1,40 @@
+## 04:08 nvm ls-remote (node 26 availability)
+        v26.0.0
+        v26.1.0
+        v26.2.0
+        v26.3.0
+        v26.3.1
+        v26.4.0
+        v26.5.0 *
+## 04:08 nvm install 26
+v26.5.0 is already installed.
+Now using node v26.5.0 (npm v11.17.0)
+elapsed: 3s
+## node -v after install
+v26.5.0
+/Users/katayamaryuunosuke/.nvm/versions/node/v26.5.0/bin/node
+## 04:08 FFI build check (v26.5.0)
+$ node --experimental-ffi -e "import('node:ffi').then(m=>console.log('ok', Object.keys(m)))"
+(node:15227) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+ok [
+  'DynamicLibrary',        'default',
+  'dlclose',               'dlopen',
+  'dlsym',                 'exportArrayBuffer',
+  'exportArrayBufferView', 'exportBuffer',
+  'exportString',          'getFloat32',
+  'getFloat64',            'getInt16',
+  'getInt32',              'getInt64',
+  'getInt8',               'getRawPointer',
+  'getUint16',             'getUint32',
+  'getUint64',             'getUint8',
+  'setFloat32',            'setFloat64',
+  'setInt16',              'setInt32',
+  'setInt64',              'setInt8',
+  'setUint16',             'setUint32',
+  'setUint64',             'setUint8',
+  'suffix',                'toArrayBuffer',
+  'toBuffer',              'toString',
+  'types'
+]
+exit=0

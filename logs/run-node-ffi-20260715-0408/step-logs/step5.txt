@@ -1,0 +1,8 @@
+(node:21895) ExperimentalWarning: FFI is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+using ブロック内: strlen("hi") = 2n
+using ブロックを抜けた（自動 dispose 済み）
+close #1
+close #2（no-op のはず）
+二重 close でも例外なし
+exit=0
