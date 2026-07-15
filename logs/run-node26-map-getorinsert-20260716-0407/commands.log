@@ -1,0 +1,64 @@
+node: v26.5.0
+===== 01-group-old =====
+== counts ==
+apple: 4
+banana: 3
+cherry: 2
+date: 2
+elderberry: 1
+== byTeam ==
+blue: Bob, Eve
+green: Dave, Grace
+red: Alice, Carol, Frank
+===== 02-group-new =====
+== counts ==
+apple: 4
+banana: 3
+cherry: 2
+date: 2
+elderberry: 1
+== byTeam ==
+blue: Bob, Eve
+green: Dave, Grace
+red: Alice, Carol, Frank
+===== diff a.txt b.txt =====
+diff exit code: 0
+===== 03-lazy-callback =====
+入力件数: 12, ユニークキー数: 5
+[getOrInsertComputed] コールバック呼び出し回数 = 5
+  → ユニークキー数(5)と一致: true
+[getOrInsert(k, expensive())] expensive() 呼び出し回数 = 12
+  → 入力件数(12)と一致（毎回評価される）: true
+
+結論: 重い初期値/副作用のある初期化は getOrInsertComputed を使う。
+===== 04-iterator-concat =====
+== Iterator.concat + filter/map/take（遅延評価） ==
+  source1 -> 1
+  source1 -> 2
+  source1 -> 3
+  source1 -> 4
+  source1 -> 5
+  source2 -> 6
+take(3) の結果: [ 20, 40, 60 ]
+→ source3 のログが出ていなければ、後続ソースは評価されていない（遅延）
+
+== Iterator.concat に async iterable を渡すと？ ==
+例外: TypeError [object AsyncGenerator] is not iterable
+===== 05-bench (--expose-gc) =====
+結果一致: OK (size=1000, sum=1000000)
+
+入力件数=1,000,000, ユニークキー=1000, 試行=5（中央値）
+  旧来 (get ?? 0)        中央値 93.7 ms  heapUsed 0.07 MB
+  新 (getOrInsert)      中央値 107.2 ms  heapUsed 0.06 MB
+
+== 連結: スプレッド中間配列 vs Iterator.concat（合計を取るだけ） ==
+  [...A, ...B]        84.9 ms  追加heap 29.13 MB  sum=999999000000
+  Iterator.concat     172.2 ms  追加heap 21.53 MB  sum=999999000000
+
+※ 単一環境の簡易計測。数値は参考値（JIT/GCでブレる）。
+
+JSON:{"node":"v26.5.0","N":1000000,"KEYS":1000,"TRIALS":5,"count":{"old":{"label":"旧来 (get ?? 0)","median":93.71862499999997,"heapUsedMB":"0.07"},"new":{"label":"新 (getOrInsert)","median":107.23125000000005,"heapUsedMB":"0.06"}},"concat":{"spreadMB":"29.13","concatMB":"21.53","spreadSum":999999000000,"concatSum":999999000000}}
+===== gen-report =====
+report.html generated
+===== shot (playwright) =====
+screenshot saved: screenshots/report.png
