@@ -1,0 +1,112 @@
+===== フェーズ1: using 機能検出 04:09 =====
+$ node --input-type=module -e "using x = ..."
+file:///Users/katayamaryuunosuke/workspace/024_zenn/[eval1]:1
+using x = { [Symbol.dispose](){ console.log('disposed') } }; console.log('ok')
+      ^
+
+SyntaxError: Unexpected identifier 'x'
+    at compileSourceTextModule (node:internal/modules/esm/utils:344:16)
+    at ModuleLoader.createModuleWrap (node:internal/modules/esm/loader:252:12)
+    at ModuleLoader.eval (node:internal/modules/esm/loader:291:23)
+    at node:internal/process/execution:72:24
+    at asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:11)
+    at Object.runEntryPointWithESMLoader (node:internal/modules/run_main:139:19)
+    at evalModuleEntryPoint (node:internal/process/execution:71:47)
+    at node:internal/main/eval_string:38:3
+
+Node.js v22.17.0
+exit=0
+===== フェーズ1: nvm use 26 で再検出 04:10 =====
+$ node -v
+v26.5.0
+$ node --input-type=module -e "using x = ..."
+ok
+disposed
+exit=0
+
+===== フェーズ2: 最小リソースクラス (04:12) =====
+$ node resource.mjs
+--- enter block ---
+open A
+using inside block
+dispose A
+--- left block ---
+exit=0
+
+===== フェーズ3A-finally: try/finally版 (04:12) =====
+$ node a-finally.mjs
+open db
+use db
+close db
+done
+exit=0
+
+===== フェーズ3A-using: using版 (04:12) =====
+$ node a-using.mjs
+open db
+use db
+close db
+done
+exit=0
+
+===== フェーズ3B-LIFO: 解放順 (04:12) =====
+$ node b-lifo.mjs
+--- using: 確保 a,b,c ---
+open a
+open b
+open c
+body
+dispose c
+dispose b
+dispose a
+--- 参考: try/finally で同じ LIFO を手で再現 ---
+open a2
+open b2
+open c2
+body2
+dispose c2
+dispose b2
+dispose a2
+exit=0
+
+===== フェーズ3B-throw: 例外時 (04:12) =====
+$ node c-throw.mjs
+open x
+before throw
+dispose x
+caught: boom
+after catch
+exit=0
+
+===== フェーズ3B-return: early return (04:12) =====
+$ node d-return.mjs
+open y
+before return check
+early return
+dispose y
+result = early
+---
+open y
+before return check
+normal path
+dispose y
+result = normal
+exit=0
+
+===== フェーズ4: await using / asyncDispose (04:12) =====
+$ node e-async.mjs
+=== (1) await using + asyncDispose ===
+open async
+body (async)
+asyncDispose start async
+asyncDispose end async
+after block (async) <- ここは asyncDispose end の後に出るはず
+---
+=== (2) using + dispose が Promise を返す（誤用） ===
+open bad
+body (bad)
+dispose start bad (returns a Promise)
+after block (bad) <- dispose end より前に出てしまう
+dispose end bad (too late!)
+=== end (bad の dispose end はここまでの間に遅れて出る) ===
+exit=0
