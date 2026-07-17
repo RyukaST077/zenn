@@ -1,0 +1,106 @@
+Wrote to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-arktype-20260718-0407/workspace/package.json:
+
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
+
+
+
+=== npm i arktype zod typescript ===
+
+added 7 packages, and audited 8 packages in 13s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+=== npm ls ===
+workspace@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-arktype-20260718-0407/workspace
++-- arktype@2.2.3
++-- typescript@7.0.2
+`-- zod@4.4.3
+
+=== npx tsc --version ===
+Version 7.0.2
+=== npx tsc --noEmit (hello) ===
+exit=0
+=== node --experimental-strip-types src/hello.ts ===
+(node:83231) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:83231) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-arktype-20260718-0407/workspace/src/hello.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-arktype-20260718-0407/workspace/package.json.
+hello arktype: { name: 'x' }
+exit=0
+(node:83256) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+hello arktype: { name: 'x' }
+=== tsc with strict:false ===
+src/hello.ts(3,19): error TS2345: Argument of type '{ name: string; }' is not assignable to parameter of type '"'strict' or 'strictNullChecks' must be set to true in your tsconfig's 'compilerOptions'​"'.
+exit=0
+=== tsc --noEmit (schemas) ===
+exit=
+=== tsc --noEmit (with run.ts) ===
+src/run.ts(2,28): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+src/run.ts(3,26): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+=== node run.ts ===
+(node:83530) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+==============================
+[正常系]
+input: {"name":"Alice","email":"alice@example.com","age":30,"role":"admin","tags":["a","b"]}
+  Zod    : OK  {"name":"Alice","email":"alice@example.com","age":30,"role":"admin","tags":["a","b"]}
+  ArkType: OK  {"name":"Alice","email":"alice@example.com","age":30,"role":"admin","tags":["a","b"]}
+
+==============================
+[異常系1: 型違い（age が文字列）]
+input: {"name":"Bob","email":"bob@example.com","age":"30","role":"user"}
+  Zod    : NG 
+           - [age] Invalid input: expected number, received string
+  ArkType: NG 
+           - summary: age must be a number (was a string)
+
+==============================
+[異常系2: 必須欠落（email なし）]
+input: {"name":"Carol","age":20,"role":"user"}
+  Zod    : NG 
+           - [email] Invalid input: expected string, received undefined
+  ArkType: NG 
+           - summary: email must be a string (was missing)
+
+==============================
+[異常系3: regex不一致（email がメール形式でない）]
+input: {"name":"Dave","email":"not-an-email","age":40,"role":"user"}
+  Zod    : NG 
+           - [email] Invalid email address
+  ArkType: NG 
+           - summary: email must be an email address (was "not-an-email")
+=== tsc type-test (correct values, should pass) ===
+src/type-test.ts(30,7): error TS2375: Type '{ name: string; email: string; age: number; role: "admin" | "user"; tags?: string[] | undefined; }' is not assignable to type '{ name: string; email: string; age: number; role: "admin" | "user"; tags?: string[]; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property '"tags?"' are incompatible.
+    Type 'string[] | undefined' is not assignable to type 'string[]'.
+      Type 'undefined' is not assignable to type 'string[]'.
+=== tsc type-error-demo (deliberate wrong values) ===
+error TS5112: tsconfig.json is present but will not be loaded if files are specified on commandline. Use '--ignoreConfig' to skip this error.
+src/type-error-demo.ts(8,3): error TS2322: Type '"superadmin"' is not assignable to type '"admin" | "user"'.
+src/type-error-demo.ts(14,3): error TS2322: Type 'string' is not assignable to type 'number'.
+=== tsc final (full build, should pass) ===
+tsc exit=0
+=== tsc (type-fn) ===
+src/type-fn.ts(12,3): error TS2578: Unused '@ts-expect-error' directive.
+tsc exit=0
+=== node type-fn.ts ===
+=== type.fn 正常値 ===
+lengthOf("hello") = 5
+=== type.fn 不正な引数（number を渡す） ===
+throw: value at [0] must be a string (was a number)
