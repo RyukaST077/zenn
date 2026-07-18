@@ -1,0 +1,84 @@
+############################################################
+# commands.log — Bun.Image vs sharp 検証 一次ログ
+# Sun Jul 19 04:11:46 JST 2026  macOS 26.5 arm64 / Apple M2 Pro / bun 1.3.14 / node v22.17.0
+############################################################
+
+### 環境 ###
+$ bun --version
+1.3.14
+$ node --version
+v22.17.0
+$ sysctl machdep.cpu.brand_string -> Apple M2 Pro
+
+### metadata (Hello World) ###
+$ bun run metadata.ts
+input.png metadata: {
+  width: 1920,
+  height: 1080,
+  format: "png",
+}
+big.jpg metadata: {
+  width: 4000,
+  height: 3000,
+  format: "jpeg",
+}
+
+### sharp 導入 (@img native footprint) ###
+@img total:  17M  (libvips-darwin-arm64:  17M)
+sharp version: ├── sharp@0.35.3
+
+### 本編: bun-image.ts (resize 800 inside -> webp q80 + AVIF) ###
+$ bun run bun-image.ts
+[Bun.Image] resize+webp times(ms): [ 117.81, 132.3, 116.8, 87.95, 93.13 ]
+[Bun.Image] resize+webp median(ms): 116.8
+[Bun.Image] out/bun.webp bytes: 12528
+[Bun.Image] AVIF OK. out/bun.avif bytes: 7061
+
+### 本編: sharp-image.ts ###
+$ bun run sharp-image.ts
+[sharp] resize+webp times(ms): [ 79.66, 85.44, 146.03, 143.35, 133.45 ]
+[sharp] resize+webp median(ms): 133.45
+[sharp] out/sharp.webp bytes: 12518
+[sharp] AVIF OK. out/sharp.avif bytes: 11052
+
+### 大画像/JPEG入力: big-image.ts (4000x3000 -> 1920x1080 inside -> webp) ###
+$ bun run big-image.ts
+[big/Bun.Image] times(ms): [ 377.22, 356.58, 418.96, 347.1, 366.8 ]
+[big/Bun.Image] median(ms): 366.8 bytes: 40974
+[big/sharp]     times(ms): [ 503.21, 454.85, 452.65, 398.01, 475.88 ]
+[big/sharp]     median(ms): 454.85 bytes: 41386
+speedup (sharp/bun): 1.24 x
+
+### 出力ファイル ###
+$ ls -la out/
+total 280
+drwxr-xr-x@  8 katayamaryuunosuke  staff    256 Jul 19 04:10 .
+drwxr-xr-x@ 17 katayamaryuunosuke  staff    544 Jul 19 04:10 ..
+-rw-r--r--@  1 katayamaryuunosuke  staff  40974 Jul 19 04:11 big-bun.webp
+-rw-r--r--@  1 katayamaryuunosuke  staff  41386 Jul 19 04:11 big-sharp.webp
+-rw-r--r--@  1 katayamaryuunosuke  staff   7061 Jul 19 04:11 bun.avif
+-rw-r--r--@  1 katayamaryuunosuke  staff  12528 Jul 19 04:11 bun.webp
+-rw-r--r--@  1 katayamaryuunosuke  staff  11052 Jul 19 04:11 sharp.avif
+-rw-r--r--@  1 katayamaryuunosuke  staff  12518 Jul 19 04:11 sharp.webp
+
+### 出力の妥当性 (metadata) ###
+out/bun.webp {
+  width: 800,
+  height: 450,
+  format: "webp",
+}
+out/sharp.webp {
+  width: 800,
+  height: 450,
+  format: "webp",
+}
+out/bun.avif {
+  width: 800,
+  height: 450,
+  format: "avif",
+}
+out/sharp.avif {
+  width: 800,
+  height: 450,
+  format: "avif",
+}
