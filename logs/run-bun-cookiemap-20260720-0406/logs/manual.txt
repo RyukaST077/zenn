@@ -1,0 +1,24 @@
+########## 手動版(第2版=属性を揃えた後) curl 3連 ##########
+===== 1) sign-in =====
+HTTP/1.1 200 OK
+set-cookie: sessionId=019f7bc8-585c-7000-b57f-4e7c671b4e81; Path=/; Max-Age=3600; HttpOnly; SameSite=Strict
+content-type: text/plain;charset=utf-8
+Date: Sun, 19 Jul 2026 19:09:15 GMT
+Content-Length: 47
+
+signed in: 019f7bc8-585c-7000-b57f-4e7c671b4e81
+===== 2) whoami =====
+HTTP/1.1 200 OK
+content-type: text/plain;charset=utf-8
+Date: Sun, 19 Jul 2026 19:09:15 GMT
+Content-Length: 45
+
+you are: 019f7bc8-585c-7000-b57f-4e7c671b4e81
+===== 3) sign-out =====
+HTTP/1.1 200 OK
+set-cookie: sessionId=; Path=/; Expires=Fri, 1 Jan 1970 00:00:00 -0000; SameSite=Lax
+content-type: text/plain;charset=utf-8
+Date: Sun, 19 Jul 2026 19:09:15 GMT
+Content-Length: 10
+
+signed out
