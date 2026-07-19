@@ -1,0 +1,27 @@
+[01-cookiemap] context.cookies() = [
+  {
+    "name": "sessionId",
+    "value": "019f7bc8-cdd0-7000-bbb5-b808ff1886d8",
+    "domain": "localhost",
+    "path": "/",
+    "expires": 1784491785.297911,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Strict"
+  }
+]
+[01-cookiemap] whoami = you are: 019f7bc8-cdd0-7000-bbb5-b808ff1886d8
+[02-manual] context.cookies() = [
+  {
+    "name": "sessionId",
+    "value": "019f7bc8-d0ce-7000-b6be-ca8704dd8ee0",
+    "domain": "localhost",
+    "path": "/",
+    "expires": 1784491786.062924,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Strict"
+  }
+]
+[02-manual] whoami = you are: 019f7bc8-d0ce-7000-b6be-ca8704dd8ee0
+done
