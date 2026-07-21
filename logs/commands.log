@@ -1,0 +1,103 @@
+## 04:08:05 setup: npm init -y && npm i -D playwright && npx playwright install chromium
+Wrote to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-scroll-promises-20260721-0407/workspace/scroll-promises-lab/package.json:
+
+{
+  "name": "scroll-promises-lab",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
+
+
+
+
+added 2 packages, and audited 3 packages in 5s
+
+found 0 vulnerabilities
+exit=0
+## 04:09:05 detect bundled
+{
+  "channel": "bundled",
+  "chromeMajor": "149",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+  "returnType": "[object Undefined]",
+  "isThenable": false
+}
+exit=0
+## 04:09:07 detect channel=chrome
+{
+  "channel": "chrome",
+  "chromeMajor": "150",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/150.0.0.0 Safari/537.36",
+  "returnType": "[object Promise]",
+  "isThenable": true
+}
+exit=0
+## 04:10:04 node measure.mjs
+[detect] channel=bundled chrome=149 未対応 → 次を試す
+[detect] 採用: channel=chrome chrome=150
+[page] {"scrollHeight":4800,"innerHeight":800,"targetY":3840}
+[method A] {"elapsed":1269.6999998092651,"detectY":3840,"finalY":3840,"resolveValue":{"interrupted":false}}
+[method B] {"elapsed":1082.4000000953674,"detectY":3840,"finalY":3840,"detectedBy":"scrollend"}
+[method C] {"elapsed":539.6000003814697,"detectY":3379,"finalY":3828}
+
+# 3手法の比較（スクロール完了検知）
+
+- ブラウザ: Chrome 150（Playwright channel=chrome）
+- ページ全高: 4800px / viewport: 800px
+- ターゲット: sec5 (top=3840px) へ `behavior:'smooth'` でスクロール
+
+| 手法 | 経過ms | 検知時 scrollY | 最終 scrollY(+400ms) | コード行数 | 備考 |
+|---|---|---|---|---|---|
+| scroll promise await | 1269.7 | 3840 | 3840 | 1 | interrupted=false |
+| scrollend イベント | 1082.4 | 3840 | 3840 | 6 | 検知=scrollend |
+| setTimeout(500) | 539.6 | 3379 | 3828 | 2 | 固定待ち |
+
+- 検知時 scrollY と 最終 scrollY が一致していれば「完了時点で検知できている」。
+- ズレが大きい手法は「完了前に検知した／待ちすぎた」ことを意味する。
+
+exit=0
+## 04:10:59 node intoview.mjs
+[scrollIntoView] {
+  "elapsed": 2,
+  "resolveY": 0,
+  "after300Y": 958,
+  "resolveValue": {
+    "interrupted": false
+  },
+  "targetTop": 2880,
+  "diff": 958,
+  "earlyResolve": true
+}
+[workaround scrollTo(offsetTop)] {
+  "elapsed": 966.0999999046326,
+  "resolveY": 2880,
+  "after300Y": 2880,
+  "resolveValue": {
+    "interrupted": false
+  },
+  "targetTop": 2880,
+  "diff": 0,
+  "earlyResolve": false
+}
+
+# scrollIntoView の early-resolve 検証
+
+- ブラウザ: Playwright channel=chrome
+- 判定閾値: resolve時 scrollY と 300ms後 scrollY の差が 20px 以上なら early-resolve
+- ターゲット: #sec4 (offsetTop=2880px)
+
+| 手法 | 経過ms | resolve時 scrollY | 300ms後 scrollY | 差(px) | early-resolve? |
+|---|---|---|---|---|---|
+| `el.scrollIntoView({smooth})` | 2 | 0 | 958 | 958 | はい（完了前にresolve） |
+| 回避策 `scrollTo({top: offsetTop})` | 966 | 2880 | 2880 | 0 | いいえ（完了時にresolve） |
+
+> 注: 2026-07 時点・この実行環境での観測（Chromium issue #41406914 で議論中）。断定ではない。
+
+exit=0

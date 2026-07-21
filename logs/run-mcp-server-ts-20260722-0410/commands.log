@@ -1,0 +1,247 @@
+## 04:10 Phase1: npm view package availability
+### npm view @modelcontextprotocol/server dist-tags + versions
+dist-tags = { latest: '2.0.0-beta.5', beta: '2.0.0-beta.5' }
+versions = [
+  '2.0.0-alpha.1',
+  '2.0.0-alpha.2',
+  '2.0.0-alpha.3',
+  '2.0.0-alpha.4',
+  '2.0.0-beta.1',
+  '2.0.0-beta.2',
+  '2.0.0-beta.3',
+  '2.0.0-beta.4',
+  '2.0.0-beta.5'
+]
+----
+### npm view @modelcontextprotocol/client dist-tags
+{ latest: '2.0.0-beta.5', beta: '2.0.0-beta.5' }
+----
+### npm view @modelcontextprotocol/sdk dist-tags (v1)
+{ latest: '1.29.0' }
+----
+### npm view @modelcontextprotocol/inspector version
+1.0.0
+## 04:11 Phase1: server package metadata
+### exports
+{
+  '.': {
+    import: { types: './dist/index.d.mts', default: './dist/index.mjs' },
+    require: { types: './dist/index.d.cts', default: './dist/index.cjs' }
+  },
+  './stdio': {
+    import: { types: './dist/stdio.d.mts', default: './dist/stdio.mjs' },
+    require: { types: './dist/stdio.d.cts', default: './dist/stdio.cjs' }
+  },
+  './_shims': {
+    node: {
+      import: {
+        types: './dist/shimsNode.d.mts',
+        default: './dist/shimsNode.mjs'
+      },
+      require: {
+        types: './dist/shimsNode.d.cts',
+        default: './dist/shimsNode.cjs'
+      }
+    },
+    browser: {
+      import: {
+        types: './dist/shimsBrowser.d.mts',
+        default: './dist/shimsBrowser.mjs'
+      },
+      require: {
+        types: './dist/shimsBrowser.d.cts',
+        default: './dist/shimsBrowser.cjs'
+      }
+    },
+    default: {
+      import: {
+        types: './dist/shimsNode.d.mts',
+        default: './dist/shimsNode.mjs'
+      },
+      require: {
+        types: './dist/shimsNode.d.cts',
+        default: './dist/shimsNode.cjs'
+      }
+    },
+    workerd: {
+      import: {
+        types: './dist/shimsWorkerd.d.mts',
+        default: './dist/shimsWorkerd.mjs'
+      },
+      require: {
+        types: './dist/shimsWorkerd.d.cts',
+        default: './dist/shimsWorkerd.cjs'
+      }
+    }
+  },
+  './validators/ajv': {
+    import: {
+      types: './dist/validators/ajv.d.mts',
+      default: './dist/validators/ajv.mjs'
+    },
+    require: {
+      types: './dist/validators/ajv.d.cts',
+      default: './dist/validators/ajv.cjs'
+    }
+  },
+  './validators/cf-worker': {
+    import: {
+      types: './dist/validators/cfWorker.d.mts',
+      default: './dist/validators/cfWorker.mjs'
+    },
+    require: {
+      types: './dist/validators/cfWorker.d.cts',
+      default: './dist/validators/cfWorker.cjs'
+    }
+  }
+}
+### type / engines / peerDependencies
+type = 'module'
+engines = { node: '>=20' }
+dependencies = { zod: '^4.2.0', '@modelcontextprotocol/core': '2.0.0-beta.5' }
+## 04:11 Phase2: npm init -y
+Wrote to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-mcp-server-ts-20260722-0410/workspace/package.json:
+
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
+
+
+
+## 04:11 Phase2: npm i @modelcontextprotocol/server@beta zod
+
+added 3 packages, and audited 4 packages in 6s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+----
+## npm i -D typescript @types/node
+
+added 4 packages, and audited 8 packages in 6s
+
+1 package is looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+## 04:11 Phase2: exact installed versions
+mcp-playground@0.0.1 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-mcp-server-ts-20260722-0410/workspace
++-- @modelcontextprotocol/server@2.0.0-beta.5
+| +-- @modelcontextprotocol/core@2.0.0-beta.5
+| | `-- zod@4.4.3 deduped
+| `-- zod@4.4.3 deduped
++-- @types/node@26.1.1
++-- typescript@7.0.2
+`-- zod@4.4.3
+
+----node/tsc versions----
+v22.17.0
+Version 7.0.2
+## 04:12 Phase2: npx tsc (empty build)
+exit=0
+----ls build----
+total 8
+drwxr-xr-x@ 3 katayamaryuunosuke  staff   96 Jul 22 04:12 .
+drwxr-xr-x@ 8 katayamaryuunosuke  staff  256 Jul 22 04:12 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff   11 Jul 22 04:12 index.js
+## 04:12 Phase3: npx tsc (server build)
+exit=0
+----ls build----
+total 8
+drwxr-xr-x@ 3 katayamaryuunosuke  staff   96 Jul 22 04:12 .
+drwxr-xr-x@ 8 katayamaryuunosuke  staff  256 Jul 22 04:12 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  676 Jul 22 04:13 index.js
+## 04:13 Phase3: Inspector CLI tools/list
+$ npx @modelcontextprotocol/inspector --cli node build/index.js --method tools/list
+npm warn exec The following package was not found and will be installed: @modelcontextprotocol/inspector@1.0.0
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+{
+  "tools": [
+    {
+      "name": "add",
+      "description": "add two numbers",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "a": {
+            "type": "number"
+          },
+          "b": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "a",
+          "b"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      }
+    },
+    {
+      "name": "echo",
+      "description": "echo back the given text",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "$schema": "https://json-schema.org/draft/2020-12/schema"
+      }
+    }
+  ]
+}exit=0
+## 04:13 Phase3: Inspector CLI tools/call add a=2 b=3
+$ npx @modelcontextprotocol/inspector --cli node build/index.js --method tools/call --tool-name add --tool-arg a=2 --tool-arg b=3
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "5"
+    }
+  ]
+}exit=0
+======================================
+## 04:13 Phase3: Inspector CLI tools/call add a=foo b=3 (validation error)
+$ ... --tool-arg a=foo --tool-arg b=3
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "Input validation error: Invalid arguments for tool add: a: Invalid input: expected number, received null"
+    }
+  ],
+  "isError": true
+}exit=0
+## 04:14 Phase3: Playwright screenshot of Inspector UI
+shot 01 saved
+clicked Connect
+[page] log [AppsTab] Filtered app tools: {totalTools: 0, appTools: 0, appToolNames: Array(0)}
+shot 02 saved
+clicked Tools tab
+clicked List Tools
+[page] log [AppsTab] Filtered app tools: {totalTools: 2, appTools: 0, appToolNames: Array(0)}
+shot 03 saved
+clicked add tool
+number inputs found: 2
+filled args
+clicked Run Tool
+shot 04 saved
+done
+exit=0
