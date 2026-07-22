@@ -1,0 +1,138 @@
+===== PHASE 1: 事前調査 =====
+--- $ node -v ---
+v26.5.0
+--- $ uname -a (OS) ---
+Darwin katayamaryuunosukes-MacBook-Pro.local 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:39:09 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T6020 arm64
+--- randomUUIDv7 / randomUUID exist? ---
+typeof randomUUIDv7 = function
+typeof randomUUID   = function
+--- randomUUIDv7 options引数チェック (arg count / disableMonotonicity受理) ---
+randomUUIDv7.length = 1
+options受理OK: 019f8b3c-21e2-7cc5-b650-7687793d436d
+--- node:sqlite フラグなしでimport＋警告有無 (stderr含む) ---
+typeof DatabaseSync = function
+(上に ExperimentalWarning が出ていなければフラグ不要・警告なし)
+===== PHASE 2: Hello World =====
+--- $ node workspace/hello.mjs ---
+v7: 019f8b3c-7d73-7643-8eec-8b67199c4a0c
+v4: 41a8c1a0-c58a-4687-9658-b9f0e7a91fec
+v7 version digit (idx14): 7
+v4 version digit (idx14): 4
+typeof randomUUIDv7: function
+===== PHASE 3-1: gen-compare.mjs =====
+--- $ node workspace/gen-compare.mjs ---
+生成件数: 1000 件ずつ
+--- v7 (randomUUIDv7) ---
+  辞書順ソート後、生成順と同じ位置: 3/1000 = 0.30%
+--- v4 (randomUUID) ---
+  辞書順ソート後、生成順と同じ位置: 0/1000 = 0.00%
+
+[参考] v7 先頭3件: [
+  '019f8b3d-5d55-796e-987d-6519d92d488c',
+  '019f8b3d-5d55-7ccf-bfd8-3d5c7742fa9b',
+  '019f8b3d-5d55-7c98-93a4-49a1150f8a78'
+]
+[参考] v4 先頭3件: [
+  'aba126ac-9db1-4b61-81a3-2ff37ba9390e',
+  '26463c2e-7c2d-4085-a9a3-85f5d2662299',
+  '87ea12ec-87c4-4b82-8eaa-b781591d0c51'
+]
+
+===== PHASE 3-2: extract-ts.mjs =====
+--- $ node workspace/extract-ts.mjs ---
+RFC 9562: UUIDv7 の先頭48bit = unix_ts_ms を復元して生成時刻と比較する
+
+#1 uuid=019f8b3d-5e08-7334-ab69-5e88222c8a91
+    復元ms=1784747482632 (2026-07-22T19:11:22.632Z)
+    生成時刻 Date.now(): before=1784747482632 after=1784747482632  範囲外誤差=0ms
+#2 uuid=019f8b3d-5e0a-7226-a4bd-6cfb51e14bfa
+    復元ms=1784747482634 (2026-07-22T19:11:22.634Z)
+    生成時刻 Date.now(): before=1784747482634 after=1784747482634  範囲外誤差=0ms
+#3 uuid=019f8b3d-5e0a-7de3-832b-cd6795558a13
+    復元ms=1784747482634 (2026-07-22T19:11:22.634Z)
+    生成時刻 Date.now(): before=1784747482634 after=1784747482634  範囲外誤差=0ms
+#4 uuid=019f8b3d-5e0a-7ad1-a9e0-ef856dee3a0e
+    復元ms=1784747482634 (2026-07-22T19:11:22.634Z)
+    生成時刻 Date.now(): before=1784747482634 after=1784747482634  範囲外誤差=0ms
+#5 uuid=019f8b3d-5e0a-7556-a01a-7b0f5b41a00e
+    復元ms=1784747482634 (2026-07-22T19:11:22.634Z)
+    生成時刻 Date.now(): before=1784747482634 after=1784747482634  範囲外誤差=0ms
+
+最大誤差: 0ms（0なら復元値が生成時のミリ秒レンジにぴたり収まった）
+===== PHASE 3-3: sqlite-order.mjs =====
+--- $ node workspace/sqlite-order.mjs ---
+件数: 1000 件ずつ INSERT / DBファイル: /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-uuidv7-20260723-0409/workspace/uuid-order.sqlite
+--- v7t: ORDER BY id が挿入順と一致 ---
+  1000/1000 = 100.00%  先頭5件のseq=[0,1,2,3,4]
+--- v4t: ORDER BY id が挿入順と一致 ---
+  2/1000 = 0.20%  先頭5件のseq=[840,926,599,258,804]
+
+===== PHASE 4: monotonic.mjs =====
+--- $ node workspace/monotonic.mjs ---
+連続生成 100000 件で、隣接ペアの文字列逆転(cur < prev)を数える
+
+--- 既定 randomUUIDv7() （単調性あり） ---
+  逆転件数: 49908
+  最初の逆転ペア:
+    prev=019f8b3d-ba3f-77df-9045-a86ccd63a671
+    cur =019f8b3d-ba3f-748e-af0e-4bb86a6ed6db
+
+--- randomUUIDv7({ disableMonotonicity: true }) （単調性なし） ---
+  逆転件数: 49817
+  最初の逆転ペア:
+    prev=019f8b3d-bab6-7e30-9c61-e6527b9b990d
+    cur =019f8b3d-bab6-741f-8abe-2962af00298b
+
+観測メモ: 既定は単調性が効くので逆転は基本出ない。無効化すると同一ms内の順序が保証されず逆転が出る。
+===== PHASE 4b: verify-monotonic.mjs (同一ms内の順序を精査) =====
+--- $ node workspace/verify-monotonic.mjs ---
+連続 200000 件生成。先頭48bitが同一のペアだけ抽出して昇順/逆転を数える
+
+--- 既定 randomUUIDv7()  ← 単調性が効くなら逆転0のはず ---
+  同一ms隣接ペア数: 199809
+  うち昇順(cur>prev): 99826  逆転(cur<prev): 99983  同値: 0
+  同一ms内の逆転率: 50.04%
+
+--- disableMonotonicity:true  ← 同一ms内はランダム順のはず ---
+  同一ms隣接ペア数: 199859
+  うち昇順(cur>prev): 99984  逆転(cur<prev): 99875  同値: 0
+  同一ms内の逆転率: 49.97%
+===== PHASE 4c: why-sqlite-100.mjs (生成ペースとdistinct ms) =====
+--- $ node workspace/why-sqlite-100.mjs ---
+(a) 純生成 1000件: 所要 5.76ms / distinct ms: 5 個
+(b) INSERT付き 1000件: 所要 16.79ms / distinct ms: 13 個
+
+解釈: distinct ms が件数に近い(=1件/ms未満のペース)ほど、隣接UUIDは別msに分かれ辞書順=生成順になる。
+同一msに何件も詰め込むと、その中の順序は保証されず並びが崩れる（前段の50%逆転）。
+
+--- 生成した .sqlite ファイル確認 ---
+-rw-r--r--@ 1 katayamaryuunosuke  staff  217088 Jul 23 04:11 logs/run-uuidv7-20260723-0409/workspace/uuid-order.sqlite
+--- sqlite3 CLIで中身サンプル (v7t先頭3 / ORDER BY id) ---
+v7t ORDER BY id 先頭3: [
+  [Object: null prototype] {
+    id: '019f8b3d-aee0-7a0e-8d3c-7796f35d50ba',
+    seq: 0
+  },
+  [Object: null prototype] {
+    id: '019f8b3d-aee2-7326-8a85-9f4fbc6d765b',
+    seq: 1
+  },
+  [Object: null prototype] {
+    id: '019f8b3d-aee4-78f2-b481-53918da7866d',
+    seq: 2
+  }
+]
+v4t ORDER BY id 先頭3: [
+  [Object: null prototype] {
+    id: '000a5f75-d30b-46a9-beca-92058149bcb2',
+    seq: 840
+  },
+  [Object: null prototype] {
+    id: '000b1357-2b3d-4527-a8b3-cc753f4839c6',
+    seq: 926
+  },
+  [Object: null prototype] {
+    id: '0018f966-1ee5-4b33-989a-402da1a8cdf9',
+    seq: 599
+  }
+]
