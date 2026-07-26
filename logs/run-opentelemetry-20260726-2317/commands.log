@@ -1,0 +1,440 @@
+=== 23:18:54 P2: workspace setup ===
+Wrote to /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/package.json:
+
+{
+  "name": "otel-practice",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
+
+
+
+--- node -v
+v22.17.0
+--- docker --version
+Docker version 28.5.1, build e180ab8
+--- docker compose version
+Docker Compose version v2.40.3-desktop.1
+--- lsof -i :4318 (before)
+(no process on 4318)
+--- lsof -i :16686 (before)
+(no process on 16686)
+--- lsof -i :3000 (before)
+(no process on 3000)
+=== 23:19:08 P2: docker compose up (with legacy jaeger exporter) ===
+--- $ docker compose up -d
+ jaeger Pulling 
+ collector Pulling 
+=== 23:24:23 P3: npm i express ===
+--- $ npm i express
+
+added 67 packages, and audited 68 packages in 1s
+
+26 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+--- $ npm ls express
+otel-practice@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice
+└── express@5.2.1
+
+=== 23:24:37 P3: curl without instrumentation ===
+--- $ curl -i localhost:3000/
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 11
+ETag: W/"b-Ai2R8hgEarLmHKwesT1qcY913ys"
+Date: Sun, 26 Jul 2026 14:24:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"ok":true}
+--- $ curl -i localhost:3000/users
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 77
+ETag: W/"4d-HjZmA4KtJLWskEAp/p6pbDagV/k"
+Date: Sun, 26 Jul 2026 14:24:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"inner":{"ok":true},"users":[{"id":1,"name":"alice"},{"id":2,"name":"bob"}]}
+--- $ curl -i localhost:3000/slow
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 29
+ETag: W/"1d-PKkYl/5YWxFbeXCCThymAvgYX0E"
+Date: Sun, 26 Jul 2026 14:24:38 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"slow":true,"waited_ms":800}
+--- $ curl -o /dev/null -s -w 'time_total=%{time_total} http_code=%{http_code}
+' localhost:3000/slow
+time_total=0.802873 http_code=200
+=== 23:24:47 P3: npm i otel packages ===
+--- $ npm i @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node @opentelemetry/exporter-trace-otlp-proto
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 195 packages, and audited 263 packages in 6s
+
+46 packages are looking for funding
+  run `npm fund` for details
+
+6 high severity vulnerabilities
+
+To address all issues, run:
+  npm audit fix
+
+Run `npm audit` for details.
+exit=0
+--- $ npm ls --depth=0
+otel-practice@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice
+├── @opentelemetry/api@1.9.1
+├── @opentelemetry/auto-instrumentations-node@0.79.0
+├── @opentelemetry/exporter-trace-otlp-proto@0.221.0
+├── @opentelemetry/sdk-node@0.221.0
+└── express@5.2.1
+
+--- $ npm ls @opentelemetry/instrumentation-express
+otel-practice@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice
+└─┬ @opentelemetry/auto-instrumentations-node@0.79.0
+  └── @opentelemetry/instrumentation-express@0.69.0
+
+--- supported express range (peer/supportedVersions):
+version: 0.69.0
+=== 23:45:00 TROUBLE: docker pull がレジストリに到達できない ===
+--- $ timeout 60 docker pull hello-world   (sandbox あり)
+Using default tag: latest
+exit=124  (タイムアウト。進捗行が1行も出ない)
+--- $ timeout 90 docker pull hello-world   (sandbox なし / dangerouslyDisableSandbox)
+Using default tag: latest
+exit=124  → サンドボックスは原因ではない
+--- $ docker version   → 正常（デーモンには到達できている）
+--- ホストからのネットワーク疎通は正常:
+  curl https://registry-1.docker.io/v2/  -> 401
+  curl https://github.com                -> 200
+  curl https://cr.jaegertracing.io/v2/   -> 401
+=> 切り分け結果: ホストのegressは生きており、Docker Desktop VM からの外向き通信のみ不通。
+=> 対処: Docker イメージの代わりに公式リリースバイナリ(darwin arm64)をDLしてローカルプロセスとして起動する。
+=== 23:45:10 extract binaries ===
+otelcol extracted
+jaeger extracted
+total 554992
+drwxr-xr-x@ 7 katayamaryuunosuke  staff        224 Jul 26 23:45 .
+drwxr-xr-x@ 4 katayamaryuunosuke  staff        128 Jul 26 23:45 ..
+drwxr-xr-x@ 4 katayamaryuunosuke  staff        128 Jul 20 12:54 jaeger-2.20.0-darwin-arm64
+-rw-r--r--@ 1 katayamaryuunosuke  staff   57635558 Jul 26 23:45 jaeger.tar.gz
+-rwxr-xr-x@ 1 katayamaryuunosuke  staff  179676146 Jul 22 18:56 otelcol
+-rw-r--r--@ 1 katayamaryuunosuke  staff   45544849 Jul 26 23:45 otelcol.tar.gz
+-rw-r--r--@ 1 katayamaryuunosuke  staff        848 Jul 22 18:49 README.md
+--- find jaeger binary
+./otelcol
+./jaeger-2.20.0-darwin-arm64/jaeger
+./jaeger-2.20.0-darwin-arm64/example-hotrod
+=== 23:45:15 version check ===
+--- $ ./otelcol --version
+otelcol version 0.157.0
+exit=0
+--- $ ./jaeger-2.20.0-darwin-arm64/jaeger version
+2026/07/26 23:45:18 application version: git-commit=d65f95169d71c3a8535355ececa782aa868071be, git-version=v2.20.0, build-date=2026-07-20T03:41:33Z
+{"gitCommit":"d65f95169d71c3a8535355ececa782aa868071be","gitVersion":"v2.20.0","buildDate":"2026-07-20T03:41:33Z"}exit=0
+=== 23:45:55 P2: otelcol with LEGACY 'jaeger' exporter config ===
+--- config being used:
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  jaeger:
+    endpoint: jaeger:14250
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [jaeger]
+--- $ ../bin/otelcol --config=./otel-collector-config.yaml
+Error: failed to get config: cannot unmarshal the configuration: decoding failed due to the following error(s):
+
+'exporters' unknown type: "jaeger" for id: "jaeger" (valid values: [otlp_grpc otlp otlp_http otlphttp kafka prometheus nop file prometheus_remote_write prometheusremotewrite zipkin debug])
+exit=1
+=== 23:46:11 P2: otelcol with otlp/jaeger exporter, receiver still on 4318 ===
+--- $ ../bin/otelcol --config=./otel-collector-config.yaml
+2026-07-26T23:46:11.174+0900	error	service@v0.157.0/service.go:183	error found during service initialization	{"resource": {"service.instance.id": "f0000d59-d1ac-40ff-9ca3-69faed9e3bb0", "service.name": "otelcol", "service.version": "0.157.0"}, "error": "failed to create meter provider: binding address localhost:8888 for Prometheus exporter: listen tcp 127.0.0.1:8888: bind: address already in use"}
+go.opentelemetry.io/collector/service.New.func2
+	go.opentelemetry.io/collector/service@v0.157.0/service.go:183
+go.opentelemetry.io/collector/service.New
+	go.opentelemetry.io/collector/service@v0.157.0/service.go:250
+go.opentelemetry.io/collector/otelcol.(*Collector).setupConfigurationComponents
+	go.opentelemetry.io/collector/otelcol@v0.157.0/collector.go:232
+go.opentelemetry.io/collector/otelcol.(*Collector).Run
+	go.opentelemetry.io/collector/otelcol@v0.157.0/collector.go:431
+go.opentelemetry.io/collector/otelcol.NewCommand.func1
+	go.opentelemetry.io/collector/otelcol@v0.157.0/command.go:41
+github.com/spf13/cobra.(*Command).execute
+	github.com/spf13/cobra@v1.10.2/command.go:1015
+github.com/spf13/cobra.(*Command).ExecuteC
+	github.com/spf13/cobra@v1.10.2/command.go:1148
+github.com/spf13/cobra.(*Command).Execute
+	github.com/spf13/cobra@v1.10.2/command.go:1071
+main.runInteractive
+	github.com/open-telemetry/opentelemetry-collector-releases/core/main.go:60
+main.run
+	github.com/open-telemetry/opentelemetry-collector-releases/core/main_others.go:10
+main.main
+	github.com/open-telemetry/opentelemetry-collector-releases/core/main.go:51
+runtime.main
+	runtime/proc.go:290
+Error: failed to create meter provider: binding address localhost:8888 for Prometheus exporter: listen tcp 127.0.0.1:8888: bind: address already in use
+(pipeline exit above)
+=== 23:46:22 who holds 8888 / 4318 ? ===
+--- $ lsof -nP -iTCP:8888 -sTCP:LISTEN
+COMMAND   PID               USER   FD   TYPE            DEVICE SIZE/OFF NODE NAME
+jaeger  15082 katayamaryuunosuke    6u  IPv4 0xc845a5d97ad7cfa      0t0  TCP 127.0.0.1:8888 (LISTEN)
+--- $ lsof -nP -iTCP:4318 -sTCP:LISTEN
+COMMAND   PID               USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+jaeger  15082 katayamaryuunosuke   16u  IPv4 0x3fe9fd8493579c1d      0t0  TCP 127.0.0.1:4318 (LISTEN)
+=== 23:46:58 P2: otelcol 起動 (4418/8889) → Jaeger への接続で IPv6/IPv4 不一致 ===
+--- $ lsof で確認: Jaeger は 127.0.0.1:4317 (IPv4) のみで LISTEN
+--- Collector のエラー(全文の代表行):
+2026-07-26T23:46:39.848+0900	warn	grpc@v1.82.1/clientconn.go:1534	[core] [Channel #1 SubChannel #2] grpc: addrConn.createTransport failed to connect to {Addr: "[::1]:4317", ServerName: "localhost:4317", }. Err: connection error: desc = "transport: Error while dialing: dial tcp [::1]:4317: connect: connection refused"	{"resource": {"service.instance.id": "a2c87d5f-26d4-448a-9ac3-174437359ebf", "service.name": "otelcol", "service.version": "0.157.0"}, "grpc_log": true}
+--- 原因: endpoint: localhost:4317 が [::1]:4317 に解決されるが Jaeger は IPv4 のみ待ち受け
+--- 対処: endpoint を 127.0.0.1:4317 に明示
+=== 23:47:27 P2: Jaeger UI empty-state screenshot ===
+--- $ curl -s localhost:16686/api/services
+{"data":[],"total":0,"limit":0,"offset":0,"errors":null}
+--- $ node otel-shot.mjs http://localhost:16686/search /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/01-jaeger-empty.png 3000
+saved /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/01-jaeger-empty.png
+title: Jaeger UI
+exit=0
+total 176
+drwxr-xr-x@ 3 katayamaryuunosuke  staff     96 Jul 26 23:47 .
+drwxr-xr-x@ 5 katayamaryuunosuke  staff    160 Jul 26 23:18 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  87344 Jul 26 23:47 01-jaeger-empty.png
+=== 23:48:03 P3: instrumented run, 3 curls ===
+--- $ curl -s -o /dev/null -w '%{http_code} %{time_total}
+' localhost:3000/ /users /slow
+GET /      -> 200 0.010709s
+GET /users -> 200 0.022812s
+GET /slow  -> 200 0.802518s
+--- wait 12s for batch export
+--- $ curl -s localhost:16686/api/services
+{"data":["jaeger","otel-practice-api"],"total":2,"limit":0,"offset":0,"errors":null}
+--- span names seen in collector debug log:
+--- total ResourceSpans batches:
+1
+=== 23:48:37 P3: span counts per trace via Jaeger API ===
+--- operation: GET /
+traceID=d25c96b4494f7e65c121f6b42b5c6546 spans=10 names=GET, GET /, GET /users, middleware - patched, middleware - patched, request handler - /, request handler - /, request handler - /users, request handler - /users, tcp.connect
+traceID=25be211bc34a7a471de867f6fbe25c4a spans=4 names=GET /, middleware - patched, request handler - /, request handler - /
+--- operation: GET /users
+traceID=d25c96b4494f7e65c121f6b42b5c6546 spans=10 names=GET, GET /, GET /users, middleware - patched, middleware - patched, request handler - /, request handler - /, request handler - /users, request handler - /users, tcp.connect
+--- operation: GET /slow
+traceID=c2d67d8e4fa3d261243cc752a3547f91 spans=4 names=GET /slow, middleware - patched, request handler - /slow, request handler - /slow
+=== 23:48:51 P3: Jaeger UI screenshots (auto-instrumentation only) ===
+saved /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/02-trace-list.png
+title: Jaeger UI
+saved /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/03-trace-detail-auto.png
+title: 🐳 c2d67d8: GET /slow (otel-practice-api) — Jaeger UI
+total 488
+drwxr-xr-x@ 5 katayamaryuunosuke  staff    160 Jul 26 23:49 .
+drwxr-xr-x@ 5 katayamaryuunosuke  staff    160 Jul 26 23:18 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  87344 Jul 26 23:47 01-jaeger-empty.png
+-rw-r--r--@ 1 katayamaryuunosuke  staff  93774 Jul 26 23:48 02-trace-list.png
+-rw-r--r--@ 1 katayamaryuunosuke  staff  63679 Jul 26 23:49 03-trace-detail-auto.png
+=== 23:49:32 P3: restart app with manual span ===
+app pid=16557
+[instrumentation] OTel SDK started
+listening on http://localhost:3000
+--- $ curl /slow and /users
+GET /slow  -> 200 0.812189s
+GET /users -> 200 0.019987s
+--- wait 12s for export
+--- $ /slow traces now:
+traceID=c355eea75a81cd8f9a50820712b991a4 spans=5 names=GET /slow, middleware - patched, request handler - /slow, request handler - /slow, slow-business-logic
+traceID=c2d67d8e4fa3d261243cc752a3547f91 spans=4 names=GET /slow, middleware - patched, request handler - /slow, request handler - /slow
+=== 23:50:00 P3/P4: after-screenshots ===
+saved /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/04-trace-detail-manual.png
+title: 🩷 c355eea: GET /slow (otel-practice-api) — Jaeger UI
+saved /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/screenshots/05-trace-users.png
+title: ⛺️ b421106: GET /users (otel-practice-api) — Jaeger UI
+--- users trace span tree:
+04f896668a842c2e parent=ab9c187b5f4aa5bf GET /
+1f8aa66c9dc0a863 parent=ROOT GET /users
+601cf0923865def1 parent=09bf380820eaa330 request handler - /
+bc91f465b1233b0e parent=04f896668a842c2e middleware - patched
+bd12b3632b0d1d32 parent=03e749d40f2fa31c request handler - /users
+6b10971882816416 parent=1f8aa66c9dc0a863 middleware - patched
+09bf380820eaa330 parent=bc91f465b1233b0e request handler - /
+03e749d40f2fa31c parent=6b10971882816416 request handler - /users
+aebf60b49926a0d1 parent=bd12b3632b0d1d32 tcp.connect
+ab9c187b5f4aa5bf parent=bd12b3632b0d1d32 GET
+=== 23:50:33 P4-1: Collector を経由せず Jaeger の 4318 へ直接送る ===
+--- 変更点: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT を Collector(4418) から Jaeger(4318) に変えるだけ
+--- $ OTEL_SERVICE_NAME=otel-practice-direct OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces node --import ./instrumentation.js app.js
+app pid=16930
+[instrumentation] OTel SDK started
+listening on http://localhost:3000
+GET /slow -> 200 0.813021s
+--- collector debug log の span 件数 (直接送信なので増えないはず):
+collector ResourceSpans batches=2
+--- $ curl -s localhost:16686/api/services
+{"data":["jaeger","otel-practice-api","otel-practice-direct"],"total":3,"limit":0,"offset":0,"errors":null}
+--- direct 送信の /slow トレース:
+traceID=d1a05fecf8d1ed5713a71275d54ece7c spans=5 names=GET /slow, middleware - patched, request handler - /slow, request handler - /slow, slow-business-logic
+collector ResourceSpans batches after=2 (変化なし=Collectorを通っていない)
+=== 23:51:05 P4-2a: 末尾の s を落とした URL (/v1/trace) ===
+app pid=17120
+--- $ curl -i localhost:3000/slow  (アプリの応答は正常か？)
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+--- アプリ側ログ全文:
+[instrumentation] OTel SDK started
+listening on http://localhost:3000
+=== 23:51:39 P4-2b: 存在しないポート 4999 (ECONNREFUSED) ===
+app pid=17288
+GET /slow -> 200 0.812332s (アプリは正常応答)
+--- アプリ側ログ全文:
+[instrumentation] OTel SDK started
+listening on http://localhost:3000
+
+=== 23:51:57 P4-2c: OTEL_LOG_LEVEL=debug を付けると失敗が見えるか ===
+app pid=17398
+GET /slow -> 200
+--- 失敗に関係する行だけ抜粋 (grep -iE 'error|fail|refus|econn'):
+@opentelemetry/instrumentation-http outgoingRequest on request error() AggregateError [ECONNREFUSED]: 
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:4999
+        at createConnectionError (node:net:1678:14)
+      code: 'ECONNREFUSED',
+    Error: connect ECONNREFUSED 127.0.0.1:4999
+        at createConnectionError (node:net:1678:14)
+      code: 'ECONNREFUSED',
+@opentelemetry/instrumentation-http outgoingRequest on request error() AggregateError [ECONNREFUSED]: 
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:4999
+        at createConnectionError (node:net:1678:14)
+      code: 'ECONNREFUSED',
+    Error: connect ECONNREFUSED 127.0.0.1:4999
+        at createConnectionError (node:net:1678:14)
+      code: 'ECONNREFUSED',
+@opentelemetry/instrumentation-http outgoingRequest on request error() AggregateError [ECONNREFUSED]: 
+  code: 'ECONNREFUSED',
+--- (ログ総行数:      387)
+=== 23:52:33 P4-3: OTEL_TRACES_SAMPLER=always_off ===
+--- 送信前の collector ResourceSpans batches = 2
+--- $ OTEL_TRACES_SAMPLER=always_off OTEL_SERVICE_NAME=otel-practice-nosample ... (送り先は Collector 4418)
+app pid=17603
+[instrumentation] OTel SDK started
+listening on http://localhost:3000
+GET /slow  -> 200
+GET /users -> 200
+GET /      -> 200
+--- 送信後の collector ResourceSpans batches = 2
+--- $ curl -s localhost:16686/api/services  (nosample が出てこないはず)
+{"data":["jaeger","otel-practice-api","otel-practice-direct"],"total":3,"limit":0,"offset":0,"errors":null}
+=== 23:53:18 完了条件の最終検証 ===
+--- (1) 2プロセス(jaeger/otelcol)が running か:
+  PID 
+15082 ./jaeger
+15661 ../bin/otelcol
+--- $ docker compose ps  (本来の完了条件。Dockerが使えないため未実施の代替)
+(docker pull 不通のため compose は起動できず。バイナリ2プロセスで代替)
+
+--- 通常構成でアプリを起動し直して (2)(3)(4)(5) を再確認
+app pid=17850
+--- (2) $ curl -i localhost:3000/slow
+HTTP/1.1 200 OK
+X-Powered-By: Express
+Content-Type: application/json; charset=utf-8
+Content-Length: 29
+ETag: W/"1d-PKkYl/5YWxFbeXCCThymAvgYX0E"
+Date: Sun, 26 Jul 2026 14:53:24 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"slow":true,"waited_ms":800}
+--- (3) Collector debug exporter に span が流れたか: batches 2 -> 3
+--- 直近の slow-business-logic span が debug ログにあるか:
+2
+--- (4) $ curl -s localhost:16686/api/services
+{"data":["jaeger","otel-practice-api","otel-practice-direct"],"total":3,"limit":0,"offset":0,"errors":null}
+--- (5) 最新 /slow トレースの span 数:
+traceID=5e797506a56f8e75000c31f678022dba spans=5 names=GET /slow, middleware - patched, request handler - /slow, request handler - /slow, slow-business-logic
+=== 23:53:51 手動span の debug 出力（属性つき） ===
+ScopeSpans SchemaURL: 
+InstrumentationScope otel-practice-api 
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : 4150356811cc0d73
+    ID             : 9a776395b3983270
+    Name           : slow-business-logic
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.127 +0000 UTC
+    End time       : 2026-07-26 14:49:39.929004417 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> practice.wait_ms: Int(800)
+ScopeSpans #1
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-http 0.221.0
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+ScopeSpans SchemaURL: 
+InstrumentationScope otel-practice-api 
+Span #0
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : 853d99fc262689ec
+    ID             : 984f9676090b276e
+
+=== 23:53:51 バージョン一覧（再現性用） ===
+--- $ node -v
+v22.17.0
+--- $ sw_vers
+ProductName:		macOS ProductVersion:		26.5 BuildVersion:		25F71 
+--- $ npm ls --depth=0
+otel-practice@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice
+├── @opentelemetry/api@1.9.1
+├── @opentelemetry/auto-instrumentations-node@0.79.0
+├── @opentelemetry/exporter-trace-otlp-proto@0.221.0
+├── @opentelemetry/sdk-node@0.221.0
+└── express@5.2.1
+
+--- $ npm ls @opentelemetry/instrumentation-express
+otel-practice@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice
+└─┬ @opentelemetry/auto-instrumentations-node@0.79.0
+  └── @opentelemetry/instrumentation-express@0.69.0
+
+--- $ ../bin/otelcol --version
+otelcol version 0.157.0
+--- $ jaeger version
+{"gitCommit":"d65f95169d71c3a8535355ececa782aa868071be","gitVersion":"v2.20.0","buildDate":"2026-07-20T03:41:33Z"}--- $ npx playwright --version
+Version 1.61.1
+--- OTel SDK (telemetry.sdk.version from resource attrs): 2.10.0
+--- $ docker --version / compose
+Docker version 28.5.1, build e180ab8
+Docker Compose version v2.40.3-desktop.1
