@@ -65,7 +65,7 @@ bash scripts/auto-publish.sh --dry-run
 
 | 変数 | 意味 | 既定 |
 |---|---|---|
-| `AP_MODEL` | 全段のモデル（`opus` / `sonnet` / `fable` またはフルID。空=CLI の既定） | `opus` |
+| `AP_MODEL` | 全段のモデル（フルID推奨。`opus` / `sonnet` / `fable` の alias も可。空=CLI の既定） | `claude-opus-5` |
 | `AP_EFFORT` | 全段の effort（`low` / `medium` / `high` / `xhigh` / `max`。空=既定） | `medium` |
 | `CLAUDE_FLAGS` | claude に渡す共通フラグ（権限モード等） | `--permission-mode bypassPermissions` |
 | `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `3` |
@@ -76,7 +76,7 @@ bash scripts/auto-publish.sh --dry-run
 
 ```bash
 # 例: モデル/effort を変えて実行
-AP_MODEL=sonnet AP_EFFORT=high bash scripts/auto-publish.sh
+AP_MODEL=claude-sonnet-5 AP_EFFORT=high bash scripts/auto-publish.sh
 
 # 例: run-practice のタイムアウトを2時間に短縮
 TIMEOUT_RUN=7200 bash scripts/auto-publish.sh
