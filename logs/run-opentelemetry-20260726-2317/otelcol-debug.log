@@ -1,0 +1,868 @@
+2026-07-26T23:47:09.726+0900	info	otelconftelemetry/tracer.go:47	Internal trace telemetry disabled	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}}
+2026-07-26T23:47:09.727+0900	warn	builders/builders.go:40	"otlp" alias is deprecated; use "otlp_grpc" instead	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "otlp/jaeger", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+2026-07-26T23:47:09.727+0900	info	service@v0.157.0/service.go:259	Starting otelcol...	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "Version": "0.157.0", "NumCPU": 10}
+2026-07-26T23:47:09.727+0900	info	extensions/extensions.go:44	Starting extensions...	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}}
+2026-07-26T23:47:09.728+0900	info	otlpreceiver@v0.157.0/otlp.go:175	Starting HTTP server	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "otlp", "otelcol.component.kind": "receiver", "endpoint": "[::]:4418"}
+2026-07-26T23:47:09.728+0900	info	service@v0.157.0/service.go:282	Everything is ready. Begin running and processing data.	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}}
+2026-07-26T23:48:08.934+0900	info	Traces	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces", "resource spans": 1, "spans": 18}
+2026-07-26T23:48:08.936+0900	info	ResourceSpans #0
+Resource SchemaURL: 
+Resource attributes:
+     -> host.name: Str(katayamaryuunosukes-MacBook-Pro.local)
+     -> host.arch: Str(arm64)
+     -> host.id: Str(2C499058-B687-573E-B63E-596D473896B2)
+     -> process.pid: Int(15892)
+     -> process.executable.name: Str(node)
+     -> process.executable.path: Str(/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node)
+     -> process.command_args: Slice(["/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node","--import","./instrumentation.js","/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js"])
+     -> process.runtime.version: Str(22.17.0)
+     -> process.runtime.name: Str(nodejs)
+     -> process.runtime.description: Str(Node.js)
+     -> process.command: Str(/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js)
+     -> process.owner: Str(katayamaryuunosuke)
+     -> service.name: Str(otel-practice-api)
+     -> telemetry.sdk.language: Str(nodejs)
+     -> telemetry.sdk.name: Str(opentelemetry)
+     -> telemetry.sdk.version: Str(2.10.0)
+ScopeSpans #0
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-http 0.221.0
+Span #0
+    Trace ID       : 25be211bc34a7a471de867f6fbe25c4a
+    Parent ID      : 
+    ID             : 6d575b1cc53abf5d
+    Name           : GET /
+    Kind           : Server
+    Start time     : 2026-07-26 14:48:03.91 +0000 UTC
+    End time       : 2026-07-26 14:48:03.917510375 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65088)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/)
+Span #1
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : deca528044d62bad
+    ID             : 256f1a7b6b4a2c6b
+    Name           : GET /
+    Kind           : Server
+    Start time     : 2026-07-26 14:48:03.942 +0000 UTC
+    End time       : 2026-07-26 14:48:03.9425085 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65090)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(node)
+     -> url.path: Str(/)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/)
+Span #2
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 
+    ID             : 21cf2920a9de6428
+    Name           : GET /users
+    Kind           : Server
+    Start time     : 2026-07-26 14:48:03.924 +0000 UTC
+    End time       : 2026-07-26 14:48:03.946442417 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65089)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/users)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/users)
+Span #3
+    Trace ID       : c2d67d8e4fa3d261243cc752a3547f91
+    Parent ID      : 
+    ID             : b80caadbbdbc0497
+    Name           : GET /slow
+    Kind           : Server
+    Start time     : 2026-07-26 14:48:03.954 +0000 UTC
+    End time       : 2026-07-26 14:48:04.756091166 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65091)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/slow)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/slow)
+ScopeSpans #1
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-router 0.65.0
+Span #0
+    Trace ID       : 25be211bc34a7a471de867f6fbe25c4a
+    Parent ID      : b0bf545149708895
+    ID             : 2db17ba89c3df5f1
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.911 +0000 UTC
+    End time       : 2026-07-26 14:48:03.91689175 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/)
+Span #1
+    Trace ID       : 25be211bc34a7a471de867f6fbe25c4a
+    Parent ID      : 6d575b1cc53abf5d
+    ID             : 2b43c39ab353c8c7
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.911 +0000 UTC
+    End time       : 2026-07-26 14:48:03.917471708 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/)
+Span #2
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 4a55b422dc42e919
+    ID             : 9bee6a1b4e563813
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.942 +0000 UTC
+    End time       : 2026-07-26 14:48:03.942445709 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/)
+Span #3
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 256f1a7b6b4a2c6b
+    ID             : 41d34c1f1aec2060
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.942 +0000 UTC
+    End time       : 2026-07-26 14:48:03.942506666 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/)
+Span #4
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : fe1701e8d0c5b614
+    ID             : d24ac1f94cae569c
+    Name           : request handler - /users
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.924 +0000 UTC
+    End time       : 2026-07-26 14:48:03.946047292 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/users)
+Span #5
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 21cf2920a9de6428
+    ID             : 2e90218924d0e442
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.924 +0000 UTC
+    End time       : 2026-07-26 14:48:03.946186 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/users)
+Span #6
+    Trace ID       : c2d67d8e4fa3d261243cc752a3547f91
+    Parent ID      : b10f48e6568f4773
+    ID             : 5c7bc77719e89826
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.954 +0000 UTC
+    End time       : 2026-07-26 14:48:04.756104959 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/slow)
+Span #7
+    Trace ID       : c2d67d8e4fa3d261243cc752a3547f91
+    Parent ID      : b80caadbbdbc0497
+    ID             : 9c41d2365e3ebcc2
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.954 +0000 UTC
+    End time       : 2026-07-26 14:48:04.7561945 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/slow)
+ScopeSpans #2
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-express 0.69.0
+Span #0
+    Trace ID       : 25be211bc34a7a471de867f6fbe25c4a
+    Parent ID      : 2b43c39ab353c8c7
+    ID             : b0bf545149708895
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.911 +0000 UTC
+    End time       : 2026-07-26 14:48:03.917024042 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/)
+     -> express.name: Str(/)
+     -> express.type: Str(request_handler)
+Span #1
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 41d34c1f1aec2060
+    ID             : 4a55b422dc42e919
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.942 +0000 UTC
+    End time       : 2026-07-26 14:48:03.942473667 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/)
+     -> express.name: Str(/)
+     -> express.type: Str(request_handler)
+Span #2
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : 2e90218924d0e442
+    ID             : fe1701e8d0c5b614
+    Name           : request handler - /users
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.924 +0000 UTC
+    End time       : 2026-07-26 14:48:03.946092875 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/users)
+     -> express.name: Str(/users)
+     -> express.type: Str(request_handler)
+Span #3
+    Trace ID       : c2d67d8e4fa3d261243cc752a3547f91
+    Parent ID      : 9c41d2365e3ebcc2
+    ID             : b10f48e6568f4773
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.954 +0000 UTC
+    End time       : 2026-07-26 14:48:04.756147208 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/slow)
+     -> express.name: Str(/slow)
+     -> express.type: Str(request_handler)
+ScopeSpans #3
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-net 0.65.0
+Span #0
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : d24ac1f94cae569c
+    ID             : 634bd1f27bcc72b8
+    Name           : tcp.connect
+    Kind           : Internal
+    Start time     : 2026-07-26 14:48:03.934 +0000 UTC
+    End time       : 2026-07-26 14:48:03.939636875 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> network.transport: Str(tcp)
+     -> server.address: Str(localhost)
+     -> server.port: Str(3000)
+     -> network.peer.address: Str(::1)
+     -> network.local.address: Str(::1)
+     -> network.local.port: Int(65090)
+ScopeSpans #4
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-undici 0.31.0
+Span #0
+    Trace ID       : d25c96b4494f7e65c121f6b42b5c6546
+    Parent ID      : d24ac1f94cae569c
+    ID             : deca528044d62bad
+    Name           : GET
+    Kind           : Client
+    Start time     : 2026-07-26 14:48:03.933 +0000 UTC
+    End time       : 2026-07-26 14:48:03.944090292 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> http.request.method_original: Str(GET)
+     -> url.full: Str(http://localhost:3000/)
+     -> url.path: Str(/)
+     -> url.query: Str()
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> server.port: Int(3000)
+     -> user_agent.original: Str(node)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(3000)
+     -> http.response.status_code: Int(200)
+	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+2026-07-26T23:49:44.941+0900	info	Traces	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces", "resource spans": 1, "spans": 15}
+2026-07-26T23:49:44.943+0900	info	ResourceSpans #0
+Resource SchemaURL: 
+Resource attributes:
+     -> host.name: Str(katayamaryuunosukes-MacBook-Pro.local)
+     -> host.arch: Str(arm64)
+     -> host.id: Str(2C499058-B687-573E-B63E-596D473896B2)
+     -> process.pid: Int(16557)
+     -> process.executable.name: Str(node)
+     -> process.executable.path: Str(/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node)
+     -> process.command_args: Slice(["/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node","--import","./instrumentation.js","/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js"])
+     -> process.runtime.version: Str(22.17.0)
+     -> process.runtime.name: Str(nodejs)
+     -> process.runtime.description: Str(Node.js)
+     -> process.command: Str(/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js)
+     -> process.owner: Str(katayamaryuunosuke)
+     -> service.name: Str(otel-practice-api)
+     -> telemetry.sdk.language: Str(nodejs)
+     -> telemetry.sdk.name: Str(opentelemetry)
+     -> telemetry.sdk.version: Str(2.10.0)
+ScopeSpans #0
+ScopeSpans SchemaURL: 
+InstrumentationScope otel-practice-api 
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : 4150356811cc0d73
+    ID             : 9a776395b3983270
+    Name           : slow-business-logic
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.127 +0000 UTC
+    End time       : 2026-07-26 14:49:39.929004417 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> practice.wait_ms: Int(800)
+ScopeSpans #1
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-http 0.221.0
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : 
+    ID             : cec82a055e69dfeb
+    Name           : GET /slow
+    Kind           : Server
+    Start time     : 2026-07-26 14:49:39.125 +0000 UTC
+    End time       : 2026-07-26 14:49:39.935960791 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65153)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/slow)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/slow)
+Span #1
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : ab9c187b5f4aa5bf
+    ID             : 04f896668a842c2e
+    Name           : GET /
+    Kind           : Server
+    Start time     : 2026-07-26 14:49:39.963 +0000 UTC
+    End time       : 2026-07-26 14:49:39.963510208 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65155)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(node)
+     -> url.path: Str(/)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/)
+Span #2
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 
+    ID             : 1f8aa66c9dc0a863
+    Name           : GET /users
+    Kind           : Server
+    Start time     : 2026-07-26 14:49:39.947 +0000 UTC
+    End time       : 2026-07-26 14:49:39.966355167 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65154)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/users)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/users)
+ScopeSpans #2
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-router 0.65.0
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : 1c4505e3e90cad81
+    ID             : 4150356811cc0d73
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.127 +0000 UTC
+    End time       : 2026-07-26 14:49:39.936594917 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/slow)
+Span #1
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : cec82a055e69dfeb
+    ID             : d83942a135e1e9fe
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.126 +0000 UTC
+    End time       : 2026-07-26 14:49:39.936138334 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/slow)
+Span #2
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 09bf380820eaa330
+    ID             : 601cf0923865def1
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.963 +0000 UTC
+    End time       : 2026-07-26 14:49:39.963414333 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/)
+Span #3
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 04f896668a842c2e
+    ID             : bc91f465b1233b0e
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.963 +0000 UTC
+    End time       : 2026-07-26 14:49:39.963567958 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/)
+Span #4
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 03e749d40f2fa31c
+    ID             : bd12b3632b0d1d32
+    Name           : request handler - /users
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.947 +0000 UTC
+    End time       : 2026-07-26 14:49:39.966069208 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/users)
+Span #5
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 1f8aa66c9dc0a863
+    ID             : 6b10971882816416
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.947 +0000 UTC
+    End time       : 2026-07-26 14:49:39.966209334 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/users)
+ScopeSpans #3
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-express 0.69.0
+Span #0
+    Trace ID       : c355eea75a81cd8f9a50820712b991a4
+    Parent ID      : d83942a135e1e9fe
+    ID             : 1c4505e3e90cad81
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.127 +0000 UTC
+    End time       : 2026-07-26 14:49:39.936700791 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/slow)
+     -> express.name: Str(/slow)
+     -> express.type: Str(request_handler)
+Span #1
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : bc91f465b1233b0e
+    ID             : 09bf380820eaa330
+    Name           : request handler - /
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.963 +0000 UTC
+    End time       : 2026-07-26 14:49:39.963481292 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/)
+     -> express.name: Str(/)
+     -> express.type: Str(request_handler)
+Span #2
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : 6b10971882816416
+    ID             : 03e749d40f2fa31c
+    Name           : request handler - /users
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.947 +0000 UTC
+    End time       : 2026-07-26 14:49:39.966108625 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/users)
+     -> express.name: Str(/users)
+     -> express.type: Str(request_handler)
+ScopeSpans #4
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-net 0.65.0
+Span #0
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : bd12b3632b0d1d32
+    ID             : aebf60b49926a0d1
+    Name           : tcp.connect
+    Kind           : Internal
+    Start time     : 2026-07-26 14:49:39.956 +0000 UTC
+    End time       : 2026-07-26 14:49:39.960923333 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> network.transport: Str(tcp)
+     -> server.address: Str(localhost)
+     -> server.port: Str(3000)
+     -> network.peer.address: Str(::1)
+     -> network.local.address: Str(::1)
+     -> network.local.port: Int(65155)
+ScopeSpans #5
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-undici 0.31.0
+Span #0
+    Trace ID       : b421106c9bd04f6405f50854e2ff02f9
+    Parent ID      : bd12b3632b0d1d32
+    ID             : ab9c187b5f4aa5bf
+    Name           : GET
+    Kind           : Client
+    Start time     : 2026-07-26 14:49:39.956 +0000 UTC
+    End time       : 2026-07-26 14:49:39.965216292 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> http.request.method_original: Str(GET)
+     -> url.full: Str(http://localhost:3000/)
+     -> url.path: Str(/)
+     -> url.query: Str()
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> server.port: Int(3000)
+     -> user_agent.original: Str(node)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(3000)
+     -> http.response.status_code: Int(200)
+	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
+2026-07-26T23:53:29.672+0900	info	Traces	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces", "resource spans": 1, "spans": 5}
+2026-07-26T23:53:29.673+0900	info	ResourceSpans #0
+Resource SchemaURL: 
+Resource attributes:
+     -> host.name: Str(katayamaryuunosukes-MacBook-Pro.local)
+     -> host.arch: Str(arm64)
+     -> host.id: Str(2C499058-B687-573E-B63E-596D473896B2)
+     -> process.pid: Int(17850)
+     -> process.executable.name: Str(node)
+     -> process.executable.path: Str(/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node)
+     -> process.command_args: Slice(["/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node","--import","./instrumentation.js","/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js"])
+     -> process.runtime.version: Str(22.17.0)
+     -> process.runtime.name: Str(nodejs)
+     -> process.runtime.description: Str(Node.js)
+     -> process.command: Str(/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-opentelemetry-20260726-2317/workspace/otel-practice/app.js)
+     -> process.owner: Str(katayamaryuunosuke)
+     -> service.name: Str(otel-practice-api)
+     -> telemetry.sdk.language: Str(nodejs)
+     -> telemetry.sdk.name: Str(opentelemetry)
+     -> telemetry.sdk.version: Str(2.10.0)
+ScopeSpans #0
+ScopeSpans SchemaURL: 
+InstrumentationScope otel-practice-api 
+Span #0
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : 853d99fc262689ec
+    ID             : 984f9676090b276e
+    Name           : slow-business-logic
+    Kind           : Internal
+    Start time     : 2026-07-26 14:53:23.843 +0000 UTC
+    End time       : 2026-07-26 14:53:24.645540708 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> practice.wait_ms: Int(800)
+ScopeSpans #1
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-http 0.221.0
+Span #0
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : 
+    ID             : 1cee1db6c1eac9b2
+    Name           : GET /slow
+    Kind           : Server
+    Start time     : 2026-07-26 14:53:23.842 +0000 UTC
+    End time       : 2026-07-26 14:53:24.653763959 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.request.method: Str(GET)
+     -> url.scheme: Str(http)
+     -> server.address: Str(localhost)
+     -> network.peer.address: Str(::1)
+     -> network.peer.port: Int(65274)
+     -> network.protocol.version: Str(1.1)
+     -> user_agent.original: Str(curl/8.7.1)
+     -> url.path: Str(/slow)
+     -> client.address: Str(::1)
+     -> server.port: Int(3000)
+     -> http.response.status_code: Int(200)
+     -> http.route: Str(/slow)
+ScopeSpans #2
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-router 0.65.0
+Span #0
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : 2e0eff80553618ee
+    ID             : 853d99fc262689ec
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:53:23.843 +0000 UTC
+    End time       : 2026-07-26 14:53:24.653307958 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(<anonymous>)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(request_handler)
+     -> http.route: Str(/slow)
+Span #1
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : 1cee1db6c1eac9b2
+    ID             : e27247340c142b2c
+    Name           : middleware - patched
+    Kind           : Internal
+    Start time     : 2026-07-26 14:53:23.843 +0000 UTC
+    End time       : 2026-07-26 14:53:24.653888 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> router.name: Str(patched)
+     -> router.version: Str(2.2.0)
+     -> router.type: Str(middleware)
+     -> http.route: Str(/slow)
+ScopeSpans #3
+ScopeSpans SchemaURL: 
+InstrumentationScope @opentelemetry/instrumentation-express 0.69.0
+Span #0
+    Trace ID       : 5e797506a56f8e75000c31f678022dba
+    Parent ID      : e27247340c142b2c
+    ID             : 2e0eff80553618ee
+    Name           : request handler - /slow
+    Kind           : Internal
+    Start time     : 2026-07-26 14:53:23.843 +0000 UTC
+    End time       : 2026-07-26 14:53:24.653417125 +0000 UTC
+    Status code    : Unset
+    Status message : 
+    DroppedAttributesCount: 0
+    DroppedEventsCount: 0
+    DroppedLinksCount: 0
+Attributes:
+     -> http.route: Str(/slow)
+     -> express.name: Str(/slow)
+     -> express.type: Str(request_handler)
+	{"resource": {"service.instance.id": "7d66c6da-7401-446e-bdd4-19ea0f40c8d8", "service.name": "otelcol", "service.version": "0.157.0"}, "otelcol.component.id": "debug", "otelcol.component.kind": "exporter", "otelcol.signal": "traces"}
