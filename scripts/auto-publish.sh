@@ -14,8 +14,8 @@
 #   bash scripts/auto-publish.sh --search-args "..." # search-topic への引数（関心領域など）
 #   bash scripts/auto-publish.sh --dry-run           # 実行計画と設定を表示して終了
 #
-# モデル/effort（既定: 全段 Opus / medium。環境変数で上書き）:
-#   AP_MODEL=sonnet AP_EFFORT=high bash scripts/auto-publish.sh
+# モデル/effort（既定: 全段 Opus 5 / medium。環境変数で上書き）:
+#   AP_MODEL=claude-sonnet-5 AP_EFFORT=high bash scripts/auto-publish.sh
 #   AP_MODEL= AP_EFFORT= bash scripts/auto-publish.sh           # CLI の既定設定に従う
 #
 # 成否判定の契約:
@@ -38,7 +38,7 @@ set -euo pipefail
 # ---------- 設定（環境変数で上書き可能） ----------
 : "${CLAUDE_BIN:=claude}"
 : "${CLAUDE_FLAGS:=--permission-mode bypassPermissions}"
-: "${AP_MODEL=opus}"       # 全段のモデル（alias可: opus/sonnet/fable。空=CLI の既定に従う）
+: "${AP_MODEL=claude-opus-5}"  # 全段のモデル（フルID推奨。alias可: opus/sonnet/fable。空=CLI の既定に従う）
 : "${AP_EFFORT=medium}"    # 全段の effort（low/medium/high/xhigh/max。空=既定）
 # ※ CLAUDE_MODEL/CLAUDE_EFFORT という名前は Claude Code 自身が環境に export する値と
 #   衝突する（claude 経由で起動すると意図しない値が漏れ込む）ため AP_ 接頭辞にしている
