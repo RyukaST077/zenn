@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "bash scripts/test-codex-pipeline.sh"
+    "test": "bash scripts/test-codex-pipeline.sh && bash scripts/test-claude-usage-gate.sh"
   },
   "repository": {
     "type": "git",
