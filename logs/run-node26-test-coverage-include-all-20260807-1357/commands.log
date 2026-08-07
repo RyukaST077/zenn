@@ -1,0 +1,59 @@
+## 13:58:14 nvm install 26.7.0
+Downloading and installing node v26.7.0...
+Downloading https://nodejs.org/dist/v26.7.0/node-v26.7.0-darwin-arm64.tar.xz...
+####                                                                       6.2%########################################                                  55.6%######################################################################## 100.0%
+Computing checksum with sha256sum
+Checksums matched!
+Now using node v26.7.0 (npm v11.19.0)
+exit=0
+[0;34m       v22.17.0[0m
+[0;34m        v26.5.0[0m
+[0;32m->      v26.7.0[0m
+[0;33m         system[0m
+[0;34mdefault[0m [0;90m->[0m [0;34m22[0m ([0;90m->[0m [0;34mv22.17.0[0m)
+[0;31miojs[0m [0;90m->[0m [0;31mN/A[0m [0;37m(default)[0m
+[0;31munstable[0m [0;90m->[0m [0;31mN/A[0m [0;37m(default)[0m
+[0;32mnode[0m [0;90m->[0m [0;32mstable[0m ([0;90m->[0m [0;32mv26.7.0[0m) [0;37m(default)[0m
+[0;32mstable[0m [0;90m->[0m [0;32m26.7[0m ([0;90m->[0m [0;32mv26.7.0[0m) [0;37m(default)[0m
+[1;33mlts/*[0m [0;90m->[0m [1;33mlts/krypton[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/argon[0m [0;90m->[0m [0;31mv4.9.1[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/boron[0m [0;90m->[0m [0;31mv6.17.1[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/carbon[0m [0;90m->[0m [0;31mv8.17.0[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/dubnium[0m [0;90m->[0m [0;31mv10.24.1[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/erbium[0m [0;90m->[0m [0;31mv12.22.12[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/fermium[0m [0;90m->[0m [0;31mv14.21.3[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/gallium[0m [0;90m->[0m [0;31mv16.20.2[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/hydrogen[0m [0;90m->[0m [0;31mv18.20.8[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/iron[0m [0;90m->[0m [0;31mv20.20.2[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/jod[0m [0;90m->[0m [0;31mv22.23.2[0m ([0;90m->[0m [0;31mN/A[0m)
+[1;33mlts/krypton[0m [0;90m->[0m [0;31mv24.19.0[0m ([0;90m->[0m [0;31mN/A[0m)
+
+## 13:58:28 node --help | grep -i coverage (v26.7.0)
+v26.7.0
+  --experimental-test-coverage
+                              enable code coverage in the test runner
+  --test-coverage-branches=...
+                              the branch coverage minimum threshold
+  --test-coverage-exclude=... exclude files from coverage report that
+  --test-coverage-functions=...
+                              the function coverage minimum threshold
+  --test-coverage-include=... include files in coverage report that
+  --test-coverage-include-all include source files that were never
+                              loaded in the coverage report
+  --test-coverage-lines=...   the line coverage minimum threshold
+NODE_V8_COVERAGE            directory to output v8 coverage JSON to
+grep-exit=0
+
+## 13:58:28 node --help | grep -i coverage (v26.5.0)
+v26.5.0
+  --experimental-test-coverage
+                              enable code coverage in the test runner
+  --test-coverage-branches=...
+                              the branch coverage minimum threshold
+  --test-coverage-exclude=... exclude files from coverage report that
+  --test-coverage-functions=...
+                              the function coverage minimum threshold
+  --test-coverage-include=... include files in coverage report that
+  --test-coverage-lines=...   the line coverage minimum threshold
+NODE_V8_COVERAGE            directory to output v8 coverage JSON to
+grep-exit=0
