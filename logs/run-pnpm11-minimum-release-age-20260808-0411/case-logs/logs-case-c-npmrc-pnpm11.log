@@ -1,0 +1,6 @@
+### 2026-08-07T19:16:26Z cwd=/tmp/pnpm11-OSh1ra/case-c-npmrc
+$ npx --yes pnpm@11.20.0 install --no-color
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[ERR_PNPM_NO_MATURE_MATCHING_VERSION] 1 version does not meet the minimumReleaseAge constraint:
+  @types/node@26.2.0 was published at 2026-08-07T17:52:06.875Z, within the minimumReleaseAge cutoff (2026-08-06T19:16:29.531Z)
+exit=1 elapsed_ms=3515

@@ -1,0 +1,263 @@
+===== [P1-1] 2026-08-07T19:12:20Z npm view pnpm dist-tags --json =====
+{
+  "latest-1": "1.43.1",
+  "latest-2": "2.25.7",
+  "latest-3": "3.8.1",
+  "latest-4": "4.14.4",
+  "latest-5": "5.18.10",
+  "dev": "6.23.7-202112041634",
+  "pr4475": "0.0.0-pr4475.1",
+  "latest-6": "6.35.1",
+  "next-6": "6.35.1",
+  "latest-7": "7.33.5",
+  "next-7": "7.33.7",
+  "latest-8": "8.15.9",
+  "next-8": "8.15.9",
+  "next-9": "9.15.9",
+  "latest-9": "9.15.9",
+  "next-10": "10.34.5",
+  "latest-10": "10.34.5",
+  "latest": "11.20.0",
+  "next-11": "11.20.0",
+  "latest-11": "11.20.0",
+  "next-12": "12.0.0-rc.1"
+}
+exit=0
+===== [P1-1] npm view pnpm@latest engines --json =====
+{
+  "node": ">=22.13"
+}
+exit=0
+===== [P1-1] npm view pnpm@11.20.0 version dist.unpackedSize --json =====
+"11.20.0"
+exit=0
+===== [P1-1] local env =====
+v22.17.0
+10.9.2
+10.13.1
+/opt/homebrew/bin/pnpm
+26.5
+===== [P1-4] version gate 2026-08-07T19:12:55Z =====
+npx --yes pnpm@11.20.0 --version -> 11.20.0 (exit=0) elapsed=3s
+npx --yes pnpm@10.13.1 --version -> 10.13.1 (exit=0) elapsed=5s
+GATE-11: OK
+GATE-10: OK
+global pnpm --version -> 10.13.1  path=/opt/homebrew/bin/pnpm
+===== [P2] store inspection 2026-08-07T19:13:42Z =====
+--- ls -la ~/Library/pnpm/store/v11 ---
+ls: /Users/katayamaryuunosuke/Library/pnpm/store/v11: No such file or directory
+--- ls -la ~/Library/pnpm/store/v10 ---
+total 0
+drwxr-xr-x@   4 katayamaryuunosuke  staff   128 Jul 12  2025 .
+drwxr-xr-x@   3 katayamaryuunosuke  staff    96 Jul 12  2025 ..
+drwxr-xr-x@ 258 katayamaryuunosuke  staff  8256 Jul 12  2025 files
+drwxr-xr-x@ 258 katayamaryuunosuke  staff  8256 Jul 12  2025 index
+===== [P3-1] find fresh versions 2026-08-07T19:13:59Z =====
+$ node find-fresh.mjs 24 <candidates>
+@types/node: latest=26.2.0 versions=0 fresh(<24h)=0
+typescript: latest=7.0.2 versions=0 fresh(<24h)=0
+esbuild: latest=0.28.1 versions=0 fresh(<24h)=0
+rollup: latest=4.62.4 versions=0 fresh(<24h)=0
+vite: latest=8.2.1 versions=0 fresh(<24h)=0
+eslint: latest=10.8.0 versions=0 fresh(<24h)=0
+prettier: latest=3.9.6 versions=0 fresh(<24h)=0
+zod: latest=4.4.3 versions=0 fresh(<24h)=0
+nanoid: latest=6.0.1 versions=0 fresh(<24h)=0
+tslib: latest=2.8.1 versions=0 fresh(<24h)=0
+@biomejs/biome: latest=2.5.7 versions=0 fresh(<24h)=0
+oxlint: latest=1.77.0 versions=0 fresh(<24h)=0
+---FRESH_JSON---
+[]
+exit=0
+===== [P3-1a] 原因切り分け: abbreviated metadata に time が無い =====
+$ curl -s -H 'accept: application/vnd.npm.install-v1+json' https://registry.npmjs.org/tslib | node -e '...keys...'
+keys: name,dist-tags,versions,modified
+has time: false
+$ curl -s https://registry.npmjs.org/tslib  # full packument
+has time: true time entries: 50
+===== [P3-1b] retry with full packument 2026-08-07T19:14:19Z =====
+@types/node: latest=26.2.0 versions=2346 fresh(<24h)=1
+  @types/node@26.2.0  published=2026-08-07T17:52:06.875Z  age=1.37h
+  newest-stable: @types/node@26.2.0 published=2026-08-07T17:52:06.875Z age=1.37h
+typescript: latest=7.0.2 versions=170 fresh(<24h)=0
+  newest-stable: typescript@7.0.2 published=2026-07-08T15:55:18.431Z age=723.32h
+esbuild: latest=0.28.1 versions=481 fresh(<24h)=0
+  newest-stable: esbuild@0.28.1 published=2026-06-11T22:47:05.085Z age=1364.45h
+rollup: latest=4.62.4 versions=859 fresh(<24h)=0
+  newest-stable: rollup@4.62.4 published=2026-08-01T05:23:41.096Z age=157.84h
+vite: latest=8.2.1 versions=428 fresh(<24h)=0
+  newest-stable: vite@8.2.1 published=2026-08-06T13:47:48.588Z age=29.44h
+eslint: latest=10.8.0 versions=374 fresh(<24h)=0
+  newest-stable: eslint@10.8.0 published=2026-07-24T20:15:20.693Z age=334.98h
+prettier: latest=3.9.6 versions=165 fresh(<24h)=0
+  newest-stable: prettier@3.9.6 published=2026-07-21T05:51:53.987Z age=421.37h
+zod: latest=4.4.3 versions=290 fresh(<24h)=0
+  newest-stable: zod@4.4.3 published=2026-05-04T07:06:40.819Z age=2292.13h
+nanoid: latest=6.0.1 versions=132 fresh(<24h)=1
+  nanoid@3.3.18  published=2026-08-07T16:41:05.696Z  age=2.55h
+  newest-stable: nanoid@3.3.18 published=2026-08-07T16:41:05.696Z age=2.55h
+tslib: latest=2.8.1 versions=47 fresh(<24h)=0
+  newest-stable: tslib@2.8.1 published=2024-10-31T22:42:48.624Z age=15476.53h
+@biomejs/biome: latest=2.5.7 versions=99 fresh(<24h)=0
+  newest-stable: @biomejs/biome@2.5.7 published=2026-08-04T13:23:52.814Z age=77.84h
+oxlint: latest=1.77.0 versions=200 fresh(<24h)=0
+  newest-stable: oxlint@1.77.0 published=2026-08-03T12:08:03.773Z age=103.10h
+---FRESH_JSON---
+[
+  {
+    "pkg": "@types/node",
+    "v": "26.2.0",
+    "t": "2026-08-07T17:52:06.875Z",
+    "ageH": 1.37027
+  },
+  {
+    "pkg": "nanoid",
+    "v": "3.3.18",
+    "t": "2026-08-07T16:41:05.696Z",
+    "ageH": 2.5539308333333333
+  }
+]
+exit=0
+===== [P3-A] ケースA 生成物の確認 =====
+--- ls -a case-a-exact ---
+.
+..
+node_modules
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+--- pnpm-workspace.yaml ---
+minimumReleaseAgeExclude:
+  - '@types/node@26.2.0'
+--- package.json (after) ---
+{
+  "name": "fixture-case-a-exact",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@types/node": "26.2.0"
+  }
+}
+--- installed version ---
+26.2.0
+--- pnpm-lock.yaml (head 40) ---
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@types/node':
+        specifier: 26.2.0
+        version: 26.2.0
+
+packages:
+
+  '@types/node@26.2.0':
+    resolution: {integrity: sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==}
+
+  undici-types@8.3.0:
+    resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
+snapshots:
+
+  '@types/node@26.2.0':
+    dependencies:
+      undici-types: 8.3.0
+
+  undici-types@8.3.0: {}
+===== [P3-B pre] @types/node 26.x の版と publish 時刻 =====
+26.0.0       2026-06-19T07:14:52.347Z 1188.01h
+26.0.1       2026-06-24T20:33:01.352Z 1054.71h
+26.1.0       2026-07-01T11:04:10.429Z 896.19h
+26.1.1       2026-07-08T06:47:46.733Z 732.47h
+26.1.2       2026-07-27T17:32:14.992Z 265.72h
+26.2.0       2026-08-07T17:52:06.875Z 1.39h
+===== [P4] store v11 / v10 の中身 2026-08-07T19:20:19Z =====
+--- ls -la ~/Library/pnpm/store/v11 ---
+total 120
+drwxr-xr-x@   6 katayamaryuunosuke  staff    192 Aug  8 04:20 .
+drwxr-xr-x@   4 katayamaryuunosuke  staff    128 Aug  8 04:14 ..
+drwxr-xr-x@   3 katayamaryuunosuke  staff     96 Aug  8 04:18 file+fixture-d-child-1.0.0.tgz
+drwxr-xr-x@ 258 katayamaryuunosuke  staff   8256 Aug  8 04:14 files
+-rw-r--r--@   1 katayamaryuunosuke  staff  61440 Aug  8 04:20 index.db
+drwxr-xr-x@  14 katayamaryuunosuke  staff    448 Aug  8 04:20 projects
+--- ls -la ~/Library/pnpm/store/v10 ---
+total 0
+drwxr-xr-x@   8 katayamaryuunosuke  staff   256 Aug  8 04:20 .
+drwxr-xr-x@   4 katayamaryuunosuke  staff   128 Aug  8 04:14 ..
+drwxr-xr-x@   3 katayamaryuunosuke  staff    96 Aug  8 04:20 file+fixture-d-child-1.0.0.tgz
+drwxr-xr-x@ 258 katayamaryuunosuke  staff  8256 Jul 12  2025 files
+drwxr-xr-x@   3 katayamaryuunosuke  staff    96 Aug  8 04:20 https+++codeload.github.com+isaacs+inherits+tar.gz+refs+tags+v2.0.4
+drwxr-xr-x@ 258 katayamaryuunosuke  staff  8256 Jul 12  2025 index
+drwxr-xr-x@   4 katayamaryuunosuke  staff   128 Aug  8 04:17 projects
+drwxr-xr-x@   3 katayamaryuunosuke  staff    96 Aug  8 04:20 tmp
+--- file index.db ---
+/Users/katayamaryuunosuke/Library/pnpm/store/v11/index.db: SQLite 3.x database, last written using SQLite version 3050000, writer version 2, read version 2, file counter 8, database pages 15, cookie 0x2, schema 4, UTF-8, version-valid-for 8
+--- sqlite3 tables ---
+package_index
+--- sqlite3 schema ---
+CREATE TABLE package_index (
+          key TEXT PRIMARY KEY,
+          data BLOB NOT NULL
+        ) WITHOUT ROWID
+      ;
+CREATE TABLE sqlite_stat1(tbl,idx,stat);
+--- row count ---
+Error: in prepare, no such table: files_index
+===== [P4] perf 計測 2026-08-07T19:20:40Z =====
+--- fixture package.json ---
+{ "name": "fixture-perf", "version": "1.0.0", "private": true,
+  "dependencies": { "express": "^5.0.0", "chalk": "^5.0.0", "date-fns": "^4.0.0" } }
+--- pnpm 11.20.0 ---
+pnpm=11.20.0 mode=cold run=1 elapsed_ms=7833 exit=0 store_kb=25048 index_db_bytes=NA pnpm_dirs=70
+pnpm=11.20.0 mode=cold run=2 elapsed_ms=7562 exit=0 store_kb=25048 index_db_bytes=NA pnpm_dirs=70
+pnpm=11.20.0 mode=cold run=3 elapsed_ms=7517 exit=0 store_kb=25044 index_db_bytes=NA pnpm_dirs=70
+pnpm=11.20.0 mode=warm run=1 elapsed_ms=9810 exit=0 store_kb=25044 index_db_bytes=NA pnpm_dirs=70
+pnpm=11.20.0 mode=warm run=2 elapsed_ms=6283 exit=0 store_kb=25044 index_db_bytes=NA pnpm_dirs=70
+pnpm=11.20.0 mode=warm run=3 elapsed_ms=6127 exit=0 store_kb=25044 index_db_bytes=NA pnpm_dirs=70
+--- store-11 layout ---
+/tmp/pnpm11-OSh1ra/store-11
+/tmp/pnpm11-OSh1ra/store-11/v11
+--- ls ---
+/tmp/pnpm11-OSh1ra/store-11:
+total 0
+drwxr-xr-x@  3 katayamaryuunosuke  wheel    96 Aug  8 04:21 .
+drwx------@ 42 katayamaryuunosuke  wheel  1344 Aug  8 04:21 ..
+drwxr-xr-x@  5 katayamaryuunosuke  wheel   160 Aug  8 04:21 v11
+
+/tmp/pnpm11-OSh1ra/store-11/v11:
+total 2360
+drwxr-xr-x@   5 katayamaryuunosuke  wheel      160 Aug  8 04:21 .
+drwxr-xr-x@   3 katayamaryuunosuke  wheel       96 Aug  8 04:21 ..
+drwxr-xr-x@ 258 katayamaryuunosuke  wheel     8256 Aug  8 04:21 files
+-rw-r--r--@   1 katayamaryuunosuke  wheel  1208320 Aug  8 04:21 index.db
+drwxr-xr-x@   3 katayamaryuunosuke  wheel       96 Aug  8 04:21 projects
+===== [P4] index.db 実測 =====
+-rw-r--r--@ 1 katayamaryuunosuke  wheel  1208320 Aug  8 04:21 /tmp/pnpm11-OSh1ra/store-11/v11/index.db
+rows: 68
+sample keys:
+sha512-+1UMbeh68lH1SegH83CGWwpb6OHHbpSgr3+s5Eww5M4CAgswBpoWS0AjTOfEJ33HiYKz1hdj/KTFprzXHmq/6w==	date-fns@4.4.0
+sha512-+ys997U96po4Kx/ABpBCqhA9EuxJaQWDQg7295H4hBphv3IZg0boBKuwYpt4YXp6MZ5AmZQnU/tyMTlRpaSejg==	call-bound@1.0.4
+sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==	math-intrinsics@1.1.0
+sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg==	bytes@3.1.2
+sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==	ipaddr.js@1.9.1
+===== [P4] pnpm 10.13.1 参考計測（ストア形式が違うため直接比較にはしない） =====
+pnpm=10.13.1 mode=cold run=1 elapsed_ms=8467 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+pnpm=10.13.1 mode=cold run=2 elapsed_ms=8751 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+pnpm=10.13.1 mode=cold run=3 elapsed_ms=8328 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+pnpm=10.13.1 mode=warm run=1 elapsed_ms=10714 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+pnpm=10.13.1 mode=warm run=2 elapsed_ms=5891 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+pnpm=10.13.1 mode=warm run=3 elapsed_ms=6228 exit=0 store_kb=25088 index_db_bytes=NA pnpm_dirs=70
+--- pnpm10 store layout ---
+total 0
+drwxr-xr-x@   4 katayamaryuunosuke  wheel   128 Aug  8 04:22 .
+drwxr-xr-x@   3 katayamaryuunosuke  wheel    96 Aug  8 04:22 ..
+drwxr-xr-x@ 258 katayamaryuunosuke  wheel  8256 Aug  8 04:22 files
+drwxr-xr-x@ 258 katayamaryuunosuke  wheel  8256 Aug  8 04:22 index
+--- pnpm10 index/ のファイル数 ---
+      68

@@ -1,0 +1,15 @@
+### 2026-08-07T19:15:48Z cwd=/tmp/pnpm11-OSh1ra/case-b-range
+$ npx --yes pnpm@11.20.0 add @types/node@^26.0.0
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +2
+++
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: /Users/katayamaryuunosuke/Library/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 2, reused 1, downloaded 1, added 2, done
+
+dependencies:
++ @types/node 26.1.2
+
+Done in 1.5s using pnpm v11.20.0
+exit=0 elapsed_ms=3614
