@@ -1,0 +1,28 @@
+✔ add (1.55975ms)
+✔ sub (0.1895ms)
+✔ formatDate (2.398917ms)
+✔ slugify (1.745125ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 90.196667
+ℹ Error: 16.95% line coverage does not meet threshold of 80%.
+ℹ start of coverage report
+ℹ ---------------------------------------------------------------
+ℹ file           | line % | branch % | funcs % | uncovered lines
+ℹ ---------------------------------------------------------------
+ℹ src            |        |          |         | 
+ℹ  add.js        | 100.00 |   100.00 |  100.00 | 
+ℹ  deepMerge.js  |   0.00 |   100.00 |  100.00 | 1-34
+ℹ  formatDate.js | 100.00 |   100.00 |  100.00 | 
+ℹ  parseQuery.js |   0.00 |   100.00 |  100.00 | 1-32
+ℹ  retry.js      |   0.00 |   100.00 |  100.00 | 1-32
+ℹ  slugify.js    | 100.00 |   100.00 |  100.00 | 
+ℹ ---------------------------------------------------------------
+ℹ all files      |  16.95 |   100.00 |  100.00 | 
+ℹ ---------------------------------------------------------------
+ℹ end of coverage report

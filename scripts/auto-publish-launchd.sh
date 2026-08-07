@@ -24,12 +24,33 @@ LOG="$LOG_DIR/auto-publish-$TS.log"
 
 # 既定は本番運用（--auto-merge）。AP_ARGS で上書き可能（例: --dry-run）。
 ARGS="${AP_ARGS:---auto-merge}"
+USAGE_GATE="$REPO/scripts/check-claude-session-usage.sh"
 
 {
   echo "===== auto-publish (launchd) start: $(date) ====="
   echo "PATH=$PATH"
   echo "args: $ARGS"
   echo
+  case " $ARGS " in
+    *" --dry-run "*) echo "Claude usage gate: bypassed for dry-run" ;;
+    *)
+      bash "$USAGE_GATE"
+      usage_rc=$?
+      case "$usage_rc" in
+        0) ;;
+        10)
+          echo "RESULT: skipped (Claude five-hour remaining allowance is 80% or lower)"
+          echo "===== auto-publish (launchd) end: $(date) exit=0 ====="
+          exit 0
+          ;;
+        *)
+          echo "RESULT: skipped (Claude usage could not be verified safely)"
+          echo "===== auto-publish (launchd) end: $(date) exit=0 ====="
+          exit 0
+          ;;
+      esac
+      ;;
+  esac
   # shellcheck disable=SC2086
   bash "$REPO/scripts/auto-publish.sh" $ARGS
   rc=$?
