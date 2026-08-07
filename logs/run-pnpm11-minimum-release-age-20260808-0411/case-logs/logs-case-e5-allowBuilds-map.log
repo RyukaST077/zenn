@@ -1,0 +1,17 @@
+### 2026-08-07T19:24:10Z cwd=/tmp/pnpm11-OSh1ra/case-e-builds
+$ npx --yes pnpm@11.20.0 install --no-color
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +2
+++
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: /Users/katayamaryuunosuke/Library/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 27, reused 2, downloaded 0, added 2, done
+.../esbuild@0.28.1/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.1/node_modules/esbuild postinstall: Done
+
+dependencies:
++ esbuild 0.28.1
+
+Done in 2.3s using pnpm v11.20.0
+exit=0 elapsed_ms=4784

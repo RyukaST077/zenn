@@ -1,0 +1,32 @@
+### 2026-08-07T19:23:38Z cwd=/tmp/pnpm11-OSh1ra/case-e-builds
+$ npx --yes pnpm@11.20.0 run hello --no-color
+✓ Lockfile passes supply-chain policies (verified 3s ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +2
+++
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: /Users/katayamaryuunosuke/Library/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 2, reused 2, downloaded 0, added 2, done
+
+dependencies:
++ esbuild 0.28.1
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.28.1
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+[ERROR] Command failed with exit code 1: pnpm install
+
+pnpm: Command failed with exit code 1: pnpm install
+    at getFinalError (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:89001:14)
+    at makeError (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:91308:21)
+    at getSyncResult (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:93152:10)
+    at spawnSubprocessSync (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:93112:14)
+    at execaCoreSync (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:93042:23)
+    at callBoundExeca (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:95570:23)
+    at boundExeca (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:95547:49)
+    at sync2 (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:95702:14)
+    at runPnpmCli (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:252538:5)
+    at runDepsStatusCheck (file:///Users/katayamaryuunosuke/.npm/_npx/90ee57dca4845993/node_modules/pnpm/dist/pnpm.mjs:254302:7)
+exit=1 elapsed_ms=4200

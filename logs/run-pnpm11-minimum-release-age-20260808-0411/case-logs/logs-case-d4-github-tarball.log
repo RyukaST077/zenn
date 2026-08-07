@@ -1,0 +1,7 @@
+### 2026-08-07T19:19:45Z cwd=/tmp/pnpm11-OSh1ra/case-d-exotic4
+$ npx --yes pnpm@11.20.0 install --no-color
+Progress: resolved 0, reused 0, downloaded 1, added 0
+[ERR_PNPM_EXOTIC_SUBDEP] Exotic dependency "inherits" (resolved via url) is not allowed in subdependencies when blockExoticSubdeps is enabled
+
+This error happened while installing the dependencies of fixture-d-child@1.0.0
+exit=1 elapsed_ms=3496
