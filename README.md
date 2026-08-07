@@ -137,6 +137,13 @@ resume は `state.sh` を読み、**完了済みの段をスキップして失�
 
 多重起動はロック（`.auto-publish.lock`）で防止されるため、前回が長引いていても安全。
 
+### launchd実行時のClaude利用率ゲート
+
+`scripts/auto-publish-launchd.sh` は開始前にClaude.aiの5時間枠を確認する。残り利用可能量が
+80%以下なら正常なスキップ（exit 0）として終了し、記事生成やPR作成を開始しない。利用率を
+取得できない場合も、上限保護を優先してスキップする。しきい値は
+`CLAUDE_USAGE_MIN_REMAINING_PERCENT` で変更でき、`--dry-run` ではゲートを通さない。
+
 ## auto-publish-codex.sh の使い方（Codex 版）
 
 Claude 版と同じ「調査 → 実践 → 執筆 → レビュー → 公開準備 → PR」を **OpenAI Codex CLI** で

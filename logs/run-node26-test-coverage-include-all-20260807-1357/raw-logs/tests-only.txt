@@ -1,0 +1,12 @@
+✔ add (0.762667ms)
+✔ sub (0.08575ms)
+✔ formatDate (1.835041ms)
+✔ slugify (0.495ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 79.261792
