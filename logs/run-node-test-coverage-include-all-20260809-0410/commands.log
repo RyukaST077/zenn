@@ -1,0 +1,505 @@
+################################################################
+### workspace/results/env.txt
+################################################################
+=== date ===
+Sun Aug  9 04:10:49 JST 2026
+=== sw_vers ===
+26.5
+=== uname -m ===
+arm64
+=== node 26.7 ===
+v26.7.0
+=== node 26.5 ===
+v26.5.0
+
+################################################################
+### workspace/results/help-26.7.txt
+################################################################
+  --experimental-test-coverage
+                              enable code coverage in the test runner
+  --test-coverage-branches=...
+                              the branch coverage minimum threshold
+  --test-coverage-exclude=... exclude files from coverage report that
+  --test-coverage-functions=...
+                              the function coverage minimum threshold
+  --test-coverage-include=... include files in coverage report that
+  --test-coverage-include-all include source files that were never
+                              loaded in the coverage report
+  --test-coverage-lines=...   the line coverage minimum threshold
+NODE_V8_COVERAGE            directory to output v8 coverage JSON to
+
+################################################################
+### workspace/results/help-26.5.txt
+################################################################
+  --experimental-test-coverage
+                              enable code coverage in the test runner
+  --test-coverage-branches=...
+                              the branch coverage minimum threshold
+  --test-coverage-exclude=... exclude files from coverage report that
+  --test-coverage-functions=...
+                              the function coverage minimum threshold
+  --test-coverage-include=... include files in coverage report that
+  --test-coverage-lines=...   the line coverage minimum threshold
+NODE_V8_COVERAGE            directory to output v8 coverage JSON to
+
+################################################################
+### workspace/results/tree.txt
+################################################################
+./package.json
+./results/env.txt
+./results/help-26.5.txt
+./results/help-26.7.txt
+./results/tree.txt
+./src/dead-branch.js
+./src/format.js
+./src/greet.js
+./src/legacy-report.js
+./test/greet.test.js
+
+################################################################
+### workspace/results/loc.txt
+################################################################
+      24 src/dead-branch.js
+      11 src/format.js
+       8 src/greet.js
+      13 src/legacy-report.js
+      11 test/greet.test.js
+      67 total
+
+################################################################
+### workspace/results/00-plain-test.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (2.080125ms)
+✔ 名前が空なら world にする (0.378ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 242.202917
+
+################################################################
+### workspace/results/A-baseline.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (1.257584ms)
+✔ 名前が空なら world にする (0.166375ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 287.306125
+ℹ start of coverage report
+ℹ -----------------------------------------------------------
+ℹ file       | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------
+ℹ src        |        |          |         | 
+ℹ  format.js |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js  | 100.00 |   100.00 |  100.00 | 
+ℹ -----------------------------------------------------------
+ℹ all files  |  78.95 |    83.33 |   66.67 | 
+ℹ -----------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/B-include.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (2.771833ms)
+✔ 名前が空なら world にする (0.157375ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 236.276708
+ℹ start of coverage report
+ℹ -----------------------------------------------------------
+ℹ file       | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------
+ℹ src        |        |          |         | 
+ℹ  format.js |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js  | 100.00 |   100.00 |  100.00 | 
+ℹ -----------------------------------------------------------
+ℹ all files  |  78.95 |    83.33 |   66.67 | 
+ℹ -----------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/C-include-all.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (2.784ms)
+✔ 名前が空なら world にする (0.306292ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 305.71175
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/D-include-all-only.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (2.614958ms)
+✔ 名前が空なら world にする (0.314417ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 280.96975
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/E-node26.5.txt
+################################################################
+/Users/katayamaryuunosuke/.nvm/versions/node/v26.5.0/bin/node: bad option: --test-coverage-include-all
+E exit=9
+
+################################################################
+### workspace/results/D2-cwd-scan.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (1.897667ms)
+✔ 名前が空なら world にする (0.305584ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.699916
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ scripts           |        |          |         | 
+ℹ  tool.js          |   0.00 |   100.00 |  100.00 | 1-3
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ stray-root.js     |   0.00 |   100.00 |  100.00 | 1-3
+ℹ ------------------------------------------------------------------
+ℹ all files         |  24.19 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/C2-include-filters-stray.txt
+################################################################
+✔ 名前があれば先頭を大文字にして挨拶する (2.702959ms)
+✔ 名前が空なら world にする (0.333792ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 296.667166
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+
+################################################################
+### workspace/results/F-noquote.txt
+################################################################
+$ node --test --experimental-test-coverage --test-coverage-include=src/** --test-coverage-include-all   # zsh, クォート無し
+zsh:1: no matches found: --test-coverage-include=src/**
+exit=1
+
+$ bash -c "... --test-coverage-include=src/** ..."   # bash, クォート無し
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=0
+
+################################################################
+### workspace/results/G-threshold.txt
+################################################################
+### B + --test-coverage-lines=80 (include-all なし)
+ℹ start of coverage report
+ℹ -----------------------------------------------------------
+ℹ file       | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------
+ℹ src        |        |          |         | 
+ℹ  format.js |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js  | 100.00 |   100.00 |  100.00 | 
+ℹ -----------------------------------------------------------
+ℹ all files  |  78.95 |    83.33 |   66.67 | 
+ℹ -----------------------------------------------------------
+ℹ end of coverage report
+exit=1
+
+### C + --test-coverage-lines=80 (include-all あり)
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=1
+
+### C + --test-coverage-lines=26 (26.79% なので通るはず)
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=0
+
+### C + --test-coverage-lines=27 (26.79% なので落ちるはず)
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=1
+
+################################################################
+### workspace/results/H-threshold70-full.txt
+################################################################
+### B + --test-coverage-lines=70 （B は 78.95% なので通るはず）【出力全文】
+✔ 名前があれば先頭を大文字にして挨拶する (1.258125ms)
+✔ 名前が空なら world にする (0.152167ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 265.267625
+ℹ start of coverage report
+ℹ -----------------------------------------------------------
+ℹ file       | line % | branch % | funcs % | uncovered lines
+ℹ -----------------------------------------------------------
+ℹ src        |        |          |         | 
+ℹ  format.js |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js  | 100.00 |   100.00 |  100.00 | 
+ℹ -----------------------------------------------------------
+ℹ all files  |  78.95 |    83.33 |   66.67 | 
+ℹ -----------------------------------------------------------
+ℹ end of coverage report
+exit=0
+
+================================================================
+### C + --test-coverage-lines=70 （C は 26.79% なので落ちるはず）【出力全文】
+✔ 名前があれば先頭を大文字にして挨拶する (2.489ms)
+✔ 名前が空なら world にする (0.317834ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 278.490333
+ℹ Error: 26.79% line coverage does not meet threshold of 70%.
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=1
+
+################################################################
+### workspace/results/I-c8-install.txt
+################################################################
+
+added 55 packages, and audited 56 packages in 6s
+
+18 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+elapsed: 9s
+
+################################################################
+### workspace/results/J-c8-compare.txt
+################################################################
+### c8 の実バージョン
+12.0.0
+
+### npx c8 node --test （--all なし）
+✔ 名前があれば先頭を大文字にして挨拶する (1.850084ms)
+✔ 名前が空なら world にする (0.213875ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 297.336709
+-----------|---------|----------|---------|---------|-------------------
+File       | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------|---------|----------|---------|---------|-------------------
+All files  |   78.94 |    83.33 |   66.66 |   78.94 |                   
+ format.js |   63.63 |    66.66 |      50 |   63.63 | 4-5,10-11         
+ greet.js  |     100 |      100 |     100 |     100 |                   
+-----------|---------|----------|---------|---------|-------------------
+exit=0
+
+================================================================
+### npx c8 --all node --test （--all あり）
+✔ 名前があれば先頭を大文字にして挨拶する (2.071917ms)
+✔ 名前が空なら world にする (0.356042ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 265.075292
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |   26.78 |     62.5 |      40 |   26.78 |                   
+ dead-branch.js   |       0 |        0 |       0 |       0 | 1-24              
+ format.js        |   63.63 |    66.66 |      50 |   63.63 | 4-5,10-11         
+ greet.js         |     100 |      100 |     100 |     100 |                   
+ legacy-report.js |       0 |        0 |       0 |       0 | 1-13              
+------------------|---------|----------|---------|---------|-------------------
+exit=0
+
+################################################################
+### workspace/results/K-branch-funcs.txt
+################################################################
+### K-1: node_modules/ がある状態で include-all だけ（既定除外が効くか）
+node_modules 内の js ファイル数: 280
+ℹ start of coverage report
+ℹ ------------------------------------------------------------------
+ℹ file              | line % | branch % | funcs % | uncovered lines
+ℹ ------------------------------------------------------------------
+ℹ src               |        |          |         | 
+ℹ  dead-branch.js   |   0.00 |   100.00 |  100.00 | 1-24
+ℹ  format.js        |  63.64 |    66.67 |   50.00 | 4-5 10-11
+ℹ  greet.js         | 100.00 |   100.00 |  100.00 | 
+ℹ  legacy-report.js |   0.00 |   100.00 |  100.00 | 1-13
+ℹ ------------------------------------------------------------------
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+ℹ ------------------------------------------------------------------
+ℹ end of coverage report
+exit=0
+
+================================================================
+### K-2: funcs しきい値 60% を B と C にかける（include-all で funcs は下がるのか）
+--- B (include-all なし) + --test-coverage-functions=60
+ℹ all files  |  78.95 |    83.33 |   66.67 | 
+exit=0
+--- C (include-all あり) + --test-coverage-functions=60
+ℹ all files         |  26.79 |    83.33 |   66.67 | 
+exit=0
+
+### K-3: 参考 — c8 --all で同じ 60% しきい値
+✔ 名前が空なら world にする (0.135625ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 300.365208
+------------------|---------|----------|---------|---------|-------------------
+File              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+------------------|---------|----------|---------|---------|-------------------
+All files         |   26.78 |     62.5 |      40 |   26.78 |                   
+ dead-branch.js   |       0 |        0 |       0 |       0 | 1-24              
+ format.js        |   63.63 |    66.66 |      50 |   63.63 | 4-5,10-11         
+ greet.js         |     100 |      100 |     100 |     100 |                   
+ legacy-report.js |       0 |        0 |       0 |       0 | 1-13              
+------------------|---------|----------|---------|---------|-------------------
+ERROR: Coverage for lines (26.78%) does not meet global threshold (90%)
+ERROR: Coverage for functions (40%) does not meet global threshold (60%)
+exit=1
+
