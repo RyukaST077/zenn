@@ -1,0 +1,10 @@
+{"type":"thread.started","thread_id":"019ff272-6c76-7a01-958f-2b3cacae4d39"}
+{"type":"item.completed","item":{"id":"item_0","type":"error","message":"`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."}}
+{"type":"item.completed","item":{"id":"item_1","type":"error","message":"`--dangerously-bypass-hook-trust` is enabled. Enabled hooks may run without review for this invocation."}}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"I’ll make the single requested execution attempt and then report its outcome."}}
+{"type":"item.started","item":{"id":"item_3","type":"command_execution","command":"/bin/zsh -lc 'node write-marker.mjs'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_3","type":"command_execution","command":"/bin/zsh -lc 'node write-marker.mjs'","aggregated_output":"","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_4","type":"agent_message","text":"It ran successfully with exit code 0."}}
+{"type":"turn.completed","usage":{"input_tokens":30710,"cached_input_tokens":19968,"cache_write_input_tokens":0,"output_tokens":139,"reasoning_output_tokens":0}}
+

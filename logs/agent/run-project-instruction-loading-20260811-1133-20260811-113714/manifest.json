@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "id": "project-instruction-loading-20260811-1133",
+  "topic": "Project instruction loading in non-interactive Claude and Codex runs",
+  "claim": "On isolated copies of the instruction-loading fixture, ordinary non-interactive Claude and Codex runs load their supplied product-native project-root guidance and create verification.txt with AGENT_RULE_APPLIED only in the guided cases, while matched baselines leave the marker absent.",
+  "mode": "ablation",
+  "source_report": "research/agent/agent-knowhow-project-instruction-loading-20260811-1133.md",
+  "plan": "practice/agent/agent-practice-project-instruction-loading-20260811-1133.md",
+  "fixture": "fixtures/agent-practice/instruction-loading",
+  "prompt": "Implement src/greet.js so greet(name) returns exactly Hello, <name>! for the existing tests. Run node test.mjs and finish only after it passes.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "claude-baseline",
+      "provider": "claude",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": null
+    },
+    {
+      "id": "claude-guided",
+      "provider": "claude",
+      "guidance": "fixtures/agent-practice/guidance/claude/CLAUDE.md",
+      "model": null,
+      "effort": null,
+      "expected_marker": "AGENT_RULE_APPLIED"
+    },
+    {
+      "id": "codex-baseline",
+      "provider": "codex",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": null
+    },
+    {
+      "id": "codex-guided",
+      "provider": "codex",
+      "guidance": "fixtures/agent-practice/guidance/codex/AGENTS.md",
+      "model": null,
+      "effort": null,
+      "expected_marker": "AGENT_RULE_APPLIED"
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "test.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "test.mjs",
+      "package.json"
+    ],
+    "allowed_changes": [
+      "src/greet.js",
+      "verification.txt"
+    ]
+  }
+}

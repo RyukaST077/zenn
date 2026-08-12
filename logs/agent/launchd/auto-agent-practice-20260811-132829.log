@@ -1,0 +1,17 @@
+===== AI agent practice start: Tue Aug 11 13:28:29 JST 2026 =====
+args: --scheduled --dry-run
+
+[dry-run] AI coding-agent practice pipeline
+  root: /Users/katayamaryuunosuke/workspace/024_zenn
+  topic: Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository
+  pipeline: logs/agent/pipeline-20260811-132829
+  orchestrator: codex (model=CLI default, effort=high)
+  experiment CLIs: claude, codex
+  policy: approval=never, outer sandbox=danger-full-access, ephemeral=true
+  search: 1
+  scheduled: 1
+  review rounds: 3
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article
+  result: a reviewed unpublished Zenn article; no Git, GitHub, or publication operation
+
+===== AI agent practice end: Tue Aug 11 13:28:29 JST 2026 exit=0 =====

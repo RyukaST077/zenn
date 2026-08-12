@@ -1,0 +1,24 @@
+{
+  "executable": "codex",
+  "args": [
+    "-a",
+    "never",
+    "exec",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--dangerously-bypass-hook-trust",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "-C",
+    "$RUN_WORKSPACE/generic-stop-fail-open",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "--json",
+    "-o",
+    "$HOME/workspace/024_zenn/logs/agent/run-codex-pretooluse-fail-open-20260812-0503-20260812-051000/generic-stop-fail-open/result.txt",
+    "Use the command-execution tool exactly once to run `node write-marker.mjs`. Do not use any other tool, command, edit, or alternate way to create `effect.txt`. After that single attempt, stop and report whether it ran."
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

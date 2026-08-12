@@ -1,0 +1,1 @@
+It ran successfully with exit code 0.

@@ -1,0 +1,22 @@
+{
+  "id": "codex-guided",
+  "provider": "codex",
+  "provider_version": "codex-cli 0.147.0",
+  "guidance": "fixtures/agent-practice/guidance/codex/AGENTS.md",
+  "model_override": null,
+  "effort_override": null,
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 27697,
+  "verifier_exit_code": 0,
+  "marker_expected": "AGENT_RULE_APPLIED",
+  "marker_observed": "AGENT_RULE_APPLIED",
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "src/greet.js",
+    "verification.txt"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}

@@ -1,0 +1,21 @@
+{
+  "id": "codex-baseline",
+  "provider": "codex",
+  "provider_version": "codex-cli 0.147.0",
+  "guidance": null,
+  "model_override": null,
+  "effort_override": null,
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 24339,
+  "verifier_exit_code": 0,
+  "marker_expected": null,
+  "marker_observed": null,
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "src/greet.js"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}

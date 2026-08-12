@@ -1,0 +1,22 @@
+{
+  "id": "claude-guided",
+  "provider": "claude",
+  "provider_version": "2.1.227 (Claude Code)",
+  "guidance": "fixtures/agent-practice/guidance/claude/CLAUDE.md",
+  "model_override": null,
+  "effort_override": null,
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 18430,
+  "verifier_exit_code": 0,
+  "marker_expected": "AGENT_RULE_APPLIED",
+  "marker_observed": "AGENT_RULE_APPLIED",
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "src/greet.js",
+    "verification.txt"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}

@@ -1,0 +1,45 @@
+# 実行したコマンド一覧（2026-08-12 16:03〜16:08 JST / cwd = workspace/）
+# 各コマンドの生出力は workspace/results/*.txt に全文保存済み。
+
+## 共通プレフィックス
+export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 26.7.0
+
+## フェーズ1: 事前調査
+curl -sS https://raw.githubusercontent.com/nodejs/node/v26.7.0/doc/api/test.md -o /tmp/test-doc.md   # http=200 size=166227
+grep -n "context.log\|test:log" /tmp/test-doc.md
+curl -sS https://raw.githubusercontent.com/nodejs/node/main/doc/changelogs/CHANGELOG_V26.md -o /tmp/chg26.md   # http=200
+grep -n "64389\|26.6.0" /tmp/chg26.md
+curl -sS "https://api.github.com/repos/nodejs/node/pulls/64389" -o /tmp/pr64389.json   # http=200
+# → results/doc-excerpts.md, results/nodejs-v26.7.0-doc-test.md
+
+## フェーズ2: 環境構築
+mkdir -p logs/run-node-test-context-log-20260812-1603/{workspace,screenshots}
+mkdir -p workspace/{results,reporters}
+echo '{"type":"module"}' > package.json
+node -v; sw_vers -productVersion; uname -m            # → results/env.txt
+node --test --test-reporter=spec probe.test.mjs       # → results/reporter-spec.txt   exit=0
+nvm use 26.5.0
+node --test --test-reporter=spec probe.test.mjs       # → results/fail-26.5.txt       exit=1 (TypeError: t.log is not a function)
+
+## フェーズ3: 本編
+nvm use 26.7.0
+node --test --test-reporter=tap probe.test.mjs        # → results/reporter-tap.txt    exit=0
+node --test --test-reporter=dot probe.test.mjs        # → results/reporter-dot.txt    exit=0
+node --test --test-reporter=reporters/dump.mjs probe.test.mjs      # exit=7 ERR_MODULE_NOT_FOUND（./ 無し）
+node --test --test-reporter=./reporters/dump.mjs probe.test.mjs    # exit=0
+for f in probe tree suite conc data entry; do node --test --test-reporter=./reporters/dump.mjs $f.test.mjs >> results/events.jsonl; done   # 76行
+node field-diff.mjs                                   # → results/field-diff.md
+node --test --test-reporter=./reporters/inspect.mjs data.test.mjs                        # → results/data-payload.txt
+node --test --test-isolation=none --test-reporter=./reporters/inspect.mjs data.test.mjs  # → results/data-payload.txt
+node --test --test-reporter=spec data-fn.test.mjs        # exit=1 Error: () => 'nope' could not be cloned.
+node --test --test-reporter=spec data-circular.test.mjs  # exit=1 Error: Unable to deserialize cloned data.
+node --test --test-isolation=none --test-reporter=spec data-circular.test.mjs   # exit=0
+                                                      # → results/data-payload-errors.txt
+node --test --test-reporter=spec conc.test.mjs                  # → results/concurrency.txt (before)
+node --test --test-reporter=./reporters/group.mjs conc.test.mjs # → results/attribution.md (after)
+
+## フェーズ4: 深掘り
+node --test --test-reporter=./reporters/dump.mjs entry.test.mjs                        # → results/entryfile.txt
+node --test --test-isolation=none --test-reporter=./reporters/dump.mjs entry.test.mjs  # → results/entryfile.txt (entryFile が付かない)
+node --test --test-reporter=./reporters/dump.mjs probe.test.mjs                        # → results/parentid-check.txt
+(cd /tmp/nomodule && node --test --test-reporter=spec probe.test.js)                   # → results/type-module.txt (警告のみで通る)
