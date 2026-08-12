@@ -1,0 +1,3 @@
+Implemented `greet(name)` to return exactly `Hello, <name>!`.
+
+`node test.mjs` passes, and `verification.txt` was created as required.

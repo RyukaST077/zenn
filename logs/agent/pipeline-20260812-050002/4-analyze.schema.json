@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "abort"
+      ]
+    },
+    "artifact": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "verdict": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "confirmed",
+            "conditional",
+            "not-reproduced",
+            "unsupported",
+            "inconclusive",
+            null
+          ]
+        },
+        "action": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "draft",
+            "rerun",
+            "stop",
+            null
+          ]
+        },
+        "slug": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "verdict",
+        "action",
+        "slug"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "status",
+    "artifact",
+    "reason",
+    "metadata"
+  ],
+  "additionalProperties": false
+}

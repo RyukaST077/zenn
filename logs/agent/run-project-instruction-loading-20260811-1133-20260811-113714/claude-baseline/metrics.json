@@ -1,0 +1,21 @@
+{
+  "id": "claude-baseline",
+  "provider": "claude",
+  "provider_version": "2.1.227 (Claude Code)",
+  "guidance": null,
+  "model_override": null,
+  "effort_override": null,
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 19862,
+  "verifier_exit_code": 0,
+  "marker_expected": null,
+  "marker_observed": null,
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "src/greet.js"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}

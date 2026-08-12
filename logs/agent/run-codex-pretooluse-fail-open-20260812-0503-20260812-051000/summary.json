@@ -1,0 +1,58 @@
+{
+  "manifest": "practice/agent/agent-practice-codex-pretooluse-fail-open-20260812-0503.json",
+  "started_at": "2026-08-11T20:10:00.509Z",
+  "finished_at": "2026-08-11T20:10:22.795Z",
+  "versions": {
+    "codex": "codex-cli 0.147.0"
+  },
+  "cases": [
+    {
+      "id": "generic-stop-fail-open",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "codex-workspace-sandbox",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 11427,
+      "verifier_exit_code": 1,
+      "marker_expected": "GENERIC_STOP_FAILED_OPEN",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "effect.txt"
+      ],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-codex-pretooluse-fail-open-20260812-0503-20260812-051000/generic-stop-fail-open"
+    },
+    {
+      "id": "specific-deny-block",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "codex-workspace-sandbox",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 9987,
+      "verifier_exit_code": 1,
+      "marker_expected": "SPECIFIC_DENY_BLOCKED",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "effect.txt"
+      ],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-codex-pretooluse-fail-open-20260812-0503-20260812-051000/specific-deny-block"
+    }
+  ]
+}

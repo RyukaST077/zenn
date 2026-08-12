@@ -1,0 +1,23 @@
+{
+  "executable": "codex",
+  "args": [
+    "-a",
+    "never",
+    "exec",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "-C",
+    "$RUN_WORKSPACE/codex-baseline",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "--json",
+    "-o",
+    "$HOME/workspace/024_zenn/logs/agent/run-project-instruction-loading-20260811-1133-20260811-113714/codex-baseline/result.txt",
+    "Implement src/greet.js so greet(name) returns exactly Hello, <name>! for the existing tests. Run node test.mjs and finish only after it passes."
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

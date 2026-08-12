@@ -1,0 +1,18 @@
+{
+  "executable": "claude",
+  "args": [
+    "-p",
+    "Implement src/greet.js so greet(name) returns exactly Hello, <name>! for the existing tests. Run node test.mjs and finish only after it passes.",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--no-session-persistence",
+    "--setting-sources",
+    "project",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Read,Edit,Write,Bash"
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

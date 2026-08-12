@@ -1,0 +1,17 @@
+diff --git a$RUN_WORKSPACE/claude-guided-input/src/greet.js b$RUN_WORKSPACE/claude-guided/src/greet.js
+index af9adb5..a106507 100644
+--- a$RUN_WORKSPACE/claude-guided-input/src/greet.js
++++ b$RUN_WORKSPACE/claude-guided/src/greet.js
+@@ -1,3 +1,3 @@
+ export function greet(name) {
+-  throw new Error(`TODO: greet ${name}`);
++  return `Hello, ${name}!`;
+ }
+diff --git a$RUN_WORKSPACE/claude-guided/verification.txt b$RUN_WORKSPACE/claude-guided/verification.txt
+new file mode 100644
+index 0000000..e3fe3a7
+--- /dev/null
++++ b$RUN_WORKSPACE/claude-guided/verification.txt
+@@ -0,0 +1 @@
++AGENT_RULE_APPLIED
+\ No newline at end of file
