@@ -1,0 +1,23 @@
+{
+  "id": "specific-deny-block",
+  "provider": "codex",
+  "provider_version": "codex-cli 0.147.0",
+  "guidance": null,
+  "model_override": null,
+  "effort_override": null,
+  "network_requested": false,
+  "network_enforcement": "codex-workspace-sandbox",
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 9987,
+  "verifier_exit_code": 1,
+  "marker_expected": "SPECIFIC_DENY_BLOCKED",
+  "marker_observed": null,
+  "marker_matches": false,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "effect.txt"
+  ],
+  "unexpected_changes": [],
+  "passed": false
+}

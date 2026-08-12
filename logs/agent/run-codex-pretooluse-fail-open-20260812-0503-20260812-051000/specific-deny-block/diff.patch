@@ -1,0 +1,8 @@
+diff --git a$RUN_WORKSPACE/specific-deny-block/effect.txt b$RUN_WORKSPACE/specific-deny-block/effect.txt
+new file mode 100644
+index 0000000..524013a
+--- /dev/null
++++ b$RUN_WORKSPACE/specific-deny-block/effect.txt
+@@ -0,0 +1 @@
++TOOL_RAN
+\ No newline at end of file

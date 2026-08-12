@@ -1,0 +1,9 @@
+diff --git a$RUN_WORKSPACE/codex-baseline-input/src/greet.js b$RUN_WORKSPACE/codex-baseline/src/greet.js
+index af9adb5..a106507 100644
+--- a$RUN_WORKSPACE/codex-baseline-input/src/greet.js
++++ b$RUN_WORKSPACE/codex-baseline/src/greet.js
+@@ -1,3 +1,3 @@
+ export function greet(name) {
+-  throw new Error(`TODO: greet ${name}`);
++  return `Hello, ${name}!`;
+ }

@@ -1,0 +1,101 @@
+{
+  "manifest": "practice/agent/agent-practice-project-instruction-loading-20260811-1133.json",
+  "started_at": "2026-08-11T02:37:14.900Z",
+  "finished_at": "2026-08-11T02:38:46.787Z",
+  "versions": {
+    "claude": "2.1.227 (Claude Code)",
+    "codex": "codex-cli 0.147.0"
+  },
+  "cases": [
+    {
+      "id": "claude-baseline",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 19862,
+      "verifier_exit_code": 0,
+      "marker_expected": null,
+      "marker_observed": null,
+      "marker_matches": true,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "src/greet.js"
+      ],
+      "unexpected_changes": [],
+      "passed": true,
+      "evidence": "logs/agent/run-project-instruction-loading-20260811-1133-20260811-113714/claude-baseline"
+    },
+    {
+      "id": "claude-guided",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "guidance": "fixtures/agent-practice/guidance/claude/CLAUDE.md",
+      "model_override": null,
+      "effort_override": null,
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 18430,
+      "verifier_exit_code": 0,
+      "marker_expected": "AGENT_RULE_APPLIED",
+      "marker_observed": "AGENT_RULE_APPLIED",
+      "marker_matches": true,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "src/greet.js",
+        "verification.txt"
+      ],
+      "unexpected_changes": [],
+      "passed": true,
+      "evidence": "logs/agent/run-project-instruction-loading-20260811-1133-20260811-113714/claude-guided"
+    },
+    {
+      "id": "codex-baseline",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 24339,
+      "verifier_exit_code": 0,
+      "marker_expected": null,
+      "marker_observed": null,
+      "marker_matches": true,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "src/greet.js"
+      ],
+      "unexpected_changes": [],
+      "passed": true,
+      "evidence": "logs/agent/run-project-instruction-loading-20260811-1133-20260811-113714/codex-baseline"
+    },
+    {
+      "id": "codex-guided",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "guidance": "fixtures/agent-practice/guidance/codex/AGENTS.md",
+      "model_override": null,
+      "effort_override": null,
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 27697,
+      "verifier_exit_code": 0,
+      "marker_expected": "AGENT_RULE_APPLIED",
+      "marker_observed": "AGENT_RULE_APPLIED",
+      "marker_matches": true,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "src/greet.js",
+        "verification.txt"
+      ],
+      "unexpected_changes": [],
+      "passed": true,
+      "evidence": "logs/agent/run-project-instruction-loading-20260811-1133-20260811-113714/codex-guided"
+    }
+  ]
+}
