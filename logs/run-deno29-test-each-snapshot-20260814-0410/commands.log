@@ -1,0 +1,1308 @@
+########## workspace/logs/00-before-versions.txt ##########
+=== date: Fri Aug 14 04:11:15 JST 2026 ===
+deno 2.8.3 (stable, release, aarch64-apple-darwin)
+v8 14.9.207.2-rusty
+typescript 6.0.3
+--- which -a deno ---
+/opt/homebrew/bin/deno
+--- node ---
+v22.17.0
+--- npm ---
+10.9.2
+--- os ---
+ProductName:		macOS
+ProductVersion:		26.5
+BuildVersion:		25F71
+arm64
+
+########## workspace/logs/01-deno-upgrade.txt ##########
+$ deno upgrade
+[0m[1m[31merror[0m: This deno was built without the "upgrade" feature. Please upgrade using the installation method originally used to install Deno.
+exit=1
+
+########## workspace/logs/01b-brew-upgrade.txt ##########
+$ brew update && brew upgrade deno
+==> Updating Homebrew...
+==> Downloading https://ghcr.io/v2/homebrew/core/portable-ruby/blobs/sha256:83a3ff85d83acf0e3dd8105de0fdb01da96b7c0eaf2dfaae2ba6500ec2ae4a64
+#=#=#                                                                                                                                                     0.1%                                                                           0.5%#                                                                          1.9%####                                                                       5.6%##########                                                                14.8%##########################                                                36.2%############################################################              84.4%######################################################################## 100.0%
+==> Pouring portable-ruby-4.0.6.arm64_big_sur.bottle.tar.gz
+Updated 3 taps (supabase/tap, homebrew/core and homebrew/cask).
+==> New Formulae
+advai-cli: CLI for managing skills and external CLIs
+apm: Dependency manager for AI agent configuration
+b4n: Terminal user interface (TUI) for Kubernetes API written in Rust
+baml: Programming language for agents
+bismark: Bisulfite read mapper and methylation caller
+bittensor: SDK and command-line tool for the Bittensor network
+bluetuith: Cross-platform TUI bluetooth manager
+bracken: Bayesian estimation of species abundance from Kraken output
+checksec: Security feature auditing for ELF binaries and Linux kernels
+chopper: Filter and trim long-read sequencing data by quality and length
+cliphist: Wayland clipboard manager with support for multimedia
+cyclonedx-npm: Creates CycloneDX Software Bill of Materials (SBOM) from npm projects
+deepline: CLI for Deepline data enrichment and durable plays
+delly: Structural variant discovery by paired-end and split-read analysis
+dnsglobe: Global DNS propagation checker TUI
+droast: Opinionated Dockerfile linter
+dskditto: Ultra-fast duplicate file finder TUI/GUI
+esbmc: Efficient SMT-based context-bounded model checker for C, C++, and Python
+evnx: Comprehensive CLI tool for managing .env files
+faker: Python-based fake data generator
+fanficfare: Download fanfiction and original stories as e-books
+fastani: Fast whole-genome similarity (ANI) estimation
+flite: Small fast and portable speech synthesis system
+fluxcd: Open and extensible continuous delivery solution for Kubernetes
+flyline: Supercharged Bash plugin replacement for readline
+fusesoc: Package manager and build abstraction tool for HDL code
+gcx: CLI for managing Grafana Cloud resources
+git-pkgs-brief: Tool that detects and reports a project's toolchain, configuration, and more
+git-pkgs-forge: Go library and CLI for working with git forges
+git-pkgs-proxy: Lightweight caching proxy for package registries
+gita: Manage multiple git repos with sanity
+godns: Dynamic DNS client with multiple providers support
+gof5: F5 BIG-IP VPN client
+goimapnotify: Execute scripts on IMAP mailbox changes using IDLE
+gss-ntlmssp: NTLM authentication plugin for GSSAPI
+honker: SQLite message queue extension
+httpx2: HTTP client library for Python
+humanbound: Adversarial security testing engine, SDK, and CLI for AI agents
+kata: Local-first, federated issue tracker for humans and coding agents
+kiesel: JavaScript engine written in Zig
+lazy-tmux: Save all your tmux sessions and lazy restore them
+lazyrsync: Terminal UI for rsync, written in Rust
+lfk: Terminal user interface for navigating and managing Kubernetes clusters
+libjaylink: Provide interoperability with JLINK hardware
+libyang: YANG data modeling language library
+libyojimbo: Secure client/server network protocol library for multiplayer games
+lief-patchelf: Robust, modern reimplementation of patchelf based on the LIEF
+livebook-cli: Code notebooks for Elixir developers
+lunarr: Self-hosted media streaming server and Plex alternative for movies and TV
+mcpsnoop: Transparent proxy and TUI for debugging MCP traffic
+mktxp: Prometheus Exporter for Mikrotik RouterOS devices
+modal: Client library and CLI for Modal
+mosdepth: Fast BAM/CRAM depth calculation for WGS, exome, or targeted sequencing
+nanoq: Minimal but speedy quality control and summaries of nanopore reads
+nats: Utility for NATS Server and JetStream administration
+near: Human-friendly console utility for interacting with NEAR Protocol
+netcode: Secure client/server protocol for multiplayer games built on top of UDP
+network-doctor: Network troubleshooting TUI
+nullhub: Management console for the Null ecosystem
+octl: Modern CLI for Outscale
+oh-my-reddit: Beautiful Reddit threads, live in your terminal
+open-code-review: AI-powered code review tool with deterministic pipelines and an LLM agent
+opencrabs: Autonomous, self-improving AI agent in a single Rust binary
+openkermit: Scriptable network and serial communication for UNIX and VMS
+openlore: Persistent architectural memory and structural cognition for AI coding agents
+ovh-ttyrec: Enhanced (but compatible) version of the classic ttyrec
+oxvg: Fastest SVG toolchain for optimisation, minification, linting, and actions
+pear: Peer-to-peer application runtime
+perlnavigator: Perl language server
+pixtuoid: Terminal pixel-art office for AI coding agents
+podcast-dl: CLI for downloading and archiving podcasts
+qobine-tui: Tui player for Qobuz
+qobine-web: Server and web based player for Qobuz
+rapid-mlx: Fast local AI engine for Apple Silicon with an OpenAI-compatible API
+rocq-micromega-plugin: Micromega decision procedures plugin for the Rocq prover
+rumbledb: JSONiq and XQuery query engine on Apache Spark
+rust-wasm: Rust standard library and sysroot for WebAssembly targets
+scrutineer: Security through scrutiny
+seqwish: Alignment to variation graph inducer
+serialize: Single-header bitpacking serializer for C++ aimed at game networking
+solod: Strict subset of Go with transpiler that translates to regular C
+systemd-lsp: Language server for systemd unit files
+tmux-fingers: Copy pasting in terminal with vimium/vimperator like hints
+treehouse: Manage worktrees without managing worktrees
+trim-galore: Quality and adapter trimming for FastQ sequencing reads
+tuicr: Code review TUI with vim keybindings
+tytanic: Test runner for Typst projects
+usbtree: Live USB device tree in your terminal
+utiluti: macOS command-line tool to work with default apps
+vi-sql: Terminal UI for SQL databases
+virtiofsd: Vhost-user virtio-fs device backend written in Rust
+wgsl-analyzer: Language server implementation for WGSL and WESL
+wild: Very fast linker for Linux
+worm-scraper: Scrape Worm, Ward, and Glow-worm web serials into EPUB ebooks
+woxi: Interpreter for a subset of the Wolfram Language
+zsh-patina: Blazingly fast Zsh syntax highlighter
+==> New Casks
+airsync: Continuity tools for use with Android devices
+android-cli: Command-line interface for Android app development with AI agents
+aphera: Raw photo editing software
+arcbox: Runtime for containers, Linux virtual machines, and AI agent sandboxes
+bettercmdtab@beta: Replacement for the built-in Cmd+Tab app switcher
+billy: Invoice manager
+block-buzz: Workspace for humans and AI agents
+canario: Terminal emulator
+caskhub: Native GUI for Homebrew casks
+cate: Infinite zoomable canvas with editor, terminal, and browser panels
+changes: Git GUI
+chatgpt-classic: OpenAI's previous ChatGPT desktop app
+clarc: Desktop client for Claude Code
+claude-status-bar: Menu bar status indicator for Claude Code
+cleanmymac-cli: Command-line interface for CleanMyMac
+cmtrace-open: Log viewer for ConfigMgr, Intune, and Windows diagnostic logs
+codexia: GUI and toolkit for Codex CLI and Claude Code
+degr: Temperature and clock screensaver
+diversion: Cloud-native version control CLI and agent
+diversion-app: Desktop app for Diversion version control
+dnclient-server: Peer-to-peer VPN client daemon for managed nebula networks
+esphome-device-builder: Desktop app to create, edit and install your ESPHome device configurations
+font-annotationmono-nerd-font
+font-googlesanscode-nerd-font
+font-jetendard
+font-luciole
+font-nexon-bazzi
+font-nexon-football-gothic
+font-nexon-lv1-gothic
+font-nexon-lv2-gothic
+font-nexon-maplestory
+gamehub: Compatibility layer for running Windows and Steam games
+glean: Workplace search and AI assistant
+grok-bot: AI teammates that work across your apps and tools
+headroom: Reduce token usage for Claude Code and Codex
+hermes-desktop: Open-source desktop AI agent
+juicy: Menu bar battery monitor with custom charge alerts and health tracking
+kirocrew: Persistent AI development workspace with multi-agent support
+koe: Zero-GUI voice input tool
+koreader: Document viewer for e-ink devices
+lemonade-server: Local LLM server with GPU and NPU acceleration
+libation: Audible audiobook manager and liberator
+linguax: Menu-bar utility for third-party mice with smooth scrolling and mapping
+lm-studio-bionic: AI agent for working with open models
+logseq-og: Privacy-first, open-source platform for knowledge sharing and management
+luna-display: Use your iPad as a wireless second display
+luna-secondary: Turn a computer or tablet into a second display
+markdown-preview: Markdown previewer with bundled Quick Look extension
+meetingrecorder: Recorder for meetings capturing mic and system audio
+mend: Application security scanning CLI
+moonfin: Media streaming client for Jellyfin and Emby
+muse-code: Interactive terminal coding agent
+neodisk: Read-only disk space visualiser
+neon-vision-editor: Native code and text editor
+onit-sidekick: AI chat panel
+opendisplay: Second-display utility for iPhone and iPad over USB and Wi-Fi
+openwhispr: Privacy-first voice-to-text dictation with AI agents
+orbit: Multiple Google accounts in isolated sessions in one window
+pastebot@2: Workflow application to improve productivity
+perplexity: AI-powered answer engine with Personal Computer agent
+phosphene: Custom video wallpapers for the desktop and lock screen
+prisma-access-browser: Secure enterprise browser with built-in threat and data protection
+redot: Multi-platform 2D and 3D game engine
+roslynpad: C# editor and runner based on Roslyn
+sentry-cli: Command-line utility to interact with Sentry
+sessionwatcher: Menu bar monitor for AI coding assistant usage and limits
+siliconscope: System monitor for Apple Silicon with ANE, Media Engine and bandwidth tracking
+smallstepagent: Device identity and certificate management daemon
+sogouinput: Input method supporting full and double spelling
+space-rabbit: Removes animations when switching between Spaces
+spacejump: Menu bar utility to name and switch desktop Spaces
+subtitle-edit: Subtitle editor
+switchy: Switch Magic Keyboard, Trackpad and Mouse between Macs
+tauritavern: SillyTavern-compatible native client
+textream: Teleprompter that highlights scripts in real time as you speak
+tickernotch: Tickers, news, weather and social counters beside the notch or in the menu bar
+tight-studio: Screen recorder and video editor
+unity-cli: Command-line interface for Unity
+unity-hub@beta: Management tool for Unity
+vorssaint: Menu bar toolkit with keep-awake, system monitor and volume mixer
+warp-agent-cli: Agentic development environment for command-line workflows
+willow-voice: AI-powered voice dictation and writing assistant
+work-louder-input: Keyboard configurator for Work Louder devices
+zcode: AI-assisted development environment
+==> Outdated Formulae
+ca-certificates
+certifi
+dav1d
+deno
+ffmpeg
+flyctl
+fontconfig
+freetype
+gettext
+gh
+giflib
+glib
+graphite2
+harfbuzz
+icu4c@76
+icu4c@77
+jpeg-turbo
+krb5
+lame
+libmagic
+libomp
+libpng
+libtiff
+libunistring
+libvmaf
+libx11
+libxext
+maven
+nvm
+openjdk
+openjdk@21
+openssl@3
+pnpm
+postgresql@14
+postgresql@15
+postgresql@16
+python@3.11
+python@3.14
+ripgrep
+sdl2-compat
+sqlite
+svt-av1
+tree
+xorgproto
+yt-dlp
+
+You have 45 outdated formulae installed.
+You can upgrade them with brew upgrade
+or list them with brew outdated.
+Warning: The following taps are not trusted:
+  supabase/tap
+
+Homebrew is currently ignoring formulae, casks and commands from these taps because tap trust is required.
+
+Prefer trusting only the specific formulae, casks or commands you need.
+Trust installed formulae from these taps with:
+  brew trust --formula supabase/tap/supabase
+Trust other specific casks and commands with:
+  brew trust --cask <user>/<tap>/<cask>
+  brew trust --command <user>/<tap>/<command>
+Whole-tap trust is broader and includes all current and future formulae,
+casks and commands from the listed taps. Trust whole taps with:
+  brew trust supabase/tap
+Untap them with:
+  brew untap supabase/tap
+To disable trust checks:
+  export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+This is not recommended and will be removed in a later release.
+For more information, see:
+  https://docs.brew.sh/Tap-Trust
+==> Downloading bottle manifests
+✔︎ Bottle Manifest deno (2.9.5)
+==> Would install 1 dependency for deno:
+webp 1.6.0
+==> Would upgrade 5 dependencies for deno:
+jpeg-turbo  3.1.4.1 -> 3.2.0
+giflib      5.2.2   -> 6.1.3
+libpng      1.6.50  -> 1.6.58
+libtiff     4.7.1_1 -> 4.7.2
+sqlite      3.53.2  -> 3.53.4
+==> Would upgrade 2 outdated packages
+deno    2.8.3    -> 2.9.5 (48.5MB)
+yt-dlp  2026.6.9 -> 2026.7.4 (5.3MB)
+==> Upgrading 2 outdated packages:
+deno    2.8.3    -> 2.9.5 (48.5MB)
+yt-dlp  2026.6.9 -> 2026.7.4 (5.3MB)
+==> Fetching downloads for: deno
+✔︎ Bottle Manifest jpeg-turbo (3.2.0)
+✔︎ Bottle Manifest giflib (6.1.3)
+✔︎ Bottle Manifest libpng (1.6.58)
+✔︎ Bottle Manifest webp (1.6.0)
+✔︎ Bottle Manifest libtiff (4.7.2)
+✔︎ Bottle Manifest sqlite (3.53.4)
+✔︎ Bottle giflib (6.1.3)
+✔︎ Bottle jpeg-turbo (3.2.0)
+✔︎ Bottle libpng (1.6.58)
+✔︎ Bottle webp (1.6.0)
+✔︎ Bottle sqlite (3.53.4)
+✔︎ Bottle libtiff (4.7.2)
+✔︎ Bottle deno (2.9.5)
+==> Upgrading deno
+  2.8.3 -> 2.9.5 
+==> Installing dependencies for deno: jpeg-turbo, giflib, libpng, webp, libtiff and sqlite
+==> Installing deno dependency: jpeg-turbo
+==> Pouring jpeg-turbo--3.2.0.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/jpeg-turbo/3.2.0: 47 files, 4.2MB
+==> Installing deno dependency: giflib
+==> Pouring giflib--6.1.3.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/giflib/6.1.3: 19 files, 515.2KB
+==> Installing deno dependency: libpng
+==> Pouring libpng--1.6.58.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/libpng/1.6.58: 28 files, 1.4MB
+==> Installing deno dependency: webp
+==> Pouring webp--1.6.0.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/webp/1.6.0: 64 files, 2.5MB
+==> Installing deno dependency: libtiff
+==> Pouring libtiff--4.7.2.arm64_tahoe.bottle.1.tar.gz
+🍺  /opt/homebrew/Cellar/libtiff/4.7.2: 493 files, 9.0MB
+==> Installing deno dependency: sqlite
+==> Pouring sqlite--3.53.4.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/sqlite/3.53.4: 13 files, 5.3MB
+==> Installing deno
+==> Pouring deno--2.9.5.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/deno/2.9.5: 12 files, 157.4MB
+==> Running `brew cleanup deno`...
+Disable this behaviour by setting `HOMEBREW_NO_INSTALL_CLEANUP=1`.
+Hide these hints with `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
+Removing: /opt/homebrew/Cellar/deno/2.6.0... (11 files, 152.5MB)
+Removing: /opt/homebrew/Cellar/deno/2.8.3... (12 files, 139.3MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/deno_bottle_manifest--2.8.3... (16.3KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/deno--2.8.3... (46.8MB)
+==> Upgrading 1 dependent of upgraded formulae:
+Disable this behaviour by setting `HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1`.
+Hide these hints with `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
+yt-dlp 2026.6.9 -> 2026.7.4
+==> Fetching downloads for: yt-dlp
+✔︎ Bottle Manifest certifi (2026.7.22)
+✔︎ Bottle Manifest ca-certificates (2026-08-13)
+✔︎ Bottle Manifest openssl@3 (3.6.3)
+✔︎ Bottle certifi (2026.7.22)
+✔︎ Bottle ca-certificates (2026-08-13)
+✔︎ Bottle yt-dlp (2026.7.4)
+✔︎ Bottle openssl@3 (3.6.3)
+==> Upgrading yt-dlp
+  2026.6.9 -> 2026.7.4 
+==> Installing dependencies for yt-dlp: certifi and openssl@3
+==> Installing yt-dlp dependency: certifi
+==> Installing certifi dependency: ca-certificates
+==> Pouring ca-certificates--2026-08-13.all.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/ca-certificates/2026-08-13: 5 files, 204.3KB
+==> Installing certifi
+==> Pouring certifi--2026.7.22.all.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/certifi/2026.7.22: 44 files, 21.9KB
+==> Installing yt-dlp dependency: openssl@3
+==> Pouring openssl@3--3.6.3.arm64_tahoe.bottle.1.tar.gz
+🍺  /opt/homebrew/Cellar/openssl@3/3.6.3: 7,633 files, 37.6MB
+==> Installing yt-dlp
+==> Pouring yt-dlp--2026.7.4.arm64_tahoe.bottle.tar.gz
+🍺  /opt/homebrew/Cellar/yt-dlp/2026.7.4: 1,694 files, 20.7MB
+==> Running `brew cleanup yt-dlp`...
+Removing: /opt/homebrew/Cellar/yt-dlp/2026.6.9... (2,872 files, 33.9MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/yt-dlp_bottle_manifest--2026.6.9... (26.2KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/yt-dlp--2026.6.9... (5.3MB)
+==> `brew cleanup` has not been run in the last 30 days, running now...
+Disable this behaviour by setting `HOMEBREW_NO_INSTALL_CLEANUP=1`.
+Hide these hints with `HOMEBREW_NO_ENV_HINTS=1` (see `man brew`).
+Removing: /opt/homebrew/Cellar/ca-certificates/2025-12-02... (4 files, 236.4KB)
+Removing: /opt/homebrew/Cellar/ca-certificates/2026-05-14... (4 files, 199.2KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/ca-certificates_bottle_manifest--2026-05-14... (1.7KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/ca-certificates--2026-05-14... (112KB)
+Removing: /opt/homebrew/Cellar/certifi/2025.11.12... (40 files, 23.7KB)
+Removing: /opt/homebrew/Cellar/certifi/2026.5.20... (40 files, 21.1KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/certifi_bottle_manifest--2026.5.20... (1.9KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/certifi--2026.5.20... (5.7KB)
+Removing: /opt/homebrew/Cellar/giflib/5.2.2... (20 files, 560.0KB)
+Removing: /opt/homebrew/Cellar/jpeg-turbo/3.1.3... (47 files, 3.7MB)
+Removing: /opt/homebrew/Cellar/jpeg-turbo/3.1.4.1... (47 files, 3.7MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/jpeg-turbo_bottle_manifest--3.1.4.1... (8.4KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/jpeg-turbo--3.1.4.1... (1.1MB)
+Removing: /opt/homebrew/Cellar/libpng/1.6.50... (28 files, 1.4MB)
+Removing: /opt/homebrew/Cellar/libtiff/4.7.1... (488 files, 9.0MB)
+Removing: /opt/homebrew/Cellar/libtiff/4.7.1_1... (488 files, 9.0MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/libtiff_bottle_manifest--4.7.1_1... (12.6KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/libtiff--4.7.1_1... (1.9MB)
+Removing: /opt/homebrew/Cellar/little-cms2/2.17... (23 files, 1.5MB)
+Removing: /opt/homebrew/Cellar/openssl@3/3.6.0... (7,609 files, 37.7MB)
+Removing: /opt/homebrew/Cellar/openssl@3/3.6.2... (7,627 files, 37.6MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/openssl@3_bottle_manifest--3.6.2... (12.0KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/openssl@3--3.6.2... (10.9MB)
+Removing: /opt/homebrew/Cellar/sqlite/3.51.1... (13 files, 5.3MB)
+Removing: /opt/homebrew/Cellar/sqlite/3.53.2... (13 files, 5.3MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/sqlite_bottle_manifest--3.53.2... (11.8KB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/sqlite--3.53.2... (2.4MB)
+Removing: /opt/homebrew/Cellar/xz/5.8.1... (96 files, 2.6MB)
+Removing: /opt/homebrew/Cellar/zstd/1.5.7... (32 files, 2.3MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/portable-ruby-4.0.5_1.arm64_big_sur.bottle.tar.gz... (12.7MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/Cask/Ghostty.dmg--1.3.1.dmg... (33.8MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/bootsnap/16e4b77f396cb05f9c9d7cc3db325ed737f1a41f52ffbca011c77ad70f50850b... (1,037 files, 9.2MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/bootsnap/4d4f04dd5cb2b3d1cc2088fdde2e7ea415ab6a872c50a809c9bfa164253517b3... (1,039 files, 9.3MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/bootsnap/14e9983d8f21ebd1759b5d12e5a0f648a2e5b645d0e27f72867e9cb6262257d9... (1,039 files, 9.3MB)
+Removing: /Users/katayamaryuunosuke/Library/Caches/Homebrew/bootsnap/148d3a0082c45793313d4cfa2955969a9805ea8fb6e34e5cf51ee0d39c52a728... (1,040 files, 9.4MB)
+Removing: /Users/katayamaryuunosuke/Library/Logs/Homebrew/openssl@3... (64B)
+Removing: /Users/katayamaryuunosuke/Library/Logs/Homebrew/ca-certificates... (64B)
+==> Caveats
+zsh completions have been installed to:
+  /opt/homebrew/share/zsh/site-functions
+==> Upgraded 2 outdated packages
+deno    2.8.3    -> 2.9.5
+yt-dlp  2026.6.9 -> 2026.7.4
+exit=0
+--- after ---
+deno 2.9.5 (stable, release, aarch64-apple-darwin)
+v8 15.0.245.2-rusty
+typescript 6.0.3
+
+########## workspace/logs/02-after-versions.txt ##########
+=== Fri Aug 14 04:13:53 JST 2026 ===
+deno 2.9.5 (stable, release, aarch64-apple-darwin)
+v8 15.0.245.2-rusty
+typescript 6.0.3
+/opt/homebrew/bin/deno
+
+########## workspace/logs/03-node-version.txt ##########
+Now using node v26.7.0 (npm v11.19.0)
+v26.7.0
+
+########## workspace/logs/10-deno-each-array.txt ##########
+=== deno deno 2.9.5 (stable, release, aarch64-apple-darwin) ===
+$ deno test tests_deno/add_test.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/meta.json
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19_meta.json
+[0m[32mDownload[0m https://jsr.io/@std/internal/meta.json
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14_meta.json
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/mod.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/almost_equals.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/array_includes.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/equals.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/exists.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/false.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/greater_or_equal.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/greater.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/instance_of.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/is_error.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/less_or_equal.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/less.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/match.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/not_equals.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/not_instance_of.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/not_match.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/not_strict_equals.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/object_match.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/rejects.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/strict_equals.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/string_includes.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/throws.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/assert.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/assertion_error.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/equal.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/fail.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/unimplemented.ts
+[0m[32mDownload[0m https://jsr.io/@std/assert/1.0.19/unreachable.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/format.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/build_message.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/diff.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/diff_str.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/styles.ts
+[0m[32mDownload[0m https://jsr.io/@std/internal/1.0.14/types.ts
+[0m[32mCheck[0m tests_deno/add_test.ts
+[0m[38;5;245mrunning 4 tests from ./tests_deno/add_test.ts[0m
+add(1, 2) = 3 ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+add(0, 0) = 0 ... [0m[32mok[0m [0m[38;5;245m(103µs)[0m
+add(-1, 1) = 0 ... [0m[32mok[0m [0m[38;5;245m(94µs)[0m
+add(10, 32) = 42 ... [0m[32mok[0m [0m[38;5;245m(79µs)[0m
+
+[0m[32mok[0m | 4 passed | 0 failed [0m[38;5;245m(13ms)[0m
+
+exit=0
+
+########## workspace/logs/10b-deno-filter.txt ##########
+$ deno test --filter "add(1, 2)" tests_deno/add_test.ts
+[0m[32mCheck[0m tests_deno/add_test.ts
+[0m[38;5;245mrunning 1 test from ./tests_deno/add_test.ts[0m
+add(1, 2) = 3 ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+
+[0m[32mok[0m | 1 passed | 0 failed | 3 filtered out [0m[38;5;245m(12ms)[0m
+
+exit=0
+
+########## workspace/logs/10c-deno-each-object.txt ##########
+$ deno test tests_deno/each_object_test.ts
+[0m[32mCheck[0m tests_deno/each_object_test.ts
+[0m[38;5;245mrunning 10 tests from ./tests_deno/each_object_test.ts[0m
+1 + 1 = 2 ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+2 + 3 = 5 ... [0m[32mok[0m [0m[38;5;245m(110µs)[0m
+case 0: 7 + 3 ... [0m[32mok[0m [0m[38;5;245m(155µs)[0m
+case 1: 8 + 4 ... [0m[32mok[0m [0m[38;5;245m(77µs)[0m
+nested 1 + 2 = 3 ... [0m[32mok[0m [0m[38;5;245m(181µs)[0m
+nested 5 + 5 = 10 ... [0m[32mok[0m [0m[38;5;245m(97µs)[0m
+MISUSE array-case with undefined + undefined = undefined ... [0m[32mok[0m [0m[38;5;245m(114µs)[0m
+MISUSE object-case with [object Object] and NaN ... [0m[32mok[0m [0m[38;5;245m(146µs)[0m
+idx=0 json={"x":1} obj=one str=undefined ... [0m[32mok[0m [0m[38;5;245m(126µs)[0m
+idx=1 json={"x":2} obj=two str=undefined ... [0m[32mok[0m [0m[38;5;245m(82µs)[0m
+
+[0m[32mok[0m | 10 passed | 0 failed [0m[38;5;245m(16ms)[0m
+
+exit=0
+
+########## workspace/logs/11-deno-each-fail.txt ##########
+$ deno test tests_deno/add_fail_test.ts
+[0m[32mCheck[0m tests_deno/add_fail_test.ts
+[0m[38;5;245mrunning 4 tests from ./tests_deno/add_fail_test.ts[0m
+add(1, 2) = 3 ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+add(0, 0) = 0 ... [0m[32mok[0m [0m[38;5;245m(109µs)[0m
+add(-1, 1) = 99 ... [0m[31mFAILED[0m [0m[38;5;245m(73ms)[0m
+add(10, 32) = 42 ... [0m[32mok[0m [0m[38;5;245m(120µs)[0m
+
+[0m[1m[37m[41m ERRORS [0m
+
+add(-1, 1) = 99 [0m[38;5;245m=> ./tests_deno/add_fail_test.ts:10:2[0m
+[0m[1m[31merror[0m: AssertionError: Values are not equal.
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   0[22m[39m
+[32m[1m+   99[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://jsr.io/@std/assert/1.0.19/equals.ts[0m:[0m[33m67[0m:[0m[33m9[0m)
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/add_fail_test.ts[0m:[0m[33m11[0m:[0m[33m3[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+add(-1, 1) = 99 [0m[38;5;245m=> ./tests_deno/add_fail_test.ts:10:2[0m
+
+[0m[31mFAILED[0m | 3 passed | 1 failed [0m[38;5;245m(86ms)[0m
+
+[0m[1m[31merror[0m: Test failed
+exit=1
+
+########## workspace/logs/12-deno-snapshot-create.txt ##########
+$ deno test tests_deno/render_test.ts
+[0m[32mCheck[0m tests_deno/render_test.ts
+[0m[38;5;245mrunning 3 tests from ./tests_deno/render_test.ts[0m
+renders the header ... [0m[31mFAILED[0m [0m[38;5;245m(6ms)[0m
+renderHeader Hello ... [0m[31mFAILED[0m [0m[38;5;245m(985µs)[0m
+renderHeader こんにちは ... [0m[31mFAILED[0m [0m[38;5;245m(811µs)[0m
+
+[0m[1m[37m[41m ERRORS [0m
+
+renders the header [0m[38;5;245m=> ./tests_deno/render_test.ts:3:6[0m
+[0m[1m[31merror[0m: AssertionError: Missing snapshot file.
+  await t.assertSnapshot(renderHeader({ title: "Deno 2.9" }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m353[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m11[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m4[0m:[0m[33m11[0m
+
+renderHeader Hello [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+[0m[1m[31merror[0m: AssertionError: Missing snapshot file.
+  await t.assertSnapshot(renderHeader({ title }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m353[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m11[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m12[0m:[0m[33m11[0m
+
+renderHeader こんにちは [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+[0m[1m[31merror[0m: AssertionError: Missing snapshot file.
+  await t.assertSnapshot(renderHeader({ title }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m353[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m11[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m12[0m:[0m[33m11[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+renders the header [0m[38;5;245m=> ./tests_deno/render_test.ts:3:6[0m
+renderHeader Hello [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+renderHeader こんにちは [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+
+[0m[31mFAILED[0m | 0 passed | 3 failed [0m[38;5;245m(21ms)[0m
+
+[0m[1m[31merror[0m: Test failed
+exit=1
+
+########## workspace/logs/12b-deno-snap-create-u.txt ##########
+$ deno test -u tests_deno/render_test.ts
+[0m[32mCheck[0m tests_deno/render_test.ts
+[0m[38;5;245mrunning 3 tests from ./tests_deno/render_test.ts[0m
+renders the header ... [0m[32mok[0m [0m[38;5;245m(1ms)[0m
+renderHeader Hello ... [0m[32mok[0m [0m[38;5;245m(164µs)[0m
+renderHeader こんにちは ... [0m[32mok[0m [0m[38;5;245m(79µs)[0m
+
+[0m[1m[32m > 3 snapshots updated.[0m
+
+[0m[32mok[0m | 3 passed | 0 failed [0m[38;5;245m(28ms)[0m
+
+exit=0
+
+########## workspace/logs/13-deno-snap-content.txt ##########
+total 8
+drwxr-xr-x@ 3 katayamaryuunosuke  staff   96 Aug 14 04:15 .
+drwxr-xr-x@ 7 katayamaryuunosuke  staff  224 Aug 14 04:15 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  270 Aug 14 04:15 render_test.ts.snap
+--- render_test.ts.snap ---
+export const snapshot = {};
+
+snapshot[`renders the header 1`] = `"<header><h1>Deno 2.9</h1></header>"`;
+
+snapshot[`renderHeader Hello 1`] = `"<header><h1>Hello</h1></header>"`;
+
+snapshot[`renderHeader こんにちは 1`] = `"<header><h1>こんにちは</h1></header>"`;
+
+########## workspace/logs/14-deno-snap-mismatch.txt ##########
+# src/render.ts の出力に class="site-header" を追加した後
+$ deno test tests_deno/render_test.ts
+[0m[32mCheck[0m tests_deno/render_test.ts
+[0m[38;5;245mrunning 3 tests from ./tests_deno/render_test.ts[0m
+renders the header ... [0m[31mFAILED[0m [0m[38;5;245m(2ms)[0m
+renderHeader Hello ... [0m[31mFAILED[0m [0m[38;5;245m(555µs)[0m
+renderHeader こんにちは ... [0m[31mFAILED[0m [0m[38;5;245m(418µs)[0m
+
+[0m[1m[37m[41m ERRORS [0m
+
+renders the header [0m[38;5;245m=> ./tests_deno/render_test.ts:3:6[0m
+[0m[1m[31merror[0m: AssertionError: Snapshot does not match:
+
+    [32m[Diff][39m [32mActual[39m / [31mExpected[39m
+
+[32m+   '<header class="site-header"><h1>Deno 2.9</h1></header>'[39m
+[31m-   "<header><h1>Deno 2.9</h1></header>"[39m
+
+To update snapshots, run
+    deno test --update-snapshots [files]...
+
+  await t.assertSnapshot(renderHeader({ title: "Deno 2.9" }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m365[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m9[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m4[0m:[0m[33m11[0m
+
+renderHeader Hello [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+[0m[1m[31merror[0m: AssertionError: Snapshot does not match:
+
+    [32m[Diff][39m [32mActual[39m / [31mExpected[39m
+
+[32m+   '<header class="site-header"><h1>Hello</h1></header>'[39m
+[31m-   "<header><h1>Hello</h1></header>"[39m
+
+To update snapshots, run
+    deno test --update-snapshots [files]...
+
+  await t.assertSnapshot(renderHeader({ title }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m365[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m9[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m12[0m:[0m[33m11[0m
+
+renderHeader こんにちは [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+[0m[1m[31merror[0m: AssertionError: Snapshot does not match:
+
+    [32m[Diff][39m [32mActual[39m / [31mExpected[39m
+
+[32m+   '<header class="site-header"><h1>こんにちは</h1></header>'[39m
+[31m-   "<header><h1>こんにちは</h1></header>"[39m
+
+To update snapshots, run
+    deno test --update-snapshots [files]...
+
+  await t.assertSnapshot(renderHeader({ title }));
+[0m[31m          ^[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245massertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test_snapshot.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m365[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m9[0m[0m[2m[38;5;245m)[0m
+    [0m[2m[38;5;245mat [0m[0m[2m[38;5;245mTestContext.assertSnapshot[0m[0m[2m[38;5;245m ([0m[0m[2m[38;5;245mext:cli/40_test.js[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m772[0m[0m[2m[38;5;245m:[0m[0m[2m[38;5;245m14[0m[0m[2m[38;5;245m)[0m
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/render_test.ts[0m:[0m[33m12[0m:[0m[33m11[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+renders the header [0m[38;5;245m=> ./tests_deno/render_test.ts:3:6[0m
+renderHeader Hello [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+renderHeader こんにちは [0m[38;5;245m=> ./tests_deno/render_test.ts:11:2[0m
+
+[0m[31mFAILED[0m | 0 passed | 3 failed [0m[38;5;245m(13ms)[0m
+
+[0m[1m[31merror[0m: Test failed
+exit=1
+
+########## workspace/logs/15-deno-snap-update.txt ##########
+$ deno test -u tests_deno/render_test.ts
+[0m[32mCheck[0m tests_deno/render_test.ts
+[0m[38;5;245mrunning 3 tests from ./tests_deno/render_test.ts[0m
+renders the header ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+renderHeader Hello ... [0m[32mok[0m [0m[38;5;245m(435µs)[0m
+renderHeader こんにちは ... [0m[32mok[0m [0m[38;5;245m(315µs)[0m
+
+[0m[1m[32m > 3 snapshots updated.[0m
+
+[0m[32mok[0m | 3 passed | 0 failed [0m[38;5;245m(14ms)[0m
+
+exit=0
+
+########## workspace/logs/16-deno-snap-repass.txt ##########
+$ deno test tests_deno/render_test.ts
+[0m[32mCheck[0m tests_deno/render_test.ts
+[0m[38;5;245mrunning 3 tests from ./tests_deno/render_test.ts[0m
+renders the header ... [0m[32mok[0m [0m[38;5;245m(2ms)[0m
+renderHeader Hello ... [0m[32mok[0m [0m[38;5;245m(455µs)[0m
+renderHeader こんにちは ... [0m[32mok[0m [0m[38;5;245m(3ms)[0m
+
+[0m[32mok[0m | 3 passed | 0 failed [0m[38;5;245m(14ms)[0m
+
+exit=0
+
+########## workspace/logs/17-snap-after.txt ##########
+# 更新前後の .snap 差分
+diff --git a/logs/snap-before.snap b/tests_deno/__snapshots__/render_test.ts.snap
+index 69d7d04..d24c735 100644
+--- a/logs/snap-before.snap
++++ b/tests_deno/__snapshots__/render_test.ts.snap
+@@ -1,7 +1,7 @@
+ export const snapshot = {};
+ 
+-snapshot[`renders the header 1`] = `"<header><h1>Deno 2.9</h1></header>"`;
++snapshot[`renders the header 1`] = `'<header class="site-header"><h1>Deno 2.9</h1></header>'`;
+ 
+-snapshot[`renderHeader Hello 1`] = `"<header><h1>Hello</h1></header>"`;
++snapshot[`renderHeader Hello 1`] = `'<header class="site-header"><h1>Hello</h1></header>'`;
+ 
+-snapshot[`renderHeader こんにちは 1`] = `"<header><h1>こんにちは</h1></header>"`;
++snapshot[`renderHeader こんにちは 1`] = `'<header class="site-header"><h1>こんにちは</h1></header>'`;
+
+########## workspace/logs/18-deno-snap-prune.txt ##########
+# .snap に使われないエントリ `obsolete entry 1` を手で追記した状態でフル実行
+$ deno test tests_deno/
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   0[22m[39m
+[32m[1m+   99[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://jsr.io/@std/assert/1.0.19/equals.ts[0m:[0m[33m67[0m:[0m[33m9[0m)
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/add_fail_test.ts[0m:[0m[33m11[0m:[0m[33m3[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+add(-1, 1) = 99 [0m[38;5;245m=> ./tests_deno/add_fail_test.ts:10:2[0m
+
+[0m[31mFAILED[0m | 20 passed | 1 failed [0m[38;5;245m(382ms)[0m
+
+[0m[1m[31merror[0m: Test failed
+--- 追記後・-u なしフル実行後の .snap ---
+export const snapshot = {};
+
+snapshot[`renders the header 1`] = `'<header class="site-header"><h1>Deno 2.9</h1></header>'`;
+
+snapshot[`renderHeader Hello 1`] = `'<header class="site-header"><h1>Hello</h1></header>'`;
+
+snapshot[`renderHeader こんにちは 1`] = `'<header class="site-header"><h1>こんにちは</h1></header>'`;
+
+snapshot[`obsolete entry 1`] = `"stale"`;
+--- -u 付きフル実行 ---
+
+
+[31m[1m-   0[22m[39m
+[32m[1m+   99[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://jsr.io/@std/assert/1.0.19/equals.ts[0m:[0m[33m67[0m:[0m[33m9[0m)
+    at [0m[2m[38;5;245mfile:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/[0m[0m[36mtests_deno/add_fail_test.ts[0m:[0m[33m11[0m:[0m[33m3[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+add(-1, 1) = 99 [0m[38;5;245m=> ./tests_deno/add_fail_test.ts:10:2[0m
+
+[0m[1m[31m > 1 snapshot removed.[0m
+[0m[31m   • obsolete entry 1[0m
+
+[0m[31mFAILED[0m | 20 passed | 1 failed [0m[38;5;245m(384ms)[0m
+
+[0m[1m[31merror[0m: Test failed
+--- prune 後の .snap ---
+export const snapshot = {};
+
+snapshot[`renders the header 1`] = `'<header class="site-header"><h1>Deno 2.9</h1></header>'`;
+
+snapshot[`renderHeader Hello 1`] = `'<header class="site-header"><h1>Hello</h1></header>'`;
+
+snapshot[`renderHeader こんにちは 1`] = `'<header class="site-header"><h1>こんにちは</h1></header>'`;
+
+########## workspace/logs/20-node-loop-params.txt ##########
+=== node v26.7.0 ===
+$ node --test tests_node/add.test.js
+✔ add(1, 2) = 3 (2.28875ms)
+✔ add(0, 0) = 0 (0.289792ms)
+✔ add(-1, 1) = 0 (0.258792ms)
+✔ add(10, 32) = 42 (3.68575ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 225.799875
+exit=0
+
+########## workspace/logs/20b-node-loop-fail.txt ##########
+=== node v26.7.0 ===
+$ node --test tests_node/add_fail.test.js
+✔ add(1, 2) = 3 (0.906209ms)
+✔ add(0, 0) = 0 (0.12025ms)
+✖ add(-1, 1) = 99 (1.439125ms)
+✔ add(10, 32) = 42 (8.124459ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.238333
+
+✖ failing tests:
+
+test at tests_node/add_fail.test.js:13:3
+✖ add(-1, 1) = 99 (1.439125ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 99
+  
+      at TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/add_fail.test.js:14:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 99,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+exit=1
+
+########## workspace/logs/21-loc-compare.txt ##########
+$ wc -l  各テストファイル
+      12 tests_deno/add_test.ts
+      17 tests_node/add.test.js
+      13 tests_deno/render_test.ts
+      13 tests_node/render.test.js
+      55 total
+
+########## workspace/logs/22-node-snap-26.txt ##########
+=== node v26.7.0 ===
+$ node --test tests_node/render.test.js  （まず更新フラグ無しで）
+✖ renders the header (3.590417ms)
+✖ renderHeader Hello (0.42ms)
+✖ renderHeader こんにちは (0.343416ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.621042
+
+✖ failing tests:
+
+test at tests_node/render.test.js:4:1
+✖ renders the header (3.590417ms)
+  Error [ERR_INVALID_STATE]: Invalid state: Cannot read snapshot file '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot.' Missing snapshots can be generated by rerunning the command with the --test-update-snapshots flag.
+      at throwReadError (node:internal/test_runner/snapshot:253:17)
+      at SnapshotFile.readFile (node:internal/test_runner/snapshot:114:7)
+      at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+      ... 5 lines matching cause stack trace ...
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    code: 'ERR_INVALID_STATE',
+    cause: Error: ENOENT: no such file or directory, open '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+        at readFileSync (node:fs:539:20)
+        at SnapshotFile.readFile (node:internal/test_runner/snapshot:97:22)
+        at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+        at assert.<computed> [as snapshot] (node:internal/test_runner/test:346:18)
+        at TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:5:12)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1397:25)
+        at Test.start (node:internal/test_runner/test:1257:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+      errno: -2,
+      code: 'ENOENT',
+      syscall: 'open',
+      path: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+    },
+    filename: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+  }
+
+test at tests_node/render.test.js:10:3
+✖ renderHeader Hello (0.42ms)
+  Error [ERR_INVALID_STATE]: Invalid state: Cannot read snapshot file '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot.' Missing snapshots can be generated by rerunning the command with the --test-update-snapshots flag.
+      at throwReadError (node:internal/test_runner/snapshot:253:17)
+      at SnapshotFile.readFile (node:internal/test_runner/snapshot:114:7)
+      at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+      ... 6 lines matching cause stack trace ...
+      at Test.run (node:internal/test_runner/test:1462:12) {
+    code: 'ERR_INVALID_STATE',
+    cause: Error: ENOENT: no such file or directory, open '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+        at readFileSync (node:fs:539:20)
+        at SnapshotFile.readFile (node:internal/test_runner/snapshot:97:22)
+        at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+        at assert.<computed> [as snapshot] (node:internal/test_runner/test:346:18)
+        at TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:11:14)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1397:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+        at Test.postRun (node:internal/test_runner/test:1537:19)
+        at Test.run (node:internal/test_runner/test:1462:12) {
+      errno: -2,
+      code: 'ENOENT',
+      syscall: 'open',
+      path: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+    },
+    filename: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+  }
+
+test at tests_node/render.test.js:10:3
+✖ renderHeader こんにちは (0.343416ms)
+  Error [ERR_INVALID_STATE]: Invalid state: Cannot read snapshot file '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot.' Missing snapshots can be generated by rerunning the command with the --test-update-snapshots flag.
+      at throwReadError (node:internal/test_runner/snapshot:253:17)
+      at SnapshotFile.readFile (node:internal/test_runner/snapshot:114:7)
+      at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+      ... 6 lines matching cause stack trace ...
+      at Test.run (node:internal/test_runner/test:1462:12) {
+    code: 'ERR_INVALID_STATE',
+    cause: Error: ENOENT: no such file or directory, open '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+        at readFileSync (node:fs:539:20)
+        at SnapshotFile.readFile (node:internal/test_runner/snapshot:97:22)
+        at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:22)
+        at assert.<computed> [as snapshot] (node:internal/test_runner/test:346:18)
+        at TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:11:14)
+        at Test.runInAsyncScope (node:async_hooks:226:14)
+        at Test.run (node:internal/test_runner/test:1397:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+        at Test.postRun (node:internal/test_runner/test:1537:19)
+        at Test.run (node:internal/test_runner/test:1462:12) {
+      errno: -2,
+      code: 'ENOENT',
+      syscall: 'open',
+      path: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+    },
+    filename: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js.snapshot'
+  }
+exit=1
+
+$ node --test --test-update-snapshots tests_node/render.test.js
+✔ renders the header (3.3265ms)
+✔ renderHeader Hello (0.387917ms)
+✔ renderHeader こんにちは (0.399709ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 242.960583
+exit=0
+
+--- 生成された .snapshot ---
+total 40
+drwxr-xr-x@ 7 katayamaryuunosuke  staff  224 Aug 14 04:16 .
+drwxr-xr-x@ 7 katayamaryuunosuke  staff  224 Aug 14 04:15 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  404 Aug 14 04:15 add.test.js
+-rw-r--r--@ 1 katayamaryuunosuke  staff  351 Aug 14 04:15 add_fail.test.js
+-rw-r--r--@ 1 katayamaryuunosuke  staff  325 Aug 14 04:16 add_ts.test.ts
+-rw-r--r--@ 1 katayamaryuunosuke  staff  372 Aug 14 04:16 render.test.js
+-rw-r--r--@ 1 katayamaryuunosuke  staff  316 Aug 14 04:16 render.test.js.snapshot
+exports[`renderHeader Hello 1`] = `
+"<header class=\\"site-header\\"><h1>Hello</h1></header>"
+`;
+
+exports[`renderHeader こんにちは 1`] = `
+"<header class=\\"site-header\\"><h1>こんにちは</h1></header>"
+`;
+
+exports[`renders the header 1`] = `
+"<header class=\\"site-header\\"><h1>Deno 2.9</h1></header>"
+`;
+
+########## workspace/logs/22b-node-snap-repass.txt ##########
+=== node v26.7.0 スナップショット再パス確認 ===
+✔ renders the header (7.073958ms)
+✔ renderHeader Hello (0.436959ms)
+✔ renderHeader こんにちは (1.931958ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 204.409667
+exit=0
+
+########## workspace/logs/23-node-snap-22.txt ##########
+=== node v22.17.0 ===
+$ node --test tests_node/render.test.js
+TAP version 13
+# Subtest: renders the header
+ok 1 - renders the header
+  ---
+  duration_ms: 7.54275
+  type: 'test'
+  ...
+# Subtest: renderHeader Hello
+ok 2 - renderHeader Hello
+  ---
+  duration_ms: 1.807834
+  type: 'test'
+  ...
+# Subtest: renderHeader こんにちは
+ok 3 - renderHeader こんにちは
+  ---
+  duration_ms: 0.295958
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.424584
+exit=0
+
+$ node --test --experimental-test-snapshots tests_node/render.test.js
+TAP version 13
+# Subtest: renders the header
+ok 1 - renders the header
+  ---
+  duration_ms: 3.033
+  type: 'test'
+  ...
+# Subtest: renderHeader Hello
+ok 2 - renderHeader Hello
+  ---
+  duration_ms: 1.095833
+  type: 'test'
+  ...
+# Subtest: renderHeader こんにちは
+ok 3 - renderHeader こんにちは
+  ---
+  duration_ms: 0.139709
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.406833
+exit=0
+
+########## workspace/logs/23b-node22-snap-mismatch.txt ##########
+### 検証: v22 でスナップショットが本当に比較されているか（出力をわざと変えた）
+=== node v22.17.0 ===
+$ node --test tests_node/render.test.js
+TAP version 13
+# Subtest: renders the header
+not ok 1 - renders the header
+  ---
+  duration_ms: 8.179083
+  type: 'test'
+  location: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:4:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '\n"<header class=\\\\"CHANGED\\\\"><h1>Deno 2.9</h1></header>"\n'
+    - '\n"<header class=\\\\"site-header\\\\"><h1>Deno 2.9</h1></header>"\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    
+    "<header class=\\"site-header\\"><h1>Deno 2.9</h1></header>"
+    
+  actual: |-
+    
+    "<header class=\\"CHANGED\\"><h1>Deno 2.9</h1></header>"
+    
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:9)
+    assert.<computed> [as snapshot] (node:internal/test_runner/test:320:18)
+    TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:5:12)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: renderHeader Hello
+not ok 2 - renderHeader Hello
+  ---
+  duration_ms: 2.251459
+  type: 'test'
+  location: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:10:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '\n"<header class=\\\\"CHANGED\\\\"><h1>Hello</h1></header>"\n'
+    - '\n"<header class=\\\\"site-header\\\\"><h1>Hello</h1></header>"\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    
+    "<header class=\\"site-header\\"><h1>Hello</h1></header>"
+    
+  actual: |-
+    
+    "<header class=\\"CHANGED\\"><h1>Hello</h1></header>"
+    
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:9)
+    assert.<computed> [as snapshot] (node:internal/test_runner/test:320:18)
+    TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:11:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: renderHeader こんにちは
+not ok 3 - renderHeader こんにちは
+  ---
+  duration_ms: 0.847209
+  type: 'test'
+  location: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:10:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '\n"<header class=\\\\"CHANGED\\\\"><h1>こんにちは</h1></header>"\n'
+    - '\n"<header class=\\\\"site-header\\\\"><h1>こんにちは</h1></header>"\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    
+    "<header class=\\"site-header\\"><h1>こんにちは</h1></header>"
+    
+  actual: |-
+    
+    "<header class=\\"CHANGED\\"><h1>こんにちは</h1></header>"
+    
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.snapshotAssertion (node:internal/test_runner/snapshot:206:9)
+    assert.<computed> [as snapshot] (node:internal/test_runner/test:320:18)
+    TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:11:14)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.227375
+exit=1
+
+########## workspace/logs/23c-node26-snap-mismatch.txt ##########
+=== node v26.7.0 同じコードで ===
+$ node --test tests_node/render.test.js
+✖ renders the header (9.710542ms)
+✖ renderHeader Hello (0.617666ms)
+✖ renderHeader こんにちは (0.836583ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 227.094333
+
+✖ failing tests:
+
+test at tests_node/render.test.js:4:1
+✖ renders the header (9.710542ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '\n"<header class=\\\\"CHANGED\\\\"><h1>Deno 2.9</h1></header>"\n'
+  - '\n"<header class=\\\\"site-header\\\\"><h1>Deno 2.9</h1></header>"\n'
+  
+      at TestContext.snapshotAssertion (node:internal/test_runner/snapshot:207:9)
+      at assert.<computed> [as snapshot] (node:internal/test_runner/test:346:18)
+      at TestContext.<anonymous> (file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/render.test.js:5:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n"<header class=\\\\"CHANGED\\\\"><h1>Deno 2.9</h1></header>"\n',
+    expected: '\n"<header class=\\\\"site-header\\\\"><h1>Deno 2.9</h1></header>"\n',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests_node/render.test.js:10:3
+✖ renderHeader Hello (0.617666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+exit=
+
+########## workspace/logs/24-node-ts-shared.txt ##########
+=== node v26.7.0: Deno と同じ .ts を Node から直接 import できるか ===
+$ node --test tests_node/add_ts.test.ts
+✔ add(1, 2) = 3 (2.067959ms)
+✔ add(10, 32) = 42 (0.394334ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 320.454584
+exit=0
+
+########## workspace/logs/24b-node22-ts-shared.txt ##########
+=== node v22.17.0 ===
+$ node --test tests_node/add_ts.test.ts
+TAP version 13
+# node:internal/modules/esm/get_format:219
+#   throw new ERR_UNKNOWN_FILE_EXTENSION(ext, filepath);
+#         ^
+# TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts" for /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/add_ts.test.ts
+#     at Object.getFileProtocolModuleFormat [as file:] (node:internal/modules/esm/get_format:219:9)
+#     at defaultGetFormat (node:internal/modules/esm/get_format:245:36)
+#     at defaultLoad (node:internal/modules/esm/load:120:22)
+#     at async ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:580:32)
+#     at async ModuleJob._link (node:internal/modules/esm/module_job:154:19) {
+#   code: 'ERR_UNKNOWN_FILE_EXTENSION'
+# }
+# Node.js v22.17.0
+# Subtest: tests_node/add_ts.test.ts
+not ok 1 - tests_node/add_ts.test.ts
+  ---
+  duration_ms: 109.575375
+  type: 'test'
+  location: '/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-deno29-test-each-snapshot-20260814-0410/workspace/tests_node/add_ts.test.ts:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 131.219792
+exit=1
+
