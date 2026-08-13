@@ -1,0 +1,3 @@
+# Agent practice plan contract
+
+Include: source report; reader problem; promised reader decision; claim; likely article type; mode; target providers; reused or newly created fixture; why the fixture is minimal; fixture files and offline/self-contained boundary; practical mapping from fixture signals to real work; cases and controlled differences; exact prompt; exact CLI settings; assertions; verification command; pre-registered expected outcome; competing outcome and how it would change the recommendation; success and failure criteria; run count; timeout; network, credential, cost, and cleanup boundaries; limitations; expected article value. Keep the sibling manifest authoritative for execution.

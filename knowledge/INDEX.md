@@ -7,6 +7,7 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-08-09] [zshでglobを含む引数（--include=*.js / --test-coverage-include=src/**）が no matches found で実行前に落ちる](./2026-08-09-zsh-nomatch-glob-argument.md) — `Configuration` / tags: zsh, bash, NoMatchesFound, glob, クォート
 - [2026-07-11] [Biome の linter.domains.types を "all" にしても nursery の型認識ルールが自動発火しない](./2026-07-11-biome-types-domain-all-not-enabling-nursery-rules.md) — `Configuration` / tags: biome, typescript, SilentNoOp, type-aware
 - [2026-07-11] [planステージがCodexサンドボックスで実行できない検証計画（実ブラウザ起動・deno upgrade等）を立ててしまう](./2026-07-11-codex-sandbox-infeasible-practice-plans.md) — `Environment` / tags: codex, sandbox, playwright, deno, docker
 - [2026-07-11] [gh pr merge --auto が branch protection の無いリポジトリで不安定に失敗する](./2026-07-11-gh-pr-merge-auto-unstable-without-protection.md) — `External Service` / tags: gh, github, AutoMergeSetupFailed

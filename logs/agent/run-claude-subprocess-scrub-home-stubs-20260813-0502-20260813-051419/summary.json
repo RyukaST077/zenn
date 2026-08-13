@@ -1,0 +1,54 @@
+{
+  "manifest": "practice/agent/agent-practice-claude-subprocess-scrub-home-stubs-20260813-0502.json",
+  "started_at": "2026-08-12T20:14:19.851Z",
+  "finished_at": "2026-08-12T20:14:31.859Z",
+  "versions": {
+    "claude": "2.1.227 (Claude Code)"
+  },
+  "cases": [
+    {
+      "id": "scrub-unset-control",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "not-enforced-for-claude-host-process",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 4512,
+      "verifier_exit_code": 1,
+      "marker_expected": "CONTROL_HOME_STARTUP_PRESERVED",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-claude-subprocess-scrub-home-stubs-20260813-0502-20260813-051419/scrub-unset-control"
+    },
+    {
+      "id": "scrub-enabled-treatment",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "not-enforced-for-claude-host-process",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 4399,
+      "verifier_exit_code": 1,
+      "marker_expected": "TREATMENT_EMPTY_BASH_PROFILE_SHADOWED_PROFILE",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-claude-subprocess-scrub-home-stubs-20260813-0502-20260813-051419/scrub-enabled-treatment"
+    }
+  ]
+}

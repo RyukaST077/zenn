@@ -1,0 +1,4 @@
+interface:
+  display_name: "Draft Agent Article"
+  short_description: "Draft reader-centered, evidence-based Zenn articles"
+  default_prompt: "Use $zenn-agent-draft-article to turn the supplied analysis, editorial brief, and run log into a reader-centered Zenn article."

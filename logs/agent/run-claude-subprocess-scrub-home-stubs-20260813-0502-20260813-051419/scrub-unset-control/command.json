@@ -1,0 +1,18 @@
+{
+  "executable": "claude",
+  "args": [
+    "-p",
+    "Offline startup probe only. Do not use tools, access files, or answer the prompt.",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--no-session-persistence",
+    "--setting-sources",
+    "project",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Read,Edit,Write,Bash"
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

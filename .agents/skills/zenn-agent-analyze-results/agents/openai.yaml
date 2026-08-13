@@ -1,0 +1,4 @@
+interface:
+  display_name: "Analyze Agent Results"
+  short_description: "Analyze evidence and build an editorial brief"
+  default_prompt: "Use $zenn-agent-analyze-results to evaluate the supplied execution log and create an evidence-backed editorial brief."

@@ -1,0 +1,21 @@
+{
+  "id": "scrub-enabled-treatment",
+  "provider": "claude",
+  "provider_version": "2.1.227 (Claude Code)",
+  "guidance": null,
+  "model_override": null,
+  "effort_override": null,
+  "network_requested": false,
+  "network_enforcement": "not-enforced-for-claude-host-process",
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 4399,
+  "verifier_exit_code": 1,
+  "marker_expected": "TREATMENT_EMPTY_BASH_PROFILE_SHADOWED_PROFILE",
+  "marker_observed": null,
+  "marker_matches": false,
+  "protected_paths_changed": [],
+  "changed_files": [],
+  "unexpected_changes": [],
+  "passed": false
+}
