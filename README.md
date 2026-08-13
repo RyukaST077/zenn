@@ -253,6 +253,77 @@ resume は `state.json` を読み、完了済みの段をスキップして失�
 > Zenn には反映されない（次回以降の push 時に枠が空いていれば自動で再処理される）。
 > 高頻度の定期実行は未反映記事が溜まるだけなので、公開ペースは 1 日 1 本程度に抑えるのが安全。
 
+## AI coding-agent know-how pipeline
+
+Claude Code と Codex 自体の使い方を、通常の技術テーマとは別枠で調査・実験・記事化するパイプライン。
+モデル性能の比較だけでなく、`CLAUDE.md` / `AGENTS.md`、hooks、skills、権限、prompt、subagent、
+長時間タスク、harness engineering、新機能や失敗条件などを対象にできる。
+
+```
+zenn-agent-search-knowhow       → 読者課題・既存記事との差分を含む research report
+zenn-agent-plan-practice       → 事前予想・読者の判断を含む manifest + 人間向けplan
+zenn-agent-run-practice        → logs/agent/run-*/execution-log.md + ケース別一次証拠
+zenn-agent-analyze-results     → 事実分析 + 編集ブリーフ
+zenn-agent-draft-article       → 記事タイプ別の articles/<slug>.md（published: false）
+zenn-agent-review-article      → 証拠監査 + 100点の編集品質レビュー
+zenn-agent-revise-article      → 構成を含む記事修正（必要な場合だけ）
+```
+
+記事は正確性・安全性・再現性の必須条件に加え、読者の問題、独自価値、説明、証拠、実用性、
+読みやすさを100点で評価する。`pass` には80点以上、各項目で配点の半分以上、blockerとwarningが
+ともに0であることが必要。実験ログの完全性と本文の読みやすさを両立するため、判断に必要な証拠を
+本文へ置き、監査向けの詳細は後半へ分離する。
+
+実験は `scripts/agent-practice/run-experiment.mjs` が一時ディレクトリへfixtureを複製し、認証済みの
+`claude` / `codex` CLIを非対話で実行する。ケースごとにコマンド、JSONL、stderr、検証結果、diff、
+変更ファイル、CLI versionを保存し、credential fileは読まず、ログは既知のtoken・session・home pathを
+redactする。manifestは変更許可ファイル、保護ファイル、timeout、network、期待markerまで明示する。
+ただし現在の `network` はCodexのworkspace sandboxにだけ強制され、ホストで直接動くClaudeの
+ネットワークを遮断しない。Claudeで `bypassPermissions` を使う実験は、ネットワークを切った
+コンテナ／VM／dev containerなど、別のOSレベル境界を用意する。
+
+```bash
+# 設定と段構成だけ確認
+bash scripts/auto-agent-practice.sh --dry-run
+
+# 未掲載のAI coding-agentテーマを選び、実CLI検証からレビュー済み未公開記事まで生成
+bash scripts/auto-agent-practice.sh
+
+# 調査テーマを指定（実験可能な1 claimへsearch段が絞り込む）
+bash scripts/auto-agent-practice.sh --topic "Claude Code hooksでformatを強制できる条件"
+```
+
+前提は、ログイン済みの `claude` と `codex`、`node`、`rg`、`timeout` または `gtimeout`。
+run段から両方の認証済みCLIを起動するため、外側のCodexは `danger-full-access` で動く。専用の
+ローカル環境でのみ使うこと。パイプラインはGit操作、PR作成、`published: true`への変更を行わない。
+
+| 環境変数 | 意味 | 既定 |
+|---|---|---|
+| `AGENT_PIPELINE_MODEL` | オーケストレーターCodexのモデル。空ならCLI既定 | 空 |
+| `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
+| `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
+| `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `3` |
+| `TIMEOUT_AGENT_<STAGE>` | 専用段ごとのtimeout秒 | 段ごと |
+
+開発時の決定論的テストは `node scripts/test-agent-practice.mjs`、全体は `npm test` で実行する。
+
+### AI記事の定期実行（毎日5:00）
+
+従来記事の4:00ジョブとは別に、`scripts/auto-agent-practice-launchd.sh`を
+`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はGit操作、PR作成、公開を行わず、
+レビューを通過した`published: false`の記事まで作成する。4:00側のパイプラインロックが残っている場合は、
+同じリポジトリを同時更新しないよう5:00側を正常終了扱いでスキップする。
+
+```bash
+# launchdと同じ経路をdry-run
+AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
+  bash scripts/auto-agent-practice-launchd.sh
+```
+
+実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
+調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、
+`articles/`へ保存する。
+
 ## スキルを個別に使う
 
 パイプラインを通さず、対話セッションで1工程だけ実行することもできる。

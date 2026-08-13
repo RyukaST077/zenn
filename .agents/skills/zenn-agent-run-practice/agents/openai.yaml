@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Agent Practice"
+  short_description: "Run Claude Code or Codex experiments safely"
+  default_prompt: "Use $zenn-agent-run-practice to execute the supplied agent-practice manifest and record evidence."
