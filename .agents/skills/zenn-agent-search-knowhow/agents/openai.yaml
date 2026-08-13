@@ -1,0 +1,4 @@
+interface:
+  display_name: "Search Agent Know-how"
+  short_description: "Find article-worthy, testable agent practices"
+  default_prompt: "Use $zenn-agent-search-knowhow to find one current AI coding-agent practice that is locally testable and resolves a concrete reader decision."

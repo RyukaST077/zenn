@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Agent Practice"
+  short_description: "Plan safe experiments and minimal fixtures"
+  default_prompt: "Use $zenn-agent-plan-practice to turn the supplied know-how report into a safe experiment with a minimal deterministic fixture when needed."

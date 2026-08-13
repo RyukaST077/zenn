@@ -1,0 +1,3 @@
+# Agent execution log contract
+
+Include: manifest, plan, and research paths; start/end timestamps; CLI versions; one chronological row per case; provider, guidance, model override, exit status, timeout, duration, verifier status, marker observation, file changes, redacted decision-relevant output, warnings, recoveries, deviations, failures, and unresolved limitations. Link raw per-case events, result, diff, verifier output, and metrics. Preserve observable events that differ from the pre-registered expectation, but state only observations and reserve surprise, causal interpretation, and recommendations for analysis.

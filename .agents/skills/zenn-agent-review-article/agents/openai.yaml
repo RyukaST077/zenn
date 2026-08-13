@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Agent Article"
+  short_description: "Review evidence integrity and editorial quality"
+  default_prompt: "Use $zenn-agent-review-article to review the supplied draft for both evidence integrity and reader-centered editorial quality."

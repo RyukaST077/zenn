@@ -1,0 +1,4 @@
+interface:
+  display_name: "Revise Agent Article"
+  short_description: "Structurally revise evidence-based agent articles"
+  default_prompt: "Use $zenn-agent-revise-article to resolve both evidence and editorial findings using only recorded sources."

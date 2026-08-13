@@ -8,5 +8,7 @@ logs/**/work/
 logs/launchd/
 logs/pipeline-*/
 logs/codex-pipeline-*/
+logs/agent/pipeline-*/
+logs/agent/launchd/
 # このリポジトリは package-lock.json を正とする
 pnpm-lock.yaml

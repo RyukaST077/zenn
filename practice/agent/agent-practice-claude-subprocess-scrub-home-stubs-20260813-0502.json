@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "id": "claude-subprocess-scrub-home-stubs-20260813-0502",
+  "topic": "Claude subprocess scrub fake-HOME startup boundary",
+  "claim": "With Claude Code 2.1.227 on macOS 26.5 arm64, one network-denied non-interactive startup with a fresh HOME containing a non-empty .profile creates an exactly empty .bash_profile only when CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1 is present, preserving .profile but hiding its marker from a later bash -lc.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-claude-subprocess-scrub-home-stubs-20260813-0502.md",
+  "plan": "practice/agent/agent-practice-claude-subprocess-scrub-home-stubs-20260813-0502.md",
+  "fixture": "fixtures/agent-practice/claude-subprocess-scrub-home-stubs",
+  "prompt": "Offline startup probe only. Do not use tools, access files, or answer the prompt.",
+  "timeout_seconds": 90,
+  "network": false,
+  "cases": [
+    {
+      "id": "scrub-unset-control",
+      "provider": "claude",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": "CONTROL_HOME_STARTUP_PRESERVED"
+    },
+    {
+      "id": "scrub-enabled-treatment",
+      "provider": "claude",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": "TREATMENT_EMPTY_BASH_PROFILE_SHADOWED_PROFILE"
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "probe-wrapper.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "case-result.json",
+      "verification.txt"
+    ]
+  }
+}
