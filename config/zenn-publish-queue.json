@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/typescript7-tsc-bin-collision-log.md",
-      "enqueuedAt": "2026-07-11T08:25:24.000Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-08-14T14:50:54.010Z"
-    },
-    {
       "article": "articles/npm12-allowscripts-local-fixture.md",
       "enqueuedAt": "2026-07-11T19:07:04.000Z",
       "attempts": 0,
