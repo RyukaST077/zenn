@@ -7,6 +7,7 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-08-14] [macOSのNode製fake CLIが unexpected environment name で事前検証に失敗する](./2026-08-14-macos-node-fake-cli-cf-user-text-encoding.md) — `Environment` / tags: macos, node, fake-cli, preflight, __CF_USER_TEXT_ENCODING
 - [2026-08-14] [Deno.test.each() で TestContext を受け取ると TS2339 になる（引数の順序）](./2026-08-14-deno-test-each-testcontext-arg-order.md) — `API` / tags: deno, Deno.test.each, TestContext, assertSnapshot, TS2339
 - [2026-08-14] [deno upgrade が built without the upgrade feature で拒否される](./2026-08-14-deno-upgrade-built-without-upgrade-feature.md) — `Environment` / tags: deno, Homebrew, UpgradeFeatureDisabled, brew upgrade deno
 - [2026-08-09] [zshでglobを含む引数（--include=*.js / --test-coverage-include=src/**）が no matches found で実行前に落ちる](./2026-08-09-zsh-nomatch-glob-argument.md) — `Configuration` / tags: zsh, bash, NoMatchesFound, glob, クォート
