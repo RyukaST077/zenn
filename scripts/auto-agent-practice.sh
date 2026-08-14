@@ -47,8 +47,6 @@ PIPE_DIR="logs/agent/pipeline-$TS"
 PLOG="$PIPE_DIR/pipeline.log"
 CONTRACT_TOOL="scripts/agent-stage-result-contract.mjs"
 RESULT_TOOL="scripts/validate-agent-stage-result.mjs"
-PUBLISH_CONTRACT_TOOL="scripts/stage-result-contract.mjs"
-PUBLISH_RESULT_TOOL="scripts/validate-stage-result.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 stage_timeout() {
@@ -60,7 +58,6 @@ stage_timeout() {
     draft) echo "${TIMEOUT_AGENT_DRAFT:=1200}" ;;
     review) echo "${TIMEOUT_AGENT_REVIEW:=900}" ;;
     revise) echo "${TIMEOUT_AGENT_REVISE:=1200}" ;;
-    prepare_publish) echo "${TIMEOUT_AGENT_PREPARE_PUBLISH:=900}" ;;
   esac
 }
 
@@ -98,8 +95,7 @@ command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
-[ -f "$PUBLISH_CONTRACT_TOOL" ] || die "publication stage contract tool is missing"
-[ -f "$PUBLISH_RESULT_TOOL" ] || die "publication stage result validator is missing"
+[ -x scripts/agent-practice/publish-reviewed-article.sh ] || die "publication helper is missing or not executable"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
@@ -163,43 +159,6 @@ run_stage() {
   log "$stage complete: $STAGE_ARTIFACT"
 }
 
-run_publish_stage() {
-  local article="$1" review="$2"
-  local stage="prepare_publish" idx="8"
-  local marker="$PIPE_DIR/.$idx-$stage.marker"
-  local events="$PIPE_DIR/$idx-$stage.events.jsonl"
-  local result="$PIPE_DIR/$idx-$stage.result.json"
-  local schema="$PIPE_DIR/$idx-$stage.schema.json"
-  local seconds contract repaired rc
-  seconds="$(stage_timeout "$stage")"
-  node "$PUBLISH_CONTRACT_TOOL" schema "$stage" "$schema" \
-    || die "$stage schema generation failed"
-  contract="$(node "$PUBLISH_CONTRACT_TOOL" prompt "$stage")" \
-    || die "$stage result prompt generation failed"
-  touch "$marker"
-
-  local cmd=("$CODEX_BIN" "-a" "never" "exec" "--ephemeral" "--ignore-user-config"
-    "--sandbox" "danger-full-access" "-c" "model_reasoning_effort=\"$AGENT_PIPELINE_EFFORT\"")
-  [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
-  cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result")
-  cmd+=("Use \$zenn-prepare-publish. Article: $article. Passing review: $review. Pipeline directory: $PIPE_DIR. Prepare publication and PR metadata. Do not ask questions, perform Git or GitHub operations, modify the article body, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract")
-
-  log "$stage start (timeout=${seconds}s, skill=zenn-prepare-publish)"
-  set +e
-  "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
-  rc=$?
-  set -e
-  [ "$rc" != 124 ] || die "$stage timed out; events: $events"
-  [ "$rc" = 0 ] || die "$stage failed with exit $rc; events: $events"
-  repaired="$(node "$PUBLISH_CONTRACT_TOOL" normalize "$stage" "$result")" \
-    || die "$stage result normalization failed"
-  [ -z "$repaired" ] || log "$stage result normalization: set $repaired to null"
-  STAGE_ARTIFACT="$(node "$PUBLISH_RESULT_TOOL" "$result" articles "$marker" "$stage" 2>>"$PLOG")" \
-    || die "$stage result contract failed: $result"
-  PUBLISH_STAGE_RESULT="$result"
-  log "$stage complete: $STAGE_ARTIFACT"
-}
-
 SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-worthy, falsifiable practice claim for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision. Exclude topics already covered by articles or prior agent reports. Prefer a boundary, failure mode, configuration, new feature, or reproducible workflow that adds value beyond official documentation and can be verified locally with a bounded offline fixture. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
 run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
 REPORT="$STAGE_ARTIFACT"
@@ -254,61 +213,10 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
 done
 [ "${VERDICT:-}" = pass ] || die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
 
-SLUG="$(basename "$ARTICLE" .md)"
-BRANCH="publish/$SLUG"
-if git show-ref --verify --quiet "refs/heads/$BRANCH" \
-    || GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-  BRANCH="$BRANCH-$TS"
-fi
-git switch -c "$BRANCH" || die "failed to create publication branch $BRANCH"
-
-run_publish_stage "$ARTICLE" "$REVIEW"
-ARTICLE="$STAGE_ARTIFACT"
-bash scripts/check-article.sh "$ARTICLE" --expect-published true \
-  || die "publication article check failed"
-PR_METADATA="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.pr_metadata)' "$PUBLISH_STAGE_RESULT")"
-case "$PR_METADATA" in "$PIPE_DIR"/*) ;; *) die "PR metadata is outside pipeline directory: $PR_METADATA" ;; esac
-metadata_lines="$(node scripts/validate-pr-metadata.mjs "$PR_METADATA" "$PIPE_DIR")" \
-  || die "PR metadata validation failed"
-PR_TITLE="$(printf '%s\n' "$metadata_lines" | sed -n '1p')"
-PR_BODY="$(printf '%s\n' "$metadata_lines" | sed -n '2p')"
-
-git add -- "$ARTICLE"
-[ -d "images/$SLUG" ] && git add -- "images/$SLUG"
-staged="$(git diff --cached --name-only)"
-[ -n "$staged" ] || die "nothing was staged for publication"
-while IFS= read -r staged_path; do
-  case "$staged_path" in
-    "$ARTICLE"|images/"$SLUG"/*) ;;
-    *) die "disallowed staged path: $staged_path" ;;
-  esac
-done <<EOF
-$staged
-EOF
-git diff --cached --check || die "staged publication diff failed whitespace checks"
-git commit -m "publish: $SLUG" || die "publication commit failed"
-COMMIT="$(git rev-parse HEAD)"
-GIT_TERMINAL_PROMPT=0 git push --set-upstream origin "$BRANCH" \
-  || die "publication push failed"
-
-PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$AGENT_PIPELINE_BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY")" \
-  || die "PR creation failed"
-git switch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null \
-  || die "failed to return to $AGENT_PIPELINE_BASE_BRANCH"
-
-if [ "$AUTO_MERGE" = 1 ]; then
-  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --auto --delete-branch; then
-    MERGE_RESULT="auto-merge requested"
-  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --delete-branch; then
-    MERGE_RESULT="merged immediately"
-  else
-    die "PR merge failed: $PR_URL"
-  fi
-  GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
-    || log "WARN: could not refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
-else
-  MERGE_RESULT="PR created; waiting for human merge"
-fi
+PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
+[ "$AUTO_MERGE" = 1 ] && PUBLISH_ARGS+=(--auto-merge) || PUBLISH_ARGS+=(--pr-only)
+PUBLISH_SUMMARY="$(bash scripts/agent-practice/publish-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
+  || die "publication helper failed"
 
 log "complete: publication submitted for $ARTICLE"
 log "research: $REPORT"
@@ -316,8 +224,4 @@ log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"
 log "analysis: $ANALYSIS"
 log "review: $REVIEW"
-log "commit: $COMMIT"
-log "PR: $PR_URL"
-log "merge: $MERGE_RESULT"
-printf 'Article: %s\nPR: %s\nPipeline: %s\nMerge: %s\n' \
-  "$ARTICLE" "$PR_URL" "$PIPE_DIR" "$MERGE_RESULT"
+printf '%s\n' "$PUBLISH_SUMMARY"

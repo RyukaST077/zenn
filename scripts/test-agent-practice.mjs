@@ -29,8 +29,163 @@ const run = (command, args, options = {}) => spawnSync(command, args, {
   env: { ...process.env, ...options.env },
 });
 
+const runAt = (cwd, command, args, options = {}) => spawnSync(command, args, {
+  cwd,
+  encoding: "utf8",
+  env: { ...process.env, ...options.env },
+});
+
+const assertRun = (result, label) => {
+  assert.equal(result.status, 0, `${label}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+};
+
+const testPublicationFlow = ({ autoMerge, failPrepare = false, failPrCreate = false }) => {
+  const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-publish-test-"));
+  const remote = path.join(publishRoot, "remote.git");
+  const checkout = path.join(publishRoot, "checkout");
+  const bin = path.join(publishRoot, "bin");
+  const ghLog = path.join(publishRoot, "gh.log");
+  const article = "articles/integration-publish-fixture.md";
+  const review = "logs/agent/review-integration-publish-fixture.md";
+  const pipeline = "logs/agent/pipeline-integration-publish-fixture";
+  const slug = "integration-publish-fixture";
+  try {
+    fs.mkdirSync(checkout, { recursive: true });
+    fs.mkdirSync(bin, { recursive: true });
+    assertRun(runAt(checkout, "git", ["init", "-b", "main"]), "git init");
+    assertRun(runAt(checkout, "git", ["config", "user.name", "Agent Publish Test"]), "git user.name");
+    assertRun(runAt(checkout, "git", ["config", "user.email", "agent-publish@example.com"]), "git user.email");
+    fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, article), `---
+title: "Integration publication fixture"
+emoji: "🧪"
+type: tech
+topics: ["codex", "test"]
+published: false
+---
+
+Publication fixture body.
+`);
+    fs.writeFileSync(path.join(checkout, "README.md"), "# publication integration fixture\n");
+    assertRun(runAt(checkout, "git", ["add", "articles", "README.md"]), "git add fixture");
+    assertRun(runAt(checkout, "git", ["commit", "-m", "fixture"]), "git commit fixture");
+    assertRun(runAt(publishRoot, "git", ["init", "--bare", remote]), "git init bare");
+    assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "git remote add");
+    assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "git push main");
+
+    fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
+    fs.writeFileSync(path.join(checkout, review), `# Integration review
+
+verdict: pass
+blockers: 0
+warnings: 0
+editorial_score: 90/100
+`);
+
+    const fakeCodex = path.join(bin, "codex");
+    fs.writeFileSync(fakeCodex, `#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+const args = process.argv.slice(2);
+if (args[0] === "login" && args[1] === "status") process.exit(0);
+if (process.env.FAKE_PREPARE_FAILURE === "1") process.exit(9);
+const worktree = args[args.indexOf("-C") + 1];
+const output = args[args.indexOf("-o") + 1];
+const article = process.env.FAKE_ARTICLE;
+const pipeline = process.env.FAKE_PIPELINE;
+const slug = path.basename(article, ".md");
+const articlePath = path.join(worktree, article);
+const draft = fs.readFileSync(articlePath, "utf8");
+fs.writeFileSync(articlePath, draft.replace("published: false", "published: true"));
+fs.mkdirSync(path.join(worktree, pipeline), { recursive: true });
+const body = path.join(pipeline, "pr-body.md");
+const metadata = path.join(pipeline, "pr-metadata.json");
+fs.writeFileSync(path.join(worktree, body), "# Publish integration fixture\\n");
+fs.writeFileSync(path.join(worktree, metadata), JSON.stringify({
+  title: "Publish integration fixture",
+  body_file: body,
+}));
+fs.writeFileSync(output, JSON.stringify({
+  status: "ok",
+  artifact: article,
+  reason: "",
+  metadata: { verdict: null, slug, pr_metadata: metadata },
+}));
+console.log(JSON.stringify({ type: "turn.completed" }));
+`, { mode: 0o755 });
+
+    const fakeGh = path.join(bin, "gh");
+    fs.writeFileSync(fakeGh, `#!/bin/sh
+printf '%s\\n' "$*" >> "$FAKE_GH_LOG"
+if [ "$1" = auth ] && [ "$2" = status ]; then exit 0; fi
+if [ "$1" = pr ] && [ "$2" = create ]; then
+  if [ "$FAKE_PR_CREATE_FAILURE" = 1 ]; then exit 7; fi
+  echo "https://example.invalid/pull/1"
+  exit 0
+fi
+if [ "$1" = pr ] && [ "$2" = merge ]; then exit 0; fi
+exit 2
+`, { mode: 0o755 });
+
+    const result = runAt(checkout, "bash", [
+      path.join(root, "scripts/agent-practice/publish-reviewed-article.sh"),
+      "--article", article,
+      "--review", review,
+      "--pipeline", pipeline,
+      autoMerge ? "--auto-merge" : "--pr-only",
+    ], {
+      env: {
+        PATH: `${bin}:${process.env.PATH}`,
+        CODEX_BIN: fakeCodex,
+        FAKE_ARTICLE: article,
+        FAKE_PIPELINE: pipeline,
+        FAKE_GH_LOG: ghLog,
+        FAKE_PREPARE_FAILURE: failPrepare ? "1" : "0",
+        FAKE_PR_CREATE_FAILURE: failPrCreate ? "1" : "0",
+      },
+    });
+
+    const branch = runAt(checkout, "git", ["branch", "--show-current"]);
+    assert.equal(branch.stdout.trim(), "main", "publication flow changed the caller checkout branch");
+    const worktrees = runAt(checkout, "git", ["worktree", "list", "--porcelain"]);
+    assert.equal((worktrees.stdout.match(/^worktree /gm) || []).length, 1,
+      `temporary worktree leaked:\n${worktrees.stdout}`);
+    assert.match(fs.readFileSync(path.join(checkout, article), "utf8"), /published: false/);
+
+    if (failPrepare) {
+      assert.notEqual(result.status, 0, "prepare failure unexpectedly succeeded");
+      assert.match(result.stderr, /prepare_publish failed with exit 9/);
+      return;
+    }
+    if (failPrCreate) {
+      assert.notEqual(result.status, 0, "PR creation failure unexpectedly succeeded");
+      assert.match(result.stderr, /PR creation failed/);
+      return;
+    }
+
+    assertRun(result, `publication helper (${autoMerge ? "auto-merge" : "pr-only"})`);
+    assert.match(result.stdout, /PR: https:\/\/example\.invalid\/pull\/1/);
+    const remoteArticle = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/publish/${slug}:${article}`,
+    ]);
+    assertRun(remoteArticle, "read published remote article");
+    assert.match(remoteArticle.stdout, /published: true/);
+    const calls = fs.readFileSync(ghLog, "utf8");
+    assert.match(calls, /pr create/);
+    if (autoMerge) assert.match(calls, /pr merge/);
+    else assert.doesNotMatch(calls, /pr merge/);
+  } finally {
+    fs.rmSync(publishRoot, { recursive: true, force: true });
+  }
+};
+
 try {
-  const shellSyntax = run("bash", ["-n", "scripts/auto-agent-practice.sh", "scripts/auto-agent-practice-launchd.sh"]);
+  const shellSyntax = run("bash", [
+    "-n",
+    "scripts/auto-agent-practice.sh",
+    "scripts/auto-agent-practice-launchd.sh",
+    "scripts/agent-practice/publish-reviewed-article.sh",
+  ]);
   assert.equal(shellSyntax.status, 0, shellSyntax.stderr);
   const dryRun = run("bash", ["scripts/auto-agent-practice.sh", "--scheduled", "--dry-run"]);
   assert.equal(dryRun.status, 0, dryRun.stderr);
@@ -45,6 +200,11 @@ try {
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
   assert.match(prOnlyDryRun.stdout, /PR -> human merge/);
+
+  testPublicationFlow({ autoMerge: false });
+  testPublicationFlow({ autoMerge: true });
+  testPublicationFlow({ autoMerge: false, failPrepare: true });
+  testPublicationFlow({ autoMerge: false, failPrCreate: true });
 
   assert.ok(!redactText(`${os.homedir()}/${os.userInfo().username}/fixture`).includes(os.userInfo().username));
   assert.equal(redactValue({ signature: "opaque-thinking-signature" }).signature, "[REDACTED]");
