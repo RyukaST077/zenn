@@ -182,15 +182,19 @@ exit 2
   }
 };
 
-const testQueueFlow = ({ autoMerge, failPrCreate = false }) => {
+const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent" }) => {
   const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-queue-test-"));
   const remote = path.join(publishRoot, "remote.git");
   const checkout = path.join(publishRoot, "checkout");
   const bin = path.join(publishRoot, "bin");
   const ghLog = path.join(publishRoot, "gh.log");
   const article = "articles/integration-queue-fixture.md";
-  const review = "logs/agent/review-integration-queue-fixture.md";
-  const pipeline = "logs/agent/pipeline-integration-queue-fixture";
+  const review = reviewStyle === "agent"
+    ? "logs/agent/review-integration-queue-fixture.md"
+    : "logs/review-integration-queue-fixture.md";
+  const pipeline = reviewStyle === "agent"
+    ? "logs/agent/pipeline-integration-queue-fixture"
+    : `logs/${reviewStyle === "codex" ? "codex-" : ""}pipeline-integration-queue-fixture`;
   const slug = "integration-queue-fixture";
   try {
     fs.mkdirSync(checkout, { recursive: true });
@@ -224,13 +228,20 @@ Queue fixture body.
     assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "queue git push main");
 
     fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
-    fs.writeFileSync(path.join(checkout, review), `# Integration review
+    const reviewText = reviewStyle === "claude" ? `# 公開前レビュー
+
+## 判定
+
+**判定: 公開可**
+
+- blocker: 0 件 / warning: 0 件 / suggestion: 0 件
+` : `# Integration review
 
 verdict: pass
 blockers: 0
 warnings: 0
-editorial_score: 90/100
-`);
+${reviewStyle === "agent" ? "editorial_score: 90/100\n" : ""}`;
+    fs.writeFileSync(path.join(checkout, review), reviewText);
 
     const fakeGh = path.join(bin, "gh");
     fs.writeFileSync(fakeGh, `#!/bin/sh
@@ -250,6 +261,7 @@ exit 2
       "--article", article,
       "--review", review,
       "--pipeline", pipeline,
+      "--review-style", reviewStyle,
       autoMerge ? "--auto-merge" : "--pr-only",
     ], {
       env: {
@@ -273,7 +285,7 @@ exit 2
       return;
     }
 
-    assertRun(result, `queue helper (${autoMerge ? "auto-merge" : "pr-only"})`);
+    assertRun(result, `queue helper (${reviewStyle}, ${autoMerge ? "auto-merge" : "pr-only"})`);
     assert.match(result.stdout, /PR: https:\/\/example\.invalid\/pull\/2/);
     const remoteArticle = runAt(checkout, "git", [
       `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:${article}`,
@@ -301,6 +313,9 @@ try {
     "-n",
     "scripts/auto-agent-practice.sh",
     "scripts/auto-agent-practice-launchd.sh",
+    "scripts/auto-publish.sh",
+    "scripts/auto-publish-launchd.sh",
+    "scripts/auto-publish-codex-launchd.sh",
     "scripts/agent-practice/publish-reviewed-article.sh",
     "scripts/agent-practice/enqueue-reviewed-article.sh",
     "scripts/zenn-publish-queue.sh",
@@ -328,6 +343,17 @@ try {
   ]);
   assert.equal(resumeDryRun.status, 0, resumeDryRun.stderr);
   assert.match(resumeDryRun.stdout, /resume after run: logs\/agent\/run-example\/execution-log\.md/);
+  const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
+  assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);
+  assert.match(claudeDryRun.stdout, /published:false \+ 公開キュー追加PR/);
+  for (const wrapper of [
+    "scripts/auto-publish-launchd.sh",
+    "scripts/auto-publish-codex-launchd.sh",
+    "scripts/auto-agent-practice-launchd.sh",
+  ]) {
+    assert.doesNotMatch(fs.readFileSync(path.join(root, wrapper), "utf8"), /pending-count/,
+      `${wrapper} must not stop article creation while the publication queue has a backlog`);
+  }
 
   testPublicationFlow({ autoMerge: false });
   testPublicationFlow({ autoMerge: true });
@@ -336,6 +362,8 @@ try {
   testQueueFlow({ autoMerge: false });
   testQueueFlow({ autoMerge: true });
   testQueueFlow({ autoMerge: false, failPrCreate: true });
+  testQueueFlow({ autoMerge: false, reviewStyle: "codex" });
+  testQueueFlow({ autoMerge: false, reviewStyle: "claude" });
 
   assert.ok(!redactText(`${os.homedir()}/${os.userInfo().username}/fixture`).includes(os.userInfo().username));
   assert.equal(redactValue({ signature: "opaque-thinking-signature" }).signature, "[REDACTED]");

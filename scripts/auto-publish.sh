@@ -4,7 +4,7 @@
 # 各スキルを非対話の claude コマンド（claude -p "/skill ..."）で順番に実行する。
 #
 #   search-topic → plan-practice → run-practice → draft-article
-#     → [ review-article ⇄ revise-article ]×最大N回 → publish-pr → (auto-merge)
+#     → [ review-article ⇄ revise-article ]×最大N回 → publication queue PR → (auto-merge)
 #
 # 使い方:
 #   bash scripts/auto-publish.sh                     # 1サイクル実行（PR作成まで。マージは人間）
@@ -195,9 +195,8 @@ if [ "$DRY_RUN" = 1 ]; then
     3. /run-practice <タスク>                   → logs/run-*/execution-log.md
     4. /draft-article <ログ>                    → articles/<slug>.md
     5. /review-article ⇄ /revise-article        → 判定「公開可」までループ
-    6. /publish-pr <記事>                       → feature ブランチ + PR
-$([ "$AUTO_MERGE" = 1 ] && echo "    6.5 素材アーカイブ                          → research/practice/logs を同PRに別コミット")
-    7. $([ "$AUTO_MERGE" = 1 ] && echo "gh pr merge (auto)" || echo "（マージは人間が行う）")
+    6. reviewed article                         → published:false + 公開キュー追加PR
+    7. $([ "$AUTO_MERGE" = 1 ] && echo "gh pr merge (auto、キューへ追加)" || echo "（マージは人間が行う）")
 EOF
   exit 0
 fi
@@ -205,24 +204,22 @@ fi
 # ---------- 前提チェック・多重起動防止 ----------
 command -v "$CLAUDE_BIN" >/dev/null || { echo "claude コマンドが見つからない" >&2; exit 2; }
 HAS_GH=0; command -v gh >/dev/null && HAS_GH=1
+[ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || {
+  echo "公開キュー追加スクリプトが見つからない" >&2; exit 2;
+}
 
-# publish 段は最終的に「/pull/N の実PR」を要求する（publish-pr は gh が無い/未認証だと compare
-# URL のフォールバックしか出せず、その URL は publish ゲート(下記の PR_URL 抽出)を通過できない）。
-# gh が使えないと何度 resume しても必ず publish 段で死ぬので、長いパイプラインを走らせる前に
-# ここで即中止して原因を明示する（45分先で紛らわしく失敗する事故の防止）。
+# 最終段は公開キュー追加PRを必須とするため、長いパイプラインを走らせる前にgh認証を確認する。
 if [ "$HAS_GH" = 0 ]; then
   cat >&2 <<'EOF'
-ERROR: gh CLI が見つからない。このパイプラインは publish 段で実PR(/pull/N)の作成に gh を使う。
-       gh 無しでは publish-pr が compare URL のフォールバックしか出せず、公開ゲートで必ず失敗する。
+ERROR: gh CLI が見つからない。このパイプラインは最終段で公開キュー追加PRを作成する。
   対処: brew install gh && gh auth login
-       その後 --resume で publish 段から再開できる（それ以前の成果物は再利用される）。
+       その後 --resume でキュー追加段から再開できる（それ以前の成果物は再利用される）。
 EOF
   exit 2
 fi
 if ! gh auth status >/dev/null 2>&1; then
   cat >&2 <<'EOF'
-ERROR: gh CLI は入っているが GitHub 未認証。この状態だと publish-pr は gh pr create できず、
-       compare URL のフォールバックしか出せないため、公開ゲート(/pull/N 抽出)で必ず失敗する。
+ERROR: gh CLI は入っているがGitHub未認証のため、公開キュー追加PRを作成できない。
   対処: gh auth login   （GitHub.com → HTTPS → ブラウザ/トークンで認証）
        その後 --resume で publish 段から再開できる。
 EOF
@@ -314,53 +311,40 @@ if [ -z "${DONE_review:-}" ]; then
   save_state DONE_review 1
 else log "skip: review ループ（実行済み・公開可）"; fi
 
-# ---------- 6. publish-pr ----------
+# ---------- 6. publication queue PR ----------
 SLUG="$(basename "$ARTICLE" .md)"
 if [ -z "${DONE_publish:-}" ]; then
   publog="$PIPE_DIR/6-publish.log"
-  run_claude publish "$publog" "/publish-pr 対象記事: $ARTICLE"
-  PR_URL="$(grep -oE 'https://github\.com/[^ ")]+/pull/[0-9]+' "$publog" | head -1 || true)"
-  if [ -z "$PR_URL" ] && [ "$HAS_GH" = 1 ]; then
-    PR_URL="$(gh pr list --head "publish/$SLUG" --json url --jq '.[0].url' 2>/dev/null || true)"
-  fi
-  [ -n "$PR_URL" ] || die "publish-pr: 実PR(/pull/N)を確認できなかった。publish-pr が公開ゲートで中止した(blocker)か gh pr create が失敗した可能性。ログ: $publog"
+  QUEUE_SUMMARY="$(AGENT_PIPELINE_BASE_BRANCH="$BASE_BRANCH" AGENT_PIPELINE_MERGE_METHOD="$MERGE_METHOD" \
+    bash scripts/agent-practice/enqueue-reviewed-article.sh \
+      --article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR" \
+      --review-style claude --pr-only)" || die "公開キュー追加に失敗した。ログ: $publog"
+  printf '%s\n' "$QUEUE_SUMMARY" >"$publog"
+  PR_URL="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^PR: //p' | head -1)"
+  [ -n "$PR_URL" ] || die "公開キューPRのURLを確認できなかった。ログ: $publog"
   save_state PR_URL "$PR_URL"; save_state DONE_publish 1
-  log "   PR 作成: $PR_URL"
-else log "skip: publish-pr (実行済み → $PR_URL)"; fi
+  log "   公開キューPR作成: $PR_URL"
+else log "skip: publication queue PR (実行済み → $PR_URL)"; fi
 
-# auto-merge 時のみ: パイプライン素材(research/practice/logs)を、publish-pr が作った同じ
-# feature ブランチ/PR に別コミットで相乗りさせ、マージ後に作業ツリーをクリーンに保つ。
-# publish-pr 実行直後はまだ feature ブランチに居る（下の checkout で main へ戻す前）。
-# resume 等で既に main に居る場合は安全のためスキップする（main 直 push を避ける）。
+# 公開キューPRは隔離worktreeで記事とキューだけをコミットする。
+# 調査・実践ログはローカル証拠として残し、公開キューPRには混ぜない。
 if [ "$AUTO_MERGE" = 1 ] && [ -z "${DONE_archive:-}" ]; then
-  cur_branch="$(git branch --show-current)"
-  if [ "$cur_branch" = "$BASE_BRANCH" ]; then
-    log "   archive: feature ブランチに居ないため素材コミットをスキップ"
-  else
-    git add -- research practice logs
-    if git diff --cached --quiet; then
-      log "   archive: コミットする素材が無い"
-    else
-      git commit -m "chore: archive pipeline artifacts for $SLUG" >>"$PLOG" 2>&1 || die "素材コミットに失敗"
-      git push >>"$PLOG" 2>&1 || die "素材 push に失敗"
-      log "   archive: パイプライン素材を PR に追加コミット・push した"
-    fi
-    save_state DONE_archive 1
-  fi
+  log "   archive: 公開キューPRには記事・画像・キューだけを含める"
+  save_state DONE_archive 1
 fi
 
-# publish-pr は feature ブランチに残るため、次サイクルに備えて main へ戻す
+# キュー追加ヘルパーは呼び出し元をmainのまま保つ。
 git checkout "$BASE_BRANCH" >/dev/null 2>&1 || true
 
 # ---------- 7. auto-merge（--auto-merge 指定時のみ） ----------
 MERGED=0
 if [ "$AUTO_MERGE" = 1 ] && [ -z "${DONE_merge:-}" ]; then
   [ "$HAS_GH" = 1 ] || die "--auto-merge には gh CLI が必要"
-  # branch protection があれば --auto（必須チェック通過後にマージ）、無ければ即時マージ
+  # branch protection があれば --auto、無ければ即時マージ。ここでは公開ではなくキュー追加になる。
   if gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch >>"$PLOG" 2>&1; then
-    log "auto-merge を予約した（必須チェック通過後にマージ→公開される）"
+    log "auto-merge を予約した（必須チェック通過後に公開キューへ追加）"
   elif gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch >>"$PLOG" 2>&1; then
-    log "PR を即時マージした（Zenn へ公開される）"
+    log "PR を即時マージした（公開キューへ追加）"
   else
     die "PR のマージに失敗した: $PR_URL ($PLOG 参照)"
   fi
@@ -376,10 +360,10 @@ log "=== auto-publish 完了"
   echo "  記事        : $ARTICLE"
   echo "  PR          : $PR_URL"
   if [ "$AUTO_MERGE" = 1 ]; then
-    echo "  マージ      : $([ "$MERGED" = 1 ] && echo '実行/予約済み（マージ＝Zenn公開）' || echo '実行済み（resume）')"
-    echo "  次のアクション: 公開後に zenn.dev で表示確認（slug 衝突時は revise でリネーム→再PR）"
+    echo "  マージ      : $([ "$MERGED" = 1 ] && echo '実行/予約済み（published:falseでキュー追加）' || echo '実行済み（resume）')"
+    echo "  次のアクション: AI非依存ワーカーが投稿枠に合わせて1件ずつ公開"
   else
-    echo "  マージ      : 未実施（人間が PR を確認してマージ＝公開）"
+    echo "  マージ      : 未実施（人間がPRを確認して公開キューへ追加）"
   fi
   echo "  ログ一式    : $PIPE_DIR"
 } | tee -a "$PLOG" >&2

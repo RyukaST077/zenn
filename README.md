@@ -19,7 +19,7 @@ Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆
 /draft-article  → articles/<slug>.md              記事ドラフト生成（published: false）
 /review-article → logs/review-*.md                公開前レビュー（公開可/要修正/公開不可）
 /revise-article → 記事修正 + logs/revise-*.md      指摘の修正適用（公開可までループ）
-/publish-pr     → feature ブランチ + PR            公開準備（PRマージ＝Zenn公開）
+/queue          → queue/<slug> + PR                published:falseのまま公開キューへ追加
 ```
 
 ## auto-publish.sh の使い方
@@ -42,10 +42,10 @@ Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆
 ### 基本の実行
 
 ```bash
-# 1サイクル実行（テーマ調査 → … → PR作成まで。マージ＝公開は人間が行う）
+# 1サイクル実行（テーマ調査 → … → 公開キュー追加PRまで。マージは人間が行う）
 bash scripts/auto-publish.sh
 
-# PRの自動マージまで行う（完全自律。マージ＝Zenn公開）
+# PRの自動マージまで行う（完全自律。記事はpublished:falseでキューに貯まる）
 bash scripts/auto-publish.sh --auto-merge
 
 # 実行計画と設定の確認だけ（何も実行しない）
@@ -56,7 +56,7 @@ bash scripts/auto-publish.sh --dry-run
 
 | オプション | 意味 | 既定 |
 |---|---|---|
-| `--auto-merge` | PR作成後に `gh pr merge` で自動マージ（branch protection があれば `--auto` 予約、無ければ即時マージ） | OFF（PR作成まで） |
+| `--auto-merge` | キュー追加PRを`gh pr merge`で自動マージ（branch protectionがあれば`--auto`予約） | OFF（PR作成まで） |
 | `--resume <dir>` | 失敗したパイプラインを途中から再開（`logs/pipeline-*/` を渡す） | — |
 | `--max-rounds <n>` | review ⇄ revise ループの上限回数 | 3 |
 | `--search-args "..."` | search-topic への引数（関心領域・スキルレベルなど） | — |
@@ -124,9 +124,10 @@ resume は `state.sh` を読み、**完了済みの段をスキップして失�
 ### 公開の仕組み（安全設計）
 
 - 記事は常に `published: false` のドラフトとして生成・レビューされる
-- `publish-pr` が feature ブランチ（`publish/<slug>`）内でのみ `true` に変え、PRを作る
-- **PRを `main` にマージした瞬間に Zenn で公開される**（`main` への直接 push はしない）
-- `--auto-merge` を付けない限り、マージ（＝公開の最終判断）は人間が行う
+- レビュー合格後も`false`のまま、`queue/<slug>`ブランチから公開キュー追加PRを作る
+- キュー追加PRをマージしても、まだZennでは公開されない
+- AI非依存ワーカーだけが投稿枠を確認して、先頭記事を`true`にする公開PRを作成・マージする
+- `--auto-merge`を付けない場合、人間が確認してから記事をキューへ追加する
 - 公開後に「Slug はサイト内で既に使用されています」が出た場合は
   `knowledge/2026-07-01-zenn-slug-already-used.md` を参照（slug を具体化してリネーム）
 
@@ -154,7 +155,7 @@ Claude 版と同じ「調査 → 実践 → 執筆 → レビュー → 公開�
 
 ```
 zenn-search-topic → zenn-plan-practice → zenn-run-practice → zenn-draft-article
-→ zenn-review-article ⇄ zenn-revise-article → branch → zenn-prepare-publish → commit/push → PR
+→ zenn-review-article ⇄ zenn-revise-article → published:falseのまま公開キュー追加PR
 ```
 
 Claude 版との主な違い:
@@ -183,10 +184,10 @@ Claude 版との主な違い:
 ### 基本の実行
 
 ```bash
-# 1サイクル実行（PR 作成まで。マージ＝公開は人間が行う）
+# 1サイクル実行（published:falseの公開キュー追加PRまで）
 bash scripts/auto-publish-codex.sh
 
-# PR の自動マージまで行う（完全自律。マージ＝Zenn公開）
+# 公開キュー追加PRの自動マージまで行う（記事はpublished:false）
 bash scripts/auto-publish-codex.sh --auto-merge
 
 # 実行計画と設定の確認だけ（何も実行しない）
@@ -278,8 +279,9 @@ bash scripts/zenn-publish-queue.sh
 5. 見つからなければ6時間の間隔を空け、キュー状態の更新pushでZennデプロイを再試行する
 
 `config/launchd/com.zenn.publish-queue.plist` はこのワーカーを1時間ごとに実行する設定で、ログは
-`logs/launchd/zenn-publish-queue-*.log` に残る。キューが空でない間は、従来記事、Codex記事、
-AI coding-agent記事のlaunchdラッパーが新しい記事生成をスキップするため、保留記事が増え続けない。
+`logs/launchd/zenn-publish-queue-*.log` に残る。記事作成側はキュー残量に関係なく毎朝動き、
+レビュー合格済みの記事を`published: false`のまま末尾へ追加する。これにより記事を貯めながら、
+公開ペースだけをワーカーが制御できる。
 
 ## AI coding-agent know-how pipeline
 
@@ -356,9 +358,9 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 ### AI記事の定期実行（毎日5:00）
 
 従来記事の4:00ジョブとは別に、`scripts/auto-agent-practice-launchd.sh`を
-`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はレビュー合格後に公開キュー追加PRを
-自動マージする。公開キューに保留記事がある場合や、4:00側のパイプラインロックが残っている場合は、
-記事を増やさないよう5:00側を正常終了扱いでスキップする。
+`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はキュー残量に関係なく記事を作り、
+レビュー合格後に`published: false`のまま公開キュー追加PRを自動マージする。4:00側のパイプラインが
+まだ動いている場合だけ、同じリポジトリを同時更新しないよう5:00側を正常終了扱いでスキップする。
 
 ```bash
 # launchdと同じ経路をdry-run

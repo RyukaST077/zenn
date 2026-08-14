@@ -34,16 +34,6 @@ USAGE_GATE="$REPO/scripts/check-claude-session-usage.sh"
   case " $ARGS " in
     *" --dry-run "*) echo "Claude usage gate: bypassed for dry-run" ;;
     *)
-      pending="$(node "$REPO/scripts/zenn-publish-queue.mjs" pending-count 2>/dev/null)" || {
-        echo "RESULT: skipped (publication queue could not be validated safely)"
-        echo "===== auto-publish (launchd) end: $(date) exit=0 ====="
-        exit 0
-      }
-      if [ "$pending" -gt 0 ]; then
-        echo "RESULT: skipped (publication queue has $pending pending article(s))"
-        echo "===== auto-publish (launchd) end: $(date) exit=0 ====="
-        exit 0
-      fi
       bash "$USAGE_GATE"
       usage_rc=$?
       case "$usage_rc" in

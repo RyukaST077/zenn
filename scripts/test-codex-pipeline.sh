@@ -112,7 +112,8 @@ node scripts/validate-pr-metadata.mjs "$PR_FIXTURE/pr-metadata.json" "$PR_FIXTUR
 bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run.txt"
 rg -q 'approval=never, sandbox=danger-full-access' "$TMP/dry-run.txt"
 rg -q 'model=gpt-5.6-sol, reasoning=high' "$TMP/dry-run.txt"
-rg -q 'zenn-search-topic.*zenn-prepare-publish' "$TMP/dry-run.txt"
+rg -q 'zenn-search-topic.*published:false publication queue' "$TMP/dry-run.txt"
+rg -q -- '--review-style codex --pr-only' scripts/auto-publish-codex.sh
 
 CODEX_SANDBOX_MODE=workspace-write bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-workspace.txt"
 rg -q 'approval=never, sandbox=workspace-write' "$TMP/dry-run-workspace.txt"
