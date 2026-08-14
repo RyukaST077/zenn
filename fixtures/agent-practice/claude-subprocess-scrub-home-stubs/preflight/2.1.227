@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Offline fake used only by the runner's wrapper preflight. It reproduces the
+# fixture's two expected filesystem outcomes without contacting Claude.
+if [ "${1:-}" = "auth" ] && [ "${2:-}" = "status" ]; then
+  echo "fixture preflight authenticated"
+  exit 0
+fi
+if [ "${1:-}" = "--version" ]; then
+  echo "2.1.227 (Claude Code; fixture preflight)"
+  exit 0
+fi
+if [ "${CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:-}" = "1" ]; then
+  : >"$HOME/.bash_profile"
+fi
+echo "API error: network connection failed (fixture preflight)" >&2
+exit 1

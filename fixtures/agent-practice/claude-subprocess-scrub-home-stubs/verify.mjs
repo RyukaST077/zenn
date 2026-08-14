@@ -48,10 +48,25 @@ assert(/^[a-f0-9]{64}$/.test(result.cli.resolved_binary_sha256), "CLI digest is 
 assert(result.safety.fake_home_is_case_child === true, "fake HOME escaped the case root");
 assert(result.safety.fake_home_differs_from_host_home === true, "host HOME was targeted");
 assert(result.safety.inherited_environment_forwarded === false, "host environment was forwarded");
-assert(JSON.stringify(result.safety.runner_environment_names) === JSON.stringify(["CLAUDE_BIN", "PATH", "REAL_CLAUDE_BIN", "TMPDIR"]), "runner environment allowlist mismatch");
-assert(result.safety.network_enforcement === "sandbox-exec deny network*", "network deny was not declared");
-assert(result.safety.write_enforcement === "sandbox-exec deny file-write* except case root and /dev/null", "write deny was not declared");
-assert(result.safety.credential_service_enforcement === "sandbox-exec denies securityd and security.agent lookup", "credential service deny was not declared");
+const expectedRunnerEnvironment = [
+  "CLAUDE_BIN",
+  "PATH",
+  "REAL_CLAUDE_BIN",
+  "TMPDIR",
+  "__CF_USER_TEXT_ENCODING",
+];
+if (result.safety.preflight === true) expectedRunnerEnvironment.push("AGENT_PRACTICE_PREFLIGHT");
+expectedRunnerEnvironment.sort();
+assert(JSON.stringify(result.safety.runner_environment_names) === JSON.stringify(expectedRunnerEnvironment), "runner environment allowlist mismatch");
+assert(result.safety.network_enforcement === (result.safety.preflight
+  ? "offline fixture preflight CLI"
+  : "sandbox-exec deny network*"), "network boundary was not declared");
+assert(result.safety.write_enforcement === (result.safety.preflight
+  ? "fixture preflight case root"
+  : "sandbox-exec deny file-write* except case root and /dev/null"), "write boundary was not declared");
+assert(result.safety.credential_service_enforcement === (result.safety.preflight
+  ? "not applicable to offline fixture preflight"
+  : "sandbox-exec denies securityd and security.agent lookup"), "credential service boundary was not declared");
 const allowedEnvironmentNames = [
   "ANTHROPIC_API_KEY",
   "ANTHROPIC_BASE_URL",

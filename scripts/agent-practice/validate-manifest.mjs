@@ -40,7 +40,7 @@ const topKeys = [
   "prompt", "timeout_seconds", "network", "cases", "verification",
 ];
 if (!exactKeys(manifest, topKeys)) fail("top-level fields do not match the contract");
-if (manifest.version !== 1) fail("version must be 1");
+if (![1, 2].includes(manifest.version)) fail("version must be 1 or 2");
 if (!/^[a-z0-9][a-z0-9-]{2,63}$/.test(manifest.id || "")) fail("id must be 3-64 lowercase hyphen characters");
 for (const key of ["topic", "claim", "prompt"]) {
   if (typeof manifest[key] !== "string" || manifest[key].trim() === "") fail(`${key} must be a non-empty string`);
@@ -59,11 +59,23 @@ if (!Array.isArray(manifest.cases) || manifest.cases.length < 1 || manifest.case
   fail("cases must contain 1-8 entries");
 }
 
-const caseKeys = ["id", "provider", "guidance", "model", "effort", "expected_marker"];
+const legacyCaseKeys = ["id", "provider", "guidance", "model", "effort", "expected_marker"];
+const caseKeys = [...legacyCaseKeys, "execution"];
 const ids = new Set();
 const efforts = new Set(["low", "medium", "high", "xhigh", "max", "ultra"]);
+const resolveFixtureEntry = (relative, label) => {
+  if (!isSafeRelative(relative)) fail(`${label} must be a safe fixture-relative path`);
+  const absolute = path.resolve(fixture, relative);
+  if (!absolute.startsWith(`${fixture}${path.sep}`)) fail(`${label} escaped the fixture`);
+  if (!fs.existsSync(absolute)) fail(`${label} does not exist: ${relative}`);
+  const stat = fs.lstatSync(absolute);
+  if (!stat.isFile() || stat.isSymbolicLink()) fail(`${label} must be a regular non-symlink file`);
+  if ((stat.mode & 0o111) === 0) fail(`${label} must be executable`);
+  return relative;
+};
 for (const item of manifest.cases) {
-  if (!exactKeys(item, caseKeys)) fail("case fields do not match the contract");
+  const expectedKeys = manifest.version === 1 ? legacyCaseKeys : caseKeys;
+  if (!exactKeys(item, expectedKeys)) fail("case fields do not match the contract");
   if (!/^[a-z0-9][a-z0-9-]{1,47}$/.test(item.id || "")) fail(`invalid case id: ${item.id}`);
   if (ids.has(item.id)) fail(`duplicate case id: ${item.id}`);
   ids.add(item.id);
@@ -79,6 +91,31 @@ for (const item of manifest.cases) {
   if (item.effort !== null && !efforts.has(item.effort)) fail(`invalid effort in ${item.id}`);
   if (item.expected_marker !== null && (typeof item.expected_marker !== "string" || item.expected_marker.length > 200)) {
     fail(`invalid expected_marker in ${item.id}`);
+  }
+  if (manifest.version === 2) {
+    const executionKeys = ["mode", "wrapper", "preflight_cli", "environment"];
+    if (!exactKeys(item.execution, executionKeys)) fail(`execution fields do not match the contract in ${item.id}`);
+    if (!["direct", "fixture-wrapper"].includes(item.execution.mode)) {
+      fail(`unsupported execution mode in ${item.id}`);
+    }
+    if (!["inherit", "minimal"].includes(item.execution.environment)) {
+      fail(`unsupported execution environment in ${item.id}`);
+    }
+    if (item.execution.mode === "direct") {
+      if (item.execution.wrapper !== null || item.execution.preflight_cli !== null) {
+        fail(`${item.id} direct execution cannot declare a wrapper or preflight CLI`);
+      }
+      if (item.execution.environment !== "inherit") {
+        fail(`${item.id} direct execution must inherit the provider environment`);
+      }
+    } else {
+      resolveFixtureEntry(item.execution.wrapper, `${item.id} wrapper`);
+      resolveFixtureEntry(item.execution.preflight_cli, `${item.id} preflight_cli`);
+      if (!manifest.verification?.protected_paths?.includes(item.execution.wrapper)
+          || !manifest.verification?.protected_paths?.includes(item.execution.preflight_cli)) {
+        fail(`${item.id} wrapper and preflight_cli must be protected paths`);
+      }
+    }
   }
 }
 
