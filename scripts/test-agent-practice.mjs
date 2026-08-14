@@ -182,12 +182,129 @@ exit 2
   }
 };
 
+const testQueueFlow = ({ autoMerge, failPrCreate = false }) => {
+  const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-queue-test-"));
+  const remote = path.join(publishRoot, "remote.git");
+  const checkout = path.join(publishRoot, "checkout");
+  const bin = path.join(publishRoot, "bin");
+  const ghLog = path.join(publishRoot, "gh.log");
+  const article = "articles/integration-queue-fixture.md";
+  const review = "logs/agent/review-integration-queue-fixture.md";
+  const pipeline = "logs/agent/pipeline-integration-queue-fixture";
+  const slug = "integration-queue-fixture";
+  try {
+    fs.mkdirSync(checkout, { recursive: true });
+    fs.mkdirSync(bin, { recursive: true });
+    assertRun(runAt(checkout, "git", ["init", "-b", "main"]), "queue git init");
+    assertRun(runAt(checkout, "git", ["config", "user.name", "Agent Queue Test"]), "queue git user.name");
+    assertRun(runAt(checkout, "git", ["config", "user.email", "agent-queue@example.com"]), "queue git user.email");
+    fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(checkout, "config"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, article), `---
+title: "Integration queue fixture"
+emoji: "🧪"
+type: tech
+topics: ["codex", "test"]
+published: false
+---
+
+Queue fixture body.
+`);
+    fs.writeFileSync(path.join(checkout, "config/zenn-publish-queue.json"), `${JSON.stringify({
+      version: 1,
+      zennUsername: "clopy",
+      maxPublicationsPer24Hours: 2,
+      retryAfterHours: 6,
+      entries: [],
+    }, null, 2)}\n`);
+    assertRun(runAt(checkout, "git", ["add", "articles", "config"]), "queue git add fixture");
+    assertRun(runAt(checkout, "git", ["commit", "-m", "fixture"]), "queue git commit fixture");
+    assertRun(runAt(publishRoot, "git", ["init", "--bare", remote]), "queue git init bare");
+    assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "queue git remote add");
+    assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "queue git push main");
+
+    fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
+    fs.writeFileSync(path.join(checkout, review), `# Integration review
+
+verdict: pass
+blockers: 0
+warnings: 0
+editorial_score: 90/100
+`);
+
+    const fakeGh = path.join(bin, "gh");
+    fs.writeFileSync(fakeGh, `#!/bin/sh
+printf '%s\\n' "$*" >> "$FAKE_GH_LOG"
+if [ "$1" = auth ] && [ "$2" = status ]; then exit 0; fi
+if [ "$1" = pr ] && [ "$2" = create ]; then
+  if [ "$FAKE_PR_CREATE_FAILURE" = 1 ]; then exit 7; fi
+  echo "https://example.invalid/pull/2"
+  exit 0
+fi
+if [ "$1" = pr ] && [ "$2" = merge ]; then exit 0; fi
+exit 2
+`, { mode: 0o755 });
+
+    const result = runAt(checkout, "bash", [
+      path.join(root, "scripts/agent-practice/enqueue-reviewed-article.sh"),
+      "--article", article,
+      "--review", review,
+      "--pipeline", pipeline,
+      autoMerge ? "--auto-merge" : "--pr-only",
+    ], {
+      env: {
+        PATH: `${bin}:${process.env.PATH}`,
+        FAKE_GH_LOG: ghLog,
+        FAKE_PR_CREATE_FAILURE: failPrCreate ? "1" : "0",
+        PUBLISH_QUEUE_NOW: "2026-08-14T03:00:00.000Z",
+      },
+    });
+
+    const branch = runAt(checkout, "git", ["branch", "--show-current"]);
+    assert.equal(branch.stdout.trim(), "main", "queue flow changed the caller checkout branch");
+    const worktrees = runAt(checkout, "git", ["worktree", "list", "--porcelain"]);
+    assert.equal((worktrees.stdout.match(/^worktree /gm) || []).length, 1,
+      `temporary queue worktree leaked:\n${worktrees.stdout}`);
+    assert.match(fs.readFileSync(path.join(checkout, article), "utf8"), /published: false/);
+
+    if (failPrCreate) {
+      assert.notEqual(result.status, 0, "queue PR creation failure unexpectedly succeeded");
+      assert.match(result.stderr, /PR creation failed/);
+      return;
+    }
+
+    assertRun(result, `queue helper (${autoMerge ? "auto-merge" : "pr-only"})`);
+    assert.match(result.stdout, /PR: https:\/\/example\.invalid\/pull\/2/);
+    const remoteArticle = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:${article}`,
+    ]);
+    assertRun(remoteArticle, "read queued remote article");
+    assert.match(remoteArticle.stdout, /published: false/);
+    const remoteQueue = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:config/zenn-publish-queue.json`,
+    ]);
+    assertRun(remoteQueue, "read remote publication queue");
+    const queue = JSON.parse(remoteQueue.stdout);
+    assert.equal(queue.entries.length, 1);
+    assert.equal(queue.entries[0].article, article);
+    const calls = fs.readFileSync(ghLog, "utf8");
+    assert.match(calls, /pr create/);
+    if (autoMerge) assert.match(calls, /pr merge/);
+    else assert.doesNotMatch(calls, /pr merge/);
+  } finally {
+    fs.rmSync(publishRoot, { recursive: true, force: true });
+  }
+};
+
 try {
   const shellSyntax = run("bash", [
     "-n",
     "scripts/auto-agent-practice.sh",
     "scripts/auto-agent-practice-launchd.sh",
     "scripts/agent-practice/publish-reviewed-article.sh",
+    "scripts/agent-practice/enqueue-reviewed-article.sh",
+    "scripts/zenn-publish-queue.sh",
+    "scripts/zenn-publish-queue-launchd.sh",
   ]);
   assert.equal(shellSyntax.status, 0, shellSyntax.stderr);
   const dryRun = run("bash", ["scripts/auto-agent-practice.sh", "--scheduled", "--dry-run"]);
@@ -196,8 +313,8 @@ try {
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
-  assert.match(dryRun.stdout, /zenn-prepare-publish -> commit\/push -> PR -> merge/);
-  assert.match(dryRun.stdout, /submitted for Zenn publication/);
+  assert.match(dryRun.stdout, /publication queue -> commit\/push -> PR -> merge/);
+  assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
   assert.doesNotMatch(dryRun.stdout, /reviewed unpublished/);
   assert.doesNotMatch(dryRun.stdout, /first end-to-end proof/);
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
@@ -216,6 +333,9 @@ try {
   testPublicationFlow({ autoMerge: true });
   testPublicationFlow({ autoMerge: false, failPrepare: true });
   testPublicationFlow({ autoMerge: false, failPrCreate: true });
+  testQueueFlow({ autoMerge: false });
+  testQueueFlow({ autoMerge: true });
+  testQueueFlow({ autoMerge: false, failPrCreate: true });
 
   assert.ok(!redactText(`${os.homedir()}/${os.userInfo().username}/fixture`).includes(os.userInfo().username));
   assert.equal(redactValue({ signature: "opaque-thinking-signature" }).signature, "[REDACTED]");

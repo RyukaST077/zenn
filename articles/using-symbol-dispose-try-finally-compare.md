@@ -3,7 +3,7 @@ title: "using / Symbol.dispose を try/finally と書き比べてみた"
 emoji: "🧹"
 type: "tech"
 topics: ["javascript", "nodejs", "typescript", "ecmascript"]
-published: true
+published: false
 ---
 
 ## はじめに
