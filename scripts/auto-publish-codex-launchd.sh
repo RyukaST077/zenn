@@ -11,21 +11,6 @@ ARGS="${CODEX_AP_ARGS:-}"
 {
   echo "===== Codex auto-publish start: $(date) ====="
   echo "args: $ARGS"
-  case " $ARGS " in
-    *" --dry-run "*) ;;
-    *)
-      pending="$(node "$REPO/scripts/zenn-publish-queue.mjs" pending-count 2>/dev/null)" || {
-        echo "RESULT: skipped (publication queue could not be validated safely)"
-        echo "===== Codex auto-publish end: $(date) exit=0 ====="
-        exit 0
-      }
-      if [ "$pending" -gt 0 ]; then
-        echo "RESULT: skipped (publication queue has $pending pending article(s))"
-        echo "===== Codex auto-publish end: $(date) exit=0 ====="
-        exit 0
-      fi
-      ;;
-  esac
   # shellcheck disable=SC2086
   bash "$REPO/scripts/auto-publish-codex.sh" $ARGS
   rc=$?

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Add one reviewed agent-practice article to the deterministic Zenn publication queue.
+# Add one reviewed article to the deterministic Zenn publication queue.
 set -euo pipefail
 
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
@@ -10,11 +10,13 @@ ARTICLE=""
 REVIEW=""
 PIPE_DIR=""
 AUTO_MERGE=1
+REVIEW_STYLE="agent"
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --article) ARTICLE="${2:?--article requires a path}"; shift ;;
     --review) REVIEW="${2:?--review requires a path}"; shift ;;
     --pipeline) PIPE_DIR="${2:?--pipeline requires a path}"; shift ;;
+    --review-style) REVIEW_STYLE="${2:?--review-style requires agent, codex, or claude}"; shift ;;
     --auto-merge) AUTO_MERGE=1 ;;
     --pr-only) AUTO_MERGE=0 ;;
     -h|--help) sed -n '1,90p' "$0"; exit 0 ;;
@@ -30,8 +32,21 @@ safe_relative "$ARTICLE" || { echo "invalid article path: $ARTICLE" >&2; exit 2;
 safe_relative "$REVIEW" || { echo "invalid review path: $REVIEW" >&2; exit 2; }
 safe_relative "$PIPE_DIR" || { echo "invalid pipeline path: $PIPE_DIR" >&2; exit 2; }
 case "$ARTICLE" in articles/*.md) ;; *) echo "article must be under articles/: $ARTICLE" >&2; exit 2 ;; esac
-case "$REVIEW" in logs/agent/*.md) ;; *) echo "review must be under logs/agent/: $REVIEW" >&2; exit 2 ;; esac
-case "$PIPE_DIR" in logs/agent/pipeline-*) ;; *) echo "invalid agent pipeline directory: $PIPE_DIR" >&2; exit 2 ;; esac
+case "$REVIEW_STYLE" in
+  agent)
+    case "$REVIEW" in logs/agent/*.md) ;; *) echo "agent review must be under logs/agent/: $REVIEW" >&2; exit 2 ;; esac
+    case "$PIPE_DIR" in logs/agent/pipeline-*) ;; *) echo "invalid agent pipeline directory: $PIPE_DIR" >&2; exit 2 ;; esac
+    ;;
+  codex)
+    case "$REVIEW" in logs/review-*.md) ;; *) echo "Codex review must match logs/review-*.md: $REVIEW" >&2; exit 2 ;; esac
+    case "$PIPE_DIR" in logs/codex-pipeline-*) ;; *) echo "invalid Codex pipeline directory: $PIPE_DIR" >&2; exit 2 ;; esac
+    ;;
+  claude)
+    case "$REVIEW" in logs/review-*.md) ;; *) echo "Claude review must match logs/review-*.md: $REVIEW" >&2; exit 2 ;; esac
+    case "$PIPE_DIR" in logs/pipeline-*) ;; *) echo "invalid Claude pipeline directory: $PIPE_DIR" >&2; exit 2 ;; esac
+    ;;
+  *) echo "--review-style must be agent, codex, or claude" >&2; exit 2 ;;
+esac
 case "$AGENT_PIPELINE_MERGE_METHOD" in
   --merge|--rebase|--squash) ;;
   *) echo "AGENT_PIPELINE_MERGE_METHOD must be --merge, --rebase, or --squash" >&2; exit 2 ;;
@@ -63,15 +78,27 @@ QUEUE_TOOL="$SOURCE_ROOT/scripts/zenn-publish-queue.mjs"
 [ -f "$QUEUE_TOOL" ] || die "publication queue tool is missing"
 (cd "$ROOT" && node "$ARTICLE_CHECK_TOOL" "$ARTICLE" --expect-published false) \
   || die "draft article check failed"
-[ "$(grep -c '^verdict: pass$' "$ROOT/$REVIEW" || true)" = 1 ] \
-  || die "review must contain exactly one verdict: pass"
-[ "$(grep -c '^blockers: 0$' "$ROOT/$REVIEW" || true)" = 1 ] \
-  || die "passing review must declare blockers: 0"
-[ "$(grep -c '^warnings: 0$' "$ROOT/$REVIEW" || true)" = 1 ] \
-  || die "passing review must declare warnings: 0"
-EDITORIAL_SCORE="$(sed -nE 's/^editorial_score: ([0-9]{1,3})\/100$/\1/p' "$ROOT/$REVIEW")"
-[ -n "$EDITORIAL_SCORE" ] && [ "$EDITORIAL_SCORE" -ge 80 ] && [ "$EDITORIAL_SCORE" -le 100 ] \
-  || die "passing review editorial score must be 80-100"
+case "$REVIEW_STYLE" in
+  agent|codex)
+    [ "$(grep -c '^verdict: pass$' "$ROOT/$REVIEW" || true)" = 1 ] \
+      || die "review must contain exactly one verdict: pass"
+    [ "$(grep -c '^blockers: 0$' "$ROOT/$REVIEW" || true)" = 1 ] \
+      || die "passing review must declare blockers: 0"
+    [ "$(grep -c '^warnings: 0$' "$ROOT/$REVIEW" || true)" = 1 ] \
+      || die "passing review must declare warnings: 0"
+    ;;
+  claude)
+    [ "$(grep -Ec '^\*\*判定: 公開可\*\*$' "$ROOT/$REVIEW" || true)" = 1 ] \
+      || die "passing Claude review must contain exactly one 判定: 公開可"
+    [ "$(grep -c 'blocker: 0 件 / warning: 0 件' "$ROOT/$REVIEW" || true)" -ge 1 ] \
+      || die "passing Claude review must declare blocker and warning counts as zero"
+    ;;
+esac
+if [ "$REVIEW_STYLE" = agent ]; then
+  EDITORIAL_SCORE="$(sed -nE 's/^editorial_score: ([0-9]{1,3})\/100$/\1/p' "$ROOT/$REVIEW")"
+  [ -n "$EDITORIAL_SCORE" ] && [ "$EDITORIAL_SCORE" -ge 80 ] && [ "$EDITORIAL_SCORE" -le 100 ] \
+    || die "passing review editorial score must be 80-100"
+fi
 
 SLUG="$(basename "$ARTICLE" .md)"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -82,7 +109,7 @@ if git show-ref --verify --quiet "refs/heads/$BRANCH" \
 fi
 
 TMP_BASE="${TMPDIR:-/tmp}"
-WORKTREE="$(mktemp -d "$TMP_BASE/zenn-agent-enqueue.XXXXXX")"
+WORKTREE="$(mktemp -d "$TMP_BASE/zenn-reviewed-enqueue.XXXXXX")"
 WORKTREE_ACTIVE=0
 cleanup_worktree() {
   if [ "$WORKTREE_ACTIVE" = 1 ]; then

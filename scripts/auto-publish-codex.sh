@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Codex Zenn pipeline: research -> practice -> draft -> review/revise -> branch -> PR.
+# Codex Zenn pipeline: research -> practice -> draft -> review/revise -> publication queue PR.
 # By default this matches the Claude pipeline's unattended host access. Run only on a
 # dedicated machine or inside an outer isolation boundary such as a dev container.
 set -euo pipefail
@@ -127,7 +127,7 @@ if [ "$DRY_RUN" = 1 ]; then
   review rounds: $MAX_REVIEW_ROUNDS
   base branch: $BASE_BRANCH
   auto merge: $AUTO_MERGE
-  stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> branch -> zenn-prepare-publish -> commit/push -> $([ "$AUTO_MERGE" = 1 ] && echo "archive artifacts -> ")PR
+  stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> published:false publication queue -> commit/push -> PR
   codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox $CODEX_SANDBOX_MODE -C $ROOT --json --output-schema <stage-schema> -o <result> <prompt>
 EOF
   exit 0
@@ -144,6 +144,7 @@ command -v rg >/dev/null 2>&1 || die "ripgrep (rg) is required"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
 [ -f "$CONTRACT_TOOL" ] || die "stage result contract tool is missing"
+[ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "publication queue helper is missing"
 if [ "$CODEX_SANDBOX_MODE" = "workspace-write" ]; then
   SANDBOX_PROBE=".codex-sandbox-probe-$$"
   OUTSIDE_PROBE="$HOME/.codex-sandbox-outside-probe-$$"
@@ -307,83 +308,27 @@ done
 
 ARTICLE="$(state_get artifacts.article)"
 SLUG="$(basename "$ARTICLE" .md)"
-BRANCH="$(state_get publish.branch)"
-if [ -z "$BRANCH" ]; then
-  BRANCH="publish/$SLUG"
-  git show-ref --verify --quiet "refs/heads/$BRANCH" && BRANCH="$BRANCH-$TS"
-  [ "$(git branch --show-current)" = "$BASE_BRANCH" ] || die "cannot create publish branch outside $BASE_BRANCH"
-  git switch -c "$BRANCH" || die "failed to create $BRANCH"
-  state_set publish.branch "\"$BRANCH\""
-elif [ "$(git branch --show-current)" != "$BRANCH" ]; then
-  git switch "$BRANCH" || die "failed to switch to saved publish branch $BRANCH"
-fi
-
-if ! is_done prepare_publish; then
-  REVIEW="$(state_get artifacts.review)"
-  run_stage prepare_publish 6 zenn-prepare-publish articles false 0 \
-    "Article: $ARTICLE. Passing review: $REVIEW. Pipeline directory: $PIPE_DIR. Prepare publication and PR metadata."
-  ARTICLE="$STAGE_ARTIFACT"
-  bash scripts/check-article.sh "$ARTICLE" --expect-published true || die "publication article check failed"
-  PR_METADATA="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.pr_metadata)' "$PIPE_DIR/6-prepare_publish.result.json")"
-  case "$PR_METADATA" in "$PIPE_DIR"/*) ;; *) die "PR metadata is outside pipeline directory: $PR_METADATA" ;; esac
-  node scripts/validate-pr-metadata.mjs "$PR_METADATA" "$PIPE_DIR" >/dev/null || die "PR metadata validation failed"
-  state_set artifacts.article "\"$ARTICLE\""; state_set artifacts.pr_metadata "\"$PR_METADATA\""; state_set completed.prepare_publish true
-fi
-
-ARTICLE="$(state_get artifacts.article)"
-PR_METADATA="$(state_get artifacts.pr_metadata)"
-if ! is_done push; then
-  git add -- "$ARTICLE"
-  [ -d "images/$SLUG" ] && git add -- "images/$SLUG"
-  staged="$(git diff --cached --name-only)"
-  [ -n "$staged" ] || die "nothing was staged for publication"
-  while IFS= read -r staged_path; do
-    case "$staged_path" in "$ARTICLE"|images/"$SLUG"/*) ;; *) die "disallowed staged path: $staged_path" ;; esac
-  done <<EOF
-$staged
-EOF
-  git commit -m "publish: $SLUG" || die "commit failed"
-  COMMIT="$(git rev-parse HEAD)"
-  state_set publish.commit "\"$COMMIT\""
-  GIT_TERMINAL_PROMPT=0 git push --set-upstream origin "$BRANCH" || die "push failed"
-  state_set completed.push true
-fi
-
-# auto-merge 時のみ: パイプライン素材(research/practice/logs)を同じ PR に別コミットで
-# 相乗りさせ、マージ後に作業ツリーがクリーンになるようにする。記事コミット(記事+画像のみ)
-# のガードは維持したいので、素材は必ず別コミットにする。.gitignore は git add が尊重する。
-if [ "$AUTO_MERGE" = 1 ] && ! is_done archive; then
-  if [ "$(git branch --show-current)" = "$BASE_BRANCH" ]; then
-    log "archive: feature ブランチに居ないため素材コミットをスキップ"
-  else
-    git add -- research practice logs
-    if git diff --cached --quiet; then
-      log "archive: コミットする素材が無い"
-    else
-      git commit -m "chore: archive pipeline artifacts for $SLUG" || die "artifact commit failed"
-      GIT_TERMINAL_PROMPT=0 git push || die "artifact push failed"
-      log "archive: パイプライン素材を PR に追加コミット・push した"
-    fi
-  fi
-  state_set completed.archive true
-fi
-
 if ! is_done pr; then
-  metadata_lines="$(node scripts/validate-pr-metadata.mjs "$PR_METADATA" "$PIPE_DIR")" || die "PR metadata validation failed"
-  PR_TITLE="$(printf '%s\n' "$metadata_lines" | sed -n '1p')"
-  PR_BODY="$(printf '%s\n' "$metadata_lines" | sed -n '2p')"
-  PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY")" || die "PR creation failed"
+  REVIEW="$(state_get artifacts.review)"
+  QUEUE_SUMMARY="$(AGENT_PIPELINE_BASE_BRANCH="$BASE_BRANCH" AGENT_PIPELINE_MERGE_METHOD="$MERGE_METHOD" \
+    bash scripts/agent-practice/enqueue-reviewed-article.sh \
+      --article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR" \
+      --review-style codex --pr-only)" || die "publication queue helper failed"
+  PR_URL="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^PR: //p' | head -1)"
+  [ -n "$PR_URL" ] || die "publication queue helper did not return a PR URL"
+  COMMIT="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^Commit: //p' | head -1)"
+  [ -z "$COMMIT" ] || state_set publish.commit "\"$COMMIT\""
   state_set publish.pr_url "\"$PR_URL\""; state_set completed.pr true
 else
   PR_URL="$(state_get publish.pr_url)"
 fi
 
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
-  # branch protection があれば --auto（必須チェック通過後にマージ）、無ければ即時マージ
+  # PRのマージは公開ではなく、published:falseの記事を公開キューへ追加する。
   if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch; then
-    log "auto-merge scheduled (merges after required checks pass)"
+    log "auto-merge scheduled (adds the unpublished article to the queue after checks)"
   elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch; then
-    log "PR merged immediately"
+    log "PR merged immediately; unpublished article added to the queue"
   else
     die "auto-merge setup failed"
   fi

@@ -46,8 +46,9 @@ Claude版の成果物形式と安全策を引き継ぎつつ、Codexのスキル
 4. **非対話時に承認を待たない**  
    `approval=never`で起動し、許可範囲外の操作は失敗として扱う。スキル内でユーザーへの質問や承認待ちは行わない。
 
-5. **公開はPRをゲートにする**  
-   `main`へ直接pushしない。`published: true`は公開用ブランチ上だけで作り、PRマージを公開操作とする。
+5. **記事作成と公開速度を分離する**
+   レビュー合格後も`published: false`のまま公開キューへ追加する。別のAI非依存ワーカーだけが
+   投稿枠を確認し、キュー先頭を`true`にして公開する。
 
 6. **Claude版と並行稼働させる**  
    Codex版は別スクリプト・別スキル配置で作り、通し試験が完了するまでClaude版を変更しない。
@@ -71,6 +72,8 @@ Claude版の成果物形式と安全策を引き継ぎつつ、Codexのスキル
 ├── scripts/
 │   ├── auto-publish-codex.sh              # Codex版オーケストレーター
 │   ├── auto-publish-codex-launchd.sh      # 定期実行ラッパー
+│   ├── agent-practice/enqueue-reviewed-article.sh # レビュー済み記事のキュー追加
+│   ├── zenn-publish-queue.sh               # AI非依存の公開ワーカー
 │   ├── check-article.sh                    # 共通の決定的記事検査
 │   ├── pipeline-state.mjs                  # JSON状態の読み書き
 │   ├── stage-result-contract.mjs           # 段別Schema・prompt・検証契約
@@ -167,18 +170,14 @@ review判定、slug、PRメタデータなどの必須値は自動生成・補�
 | 4 | `zenn-draft-article` | 実践ログ | `articles/<slug>.md`、画像 | 未検証事実の補完、`published: true` |
 | 5 | `zenn-review-article` | 記事、実践ログ | `logs/review-*.md` | 記事の大幅修正、公開操作 |
 | 5R | `zenn-revise-article` | 記事、レビュー、実践ログ | 修正記事、`logs/revise-*.md` | ログにない事実の追加、公開操作 |
-| 6 | `zenn-prepare-publish` | 公開可の記事、レビュー | `published: true`の記事、PRメタデータ | branch、commit、push、PR作成 |
+| 6 | 決定論的キュー追加処理 | 公開可の記事、レビュー | `published: false`の記事、キュー更新PR | 記事本文の変更、直接公開 |
 
 `consult/save-knowledge`は補助スキルとし、パイプラインの独立段にはしない。`run-practice`などが必要時に明示利用する。
 
 slug衝突の解消は`zenn-revise-article`の責務とする。記事パス、Front Matter、画像ディレクトリ、画像参照を同時に更新し、再度reviewを通す。
 
-`zenn-prepare-publish`はパイプラインディレクトリへ次を保存する。
-
-- `pr-metadata.json`: `{"title":"...","body_file":"logs/codex-pipeline-<timestamp>/pr-body.md"}`
-- `pr-body.md`: PR本文
-
-`title`は空でない文字列、`body_file`は当該パイプラインディレクトリ配下のリポジトリ相対パスとする。オーケストレーターはこのJSONだけからPRタイトルと本文ファイルを取得する。
+`zenn-prepare-publish`は旧直接公開フローとの互換性と契約テストのため残すが、現在の自動パイプラインは
+呼び出さない。キュー追加はAIを使わない共通スクリプトが行う。
 
 ### 命名方針
 
@@ -192,9 +191,9 @@ Claude版と役割を対応させつつ、グローバルスキルとの衝突�
 | `draft-article` | `zenn-draft-article` |
 | `review-article` | `zenn-review-article` |
 | `revise-article` | `zenn-revise-article` |
-| `publish-pr` | `zenn-prepare-publish` |
+| `publish-pr` | 決定論的な公開キュー追加 |
 
-`publish-pr`を`prepare-publish`へ変えるのは、GitHubへの副作用をスキルからオーケストレーターへ移すためである。
+GitHubへの副作用と公開速度の制御は、Codexスキルではなく決定論的スクリプトへ分離する。
 
 ## 7. `codex exec`の起動方式
 
@@ -352,31 +351,31 @@ review
 - review完了時に`rounds`を加算し、verdict、レポートパス、実施時刻を`history`へ追加して`last_verdict`と`next_stage`を更新
 - revise完了時に成果物を保存して`next_stage`を`review`へ更新
 
-## 10. Git・GitHub公開フロー
+## 10. Git・GitHubキュー追加フロー
 
 Git操作はCodexの外で次の順に固定する。
 
 1. `main`と追跡ファイルのクリーン状態を確認
 2. 必要なら`git pull --ff-only`
 3. reviewが`pass`したことを確認
-4. `publish/<slug>`ブランチを作成して切り替え
-5. `zenn-prepare-publish`を実行
-6. `published: true`と記事検査の通過を確認
-7. `git add -- articles/<slug>.md images/<slug>/`
+4. 隔離worktreeで`queue/<slug>`ブランチを作成
+5. `published: false`と記事検査の通過を確認
+6. `config/zenn-publish-queue.json`の末尾へ記事を追加
+7. `git add -- articles/<slug>.md images/<slug>/ config/zenn-publish-queue.json`
 8. staged diffに許可外パスがないことを確認
 9. commit
 10. `git push --set-upstream origin <branch>`
-11. `pr-metadata.json`のSchema、タイトル、`body_file`の配置を検査し、`gh pr create --base main --head <branch> --title <title> --body-file <body_file>`
+11. `gh pr create --base main --head <branch>`でキュー追加PRを作成
 12. PR URLを状態へ保存
 13. `main`へ戻す
 
-### 公開ゲート
+### キュー追加ゲート
 
 push前に次を必須とする。
 
 - 最新レビューが`pass`
 - blocker 0、warning 0
-- `published: true`
+- `published: false`
 - slug、Front Matter、画像、Markdown検査が成功
 - `<!-- 要素材 -->`が0件
 - 秘密情報の一次検査が成功
@@ -568,9 +567,9 @@ bash scripts/auto-publish-codex.sh --auto-merge
 
 ### Phase 4: GitHub連携
 
-- `zenn-prepare-publish`
-- branch/commit/push
-- PR作成
+- `published: false`のレビュー済み記事を公開キューへ追加
+- `queue/<slug>`のbranch/commit/push
+- キュー追加PR作成
 - resume試験
 
 ### Phase 5: 定期実行
