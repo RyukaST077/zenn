@@ -3,7 +3,7 @@ title: "TypeScript 7と6の併用検証がtscのbin衝突で止まった記録"
 emoji: "🧪"
 type: tech
 topics: [typescript, npm, nodejs]
-published: false
+published: true
 ---
 
 ## 対象読者
