@@ -1,0 +1,32 @@
+{
+  "manifest": "practice/agent/agent-practice-codex-exec-jsonl-final-artifact-20260814-0504.json",
+  "started_at": "2026-08-13T20:13:29.663Z",
+  "finished_at": "2026-08-13T20:13:44.240Z",
+  "versions": {
+    "codex": "codex-cli 0.147.0"
+  },
+  "cases": [
+    {
+      "id": "two-read-finality-boundary",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "codex-workspace-sandbox",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 13808,
+      "verifier_exit_code": 1,
+      "marker_expected": "FIRST_VALID_IS_NOT_FINAL",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-codex-exec-jsonl-final-artifact-20260814-0504-20260814-051329/two-read-finality-boundary"
+    }
+  ]
+}
