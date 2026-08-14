@@ -18,10 +18,12 @@ TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, wo
 DRY_RUN=0
 SCHEDULED=0
 AUTO_MERGE=1
+RESUME_RUN_LOG=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --topic) TOPIC="${2:?--topic requires text}"; shift ;;
     --max-rounds) MAX_AGENT_REVIEW_ROUNDS="${2:?--max-rounds requires a number}"; shift ;;
+    --resume-after-run) RESUME_RUN_LOG="${2:?--resume-after-run requires an execution log}"; shift ;;
     --scheduled) SCHEDULED=1 ;;
     --auto-merge) AUTO_MERGE=1 ;;
     --pr-only) AUTO_MERGE=0 ;;
@@ -75,6 +77,7 @@ if [ "$DRY_RUN" = 1 ]; then
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
+  resume after run: ${RESUME_RUN_LOG:-none}
   stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
   result: a reviewed article prepared and submitted for Zenn publication
 EOF
@@ -159,20 +162,47 @@ run_stage() {
   log "$stage complete: $STAGE_ARTIFACT"
 }
 
-SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-worthy, falsifiable practice claim for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision. Exclude topics already covered by articles or prior agent reports. Prefer a boundary, failure mode, configuration, new feature, or reproducible workflow that adds value beyond official documentation and can be verified locally with a bounded offline fixture. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
-run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
-REPORT="$STAGE_ARTIFACT"
+if [ -n "$RESUME_RUN_LOG" ]; then
+  case "$RESUME_RUN_LOG" in
+    logs/agent/run-*/execution-log.md) ;;
+    *) die "--resume-after-run must be a repository-relative logs/agent/run-*/execution-log.md path" ;;
+  esac
+  [ -f "$RESUME_RUN_LOG" ] || die "resume execution log does not exist: $RESUME_RUN_LOG"
+  RUN_LOG="$RESUME_RUN_LOG"
+  MANIFEST="$(node -e '
+    const fs = require("node:fs");
+    const text = fs.readFileSync(process.argv[1], "utf8");
+    const match = text.match(/^- Manifest: `([^`]+)`$/m);
+    if (!match) process.exit(1);
+    process.stdout.write(match[1]);
+  ' "$RUN_LOG")" || die "resume execution log does not declare a manifest"
+  case "$MANIFEST" in practice/agent/*.json) ;; *) die "resume manifest path is invalid: $MANIFEST" ;; esac
+  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null \
+    || die "resume manifest failed independent validation"
+  REPORT="$(node -e '
+    const fs = require("node:fs");
+    const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    process.stdout.write(manifest.source_report);
+  ' "$MANIFEST")"
+  case "$REPORT" in research/agent/*.md) ;; *) die "resume research path is invalid: $REPORT" ;; esac
+  [ -f "$REPORT" ] || die "resume research report does not exist: $REPORT"
+  log "resuming after verified run: $RUN_LOG"
+else
+  SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-worthy, falsifiable practice claim for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision. Exclude topics already covered by articles or prior agent reports. Prefer a boundary, failure mode, configuration, new feature, or reproducible workflow that adds value beyond official documentation and can be verified locally with a bounded offline fixture. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
+  run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
+  REPORT="$STAGE_ARTIFACT"
 
-PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
-run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
-MANIFEST="$STAGE_ARTIFACT"
-node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null || die "generated manifest failed independent validation"
-node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
-  || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
+  PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
+  run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
+  MANIFEST="$STAGE_ARTIFACT"
+  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null || die "generated manifest failed independent validation"
+  node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
+    || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
 
-RUN_PROMPT="Experiment manifest: $MANIFEST. Execute it once with the deterministic repository runner. Preserve its redacted evidence and return only the generated execution-log.md as the primary artifact."
-run_stage run 3 zenn-agent-run-practice logs/agent 0 "$RUN_PROMPT"
-RUN_LOG="$STAGE_ARTIFACT"
+  RUN_PROMPT="Experiment manifest: $MANIFEST. Execute it once with the deterministic repository runner. Preserve its redacted evidence and return only the generated execution-log.md as the primary artifact."
+  run_stage run 3 zenn-agent-run-practice logs/agent 0 "$RUN_PROMPT"
+  RUN_LOG="$STAGE_ARTIFACT"
+fi
 
 ANALYZE_PROMPT="Execution log: $RUN_LOG. Inspect the manifest and every case's raw metrics, verifier output, and diff. Create exactly one analysis report with one verdict, one next action, and the required editorial brief. A negative or conditional finding may still recommend drafting when it is reproducible and gives the named reader a useful decision."
 run_stage analyze 4 zenn-agent-analyze-results logs/agent 0 "$ANALYZE_PROMPT"

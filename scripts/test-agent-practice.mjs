@@ -204,6 +204,13 @@ try {
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
   assert.match(prOnlyDryRun.stdout, /PR -> human merge/);
+  const resumeDryRun = run("bash", [
+    "scripts/auto-agent-practice.sh",
+    "--resume-after-run", "logs/agent/run-example/execution-log.md",
+    "--dry-run",
+  ]);
+  assert.equal(resumeDryRun.status, 0, resumeDryRun.stderr);
+  assert.match(resumeDryRun.stdout, /resume after run: logs\/agent\/run-example\/execution-log\.md/);
 
   testPublicationFlow({ autoMerge: false });
   testPublicationFlow({ autoMerge: true });
