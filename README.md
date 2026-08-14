@@ -280,6 +280,8 @@ GitHub                         → publish/<slug>をpush → PR → 自動マー
 `claude` / `codex` CLIを非対話で実行する。ケースごとにコマンド、JSONL、stderr、検証結果、diff、
 変更ファイル、CLI versionを保存し、credential fileは読まず、ログは既知のtoken・session・home pathを
 redactする。manifestは変更許可ファイル、保護ファイル、timeout、network、期待markerまで明示する。
+fixture固有のCLIラッパーを使うケースは、オフラインのfake CLIと検証処理を全ケース分先に実行し、
+すべて合格した場合だけ認証済みCLIの実験へ進む。これにより、証拠ファイルの受け渡し不備をモデル実行前に検出する。
 ただし現在の `network` はCodexのworkspace sandboxにだけ強制され、ホストで直接動くClaudeの
 ネットワークを遮断しない。Claudeで `bypassPermissions` を使う実験は、ネットワークを切った
 コンテナ／VM／dev containerなど、別のOSレベル境界を用意する。
