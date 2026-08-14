@@ -3,7 +3,7 @@ title: "Playwright 1.61のパスキー検証、npm依存解決で止まった記
 emoji: "🛑"
 type: tech
 topics: ["playwright", "webauthn", "npm", "testing"]
-published: false
+published: true
 ---
 
 ## 対象読者

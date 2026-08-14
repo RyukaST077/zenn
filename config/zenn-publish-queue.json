@@ -7,8 +7,8 @@
     {
       "article": "articles/playwright-passkey-dependency-failure.md",
       "enqueuedAt": "2026-07-10T15:04:57.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-14T06:50:02.808Z"
     },
     {
       "article": "articles/typescript7-tsc-bin-collision-log.md",
