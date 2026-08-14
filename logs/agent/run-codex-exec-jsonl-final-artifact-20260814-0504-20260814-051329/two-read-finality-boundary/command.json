@@ -1,0 +1,23 @@
+{
+  "executable": "codex",
+  "args": [
+    "-a",
+    "never",
+    "exec",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "-C",
+    "$RUN_WORKSPACE/two-read-finality-boundary",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "--json",
+    "-o",
+    "$HOME/workspace/024_zenn/logs/agent/run-codex-exec-jsonl-final-artifact-20260814-0504-20260814-051329/two-read-finality-boundary/result.txt",
+    "Perform exactly this sequence and nothing else. First, send one assistant progress message as a JSON object with exactly one non-empty string field named `message`; it must say that alpha will be read, but must not claim any read result. Second, use the command-execution tool exactly once to run `head -n 1 alpha.txt`. Third, send a different assistant progress message using the same exact JSON shape; it must say that beta will be read and may mention the alpha output, but must not claim the beta result. Fourth, use the command-execution tool exactly once to run `head -n 1 beta.txt`. Finally, send exactly `{\"message\":\"ALPHA_READY + BETA_READY\"}`. Do not combine commands, edit or create files, use another tool or command, inspect any other path, access the network, use MCP, or add commentary outside those three JSON objects."
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

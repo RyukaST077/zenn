@@ -1,0 +1,10 @@
+{"type":"thread.started","thread_id":"019ffcc2-2660-7ed3-a99b-5f53217570cf"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"{\"message\":\"alpha will be read\"}"}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'head -n 1 alpha.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"/bin/zsh -lc 'head -n 1 alpha.txt'","aggregated_output":"ALPHA_READY\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"{\"message\":\"beta will be read; alpha output was ALPHA_READY\"}"}}
+{"type":"item.started","item":{"id":"item_3","type":"command_execution","command":"/bin/zsh -lc 'head -n 1 beta.txt'","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_3","type":"command_execution","command":"/bin/zsh -lc 'head -n 1 beta.txt'","aggregated_output":"BETA_READY\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_4","type":"agent_message","text":"{\"message\":\"ALPHA_READY + BETA_READY\"}"}}
+{"type":"turn.completed","usage":{"input_tokens":42214,"cached_input_tokens":33024,"cache_write_input_tokens":0,"output_tokens":270,"reasoning_output_tokens":0}}

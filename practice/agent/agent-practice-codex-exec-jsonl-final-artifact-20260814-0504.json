@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "id": "codex-exec-jsonl-final-artifact-20260814-0504",
+  "topic": "Codex exec JSONL final-artifact boundary",
+  "claim": "With locally installed Codex CLI 0.147.0, one successful schema-constrained turn with two ordered harmless reads emits schema-valid progress agent messages before its final agent message, while -o equals only that last message, so accepting the first schema-valid JSONL agent_message is premature.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-codex-exec-jsonl-final-artifact-20260814-0504.md",
+  "plan": "practice/agent/agent-practice-codex-exec-jsonl-final-artifact-20260814-0504.md",
+  "fixture": "fixtures/agent-practice/codex-exec-jsonl-final-artifact",
+  "prompt": "Perform exactly this sequence and nothing else. First, send one assistant progress message as a JSON object with exactly one non-empty string field named `message`; it must say that alpha will be read, but must not claim any read result. Second, use the command-execution tool exactly once to run `head -n 1 alpha.txt`. Third, send a different assistant progress message using the same exact JSON shape; it must say that beta will be read and may mention the alpha output, but must not claim the beta result. Fourth, use the command-execution tool exactly once to run `head -n 1 beta.txt`. Finally, send exactly `{\"message\":\"ALPHA_READY + BETA_READY\"}`. Do not combine commands, edit or create files, use another tool or command, inspect any other path, access the network, use MCP, or add commentary outside those three JSON objects.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "two-read-finality-boundary",
+      "provider": "codex",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": "FIRST_VALID_IS_NOT_FINAL"
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "alpha.txt",
+      "beta.txt",
+      "schema.json",
+      "codex-wrapper.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "agent-events.jsonl",
+      "agent-final.json",
+      "agent-process.json",
+      "verification.txt"
+    ]
+  }
+}
