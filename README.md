@@ -251,7 +251,7 @@ resume は `state.json` を読み、完了済みの段をスキップして失�
 引数は環境変数 `CODEX_AP_ARGS` で渡す。例: `CODEX_AP_ARGS="--auto-merge"`）。
 
 > **Zenn の投稿数レートリミット**: Zenn の正確な上限判定は非公開。そのためこのリポジトリは
-> `config/zenn-publish-queue.json` で直近24時間を保守的に最大2件として扱い、先頭の記事だけを
+> `config/zenn-publish-queue.json` で直近24時間を最大4件として扱い、先頭の記事だけを
 > 公開する。公開できなかった記事は6時間空けて再試行し、公開APIで確認できるまで次へ進まない。
 
 ## Zenn公開キュー

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "zennUsername": "clopy",
-  "maxPublicationsPer24Hours": 2,
+  "maxPublicationsPer24Hours": 4,
   "retryAfterHours": 6,
   "entries": [
     {
