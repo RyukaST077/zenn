@@ -13,6 +13,7 @@ set -euo pipefail
 : "${MAX_AGENT_REVIEW_ROUNDS:=3}"
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
+: "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 
 TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository"
 DRY_RUN=0
@@ -154,8 +155,8 @@ run_stage() {
   local result_rc=$?
   set -e
   if [ "$result_rc" = 4 ] && [ "$SCHEDULED" = 1 ]; then
-    log "$stage selected no safe or article-worthy output; scheduled run skipped"
-    exit 0
+    log "$stage selected no safe or article-worthy output; another scheduled topic may be tried"
+    exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
   fi
   [ "$result_rc" = 0 ] || die "$stage result contract failed: $result"
   STAGE_RESULT="$result"
@@ -208,7 +209,13 @@ ANALYZE_PROMPT="Execution log: $RUN_LOG. Inspect the manifest and every case's r
 run_stage analyze 4 zenn-agent-analyze-results logs/agent 0 "$ANALYZE_PROMPT"
 ANALYSIS="$STAGE_ARTIFACT"
 ACTION="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.action)' "$STAGE_RESULT")"
-[ "$ACTION" = draft ] || die "analysis selected action=$ACTION; an honest article cannot be drafted without a new run"
+if [ "$ACTION" != draft ]; then
+  if [ "$SCHEDULED" = 1 ]; then
+    log "analysis selected action=$ACTION; another scheduled topic may be tried"
+    exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+  fi
+  die "analysis selected action=$ACTION; an honest article cannot be drafted without a new run"
+fi
 
 DRAFT_PROMPT="Analysis: $ANALYSIS. Execution log: $RUN_LOG. Draft exactly one unpublished Japanese Zenn article using the editorial brief and the appropriate article-type structure. Lead with the reader's practical problem and evidence-backed answer. Focus on the selected tested practice and its observed limits, not an unsupported broad ranking or a pipeline-shaped report."
 run_stage draft 5 zenn-agent-draft-article articles 0 "$DRAFT_PROMPT"
