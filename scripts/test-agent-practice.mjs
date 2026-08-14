@@ -343,6 +343,30 @@ try {
   ]);
   assert.equal(resumeDryRun.status, 0, resumeDryRun.stderr);
   assert.match(resumeDryRun.stdout, /resume after run: logs\/agent\/run-example\/execution-log\.md/);
+  const retryDir = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-launchd-retry-"));
+  const retryScript = path.join(retryDir, "retryable-pipeline.sh");
+  const retryCount = path.join(retryDir, "count");
+  fs.writeFileSync(retryScript, `#!/bin/bash
+count=0
+[ ! -f "$FAKE_RETRY_COUNT" ] || count="$(cat "$FAKE_RETRY_COUNT")"
+count=$((count + 1))
+printf '%s\\n' "$count" >"$FAKE_RETRY_COUNT"
+[ "$count" -gt 1 ] || exit 20
+exit 0
+`, { mode: 0o755 });
+  const retryRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: {
+      AGENT_PRACTICE_SCRIPT: retryScript,
+      AGENT_PRACTICE_ARGS: "--scheduled",
+      AGENT_PRACTICE_MAX_ATTEMPTS: "2",
+      AGENT_PIPELINE_RETRYABLE_EXIT: "20",
+      FAKE_RETRY_COUNT: retryCount,
+    },
+  });
+  assert.equal(retryRun.status, 0, retryRun.stderr);
+  assert.equal(fs.readFileSync(retryCount, "utf8").trim(), "2",
+    "launchd wrapper must retry one evidence-safe scheduled skip");
+  fs.rmSync(retryDir, { recursive: true, force: true });
   const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
   assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);
   assert.match(claudeDryRun.stdout, /published:false \+ 公開キュー追加PR/);
