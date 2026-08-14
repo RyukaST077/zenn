@@ -12,7 +12,15 @@ const CASES = new Map([
   ["scrub-enabled-treatment", true],
 ]);
 const args = process.argv.slice(2);
-const runnerEnvironmentAllowlist = new Set(["CLAUDE_BIN", "PATH", "REAL_CLAUDE_BIN", "TMPDIR"]);
+// Node adds __CF_USER_TEXT_ENCODING on macOS even when spawn receives an exact env object.
+const runnerEnvironmentAllowlist = new Set([
+  "CLAUDE_BIN",
+  "AGENT_PRACTICE_PREFLIGHT",
+  "PATH",
+  "REAL_CLAUDE_BIN",
+  "TMPDIR",
+  "__CF_USER_TEXT_ENCODING",
+]);
 if (Object.keys(process.env).some((name) => !runnerEnvironmentAllowlist.has(name))) {
   process.stderr.write("probe wrapper error: runner environment is not the required empty allowlist\n");
   process.exit(2);
@@ -39,6 +47,7 @@ const quoteSandbox = (value) => value.replaceAll("\\", "\\\\").replaceAll('"', '
 
 const caseRoot = fs.realpathSync(process.cwd());
 const caseId = path.basename(caseRoot);
+const isPreflight = process.env.AGENT_PRACTICE_PREFLIGHT === "1";
 invariant(CASES.has(caseId), `unsupported case directory: ${caseId}`);
 invariant(args[0] === "-p" && args[1] === PROMPT, "runner prompt differs from the manifest");
 for (const required of ["--output-format", "stream-json", "--no-session-persistence", "--setting-sources", "project"]) {
@@ -138,20 +147,18 @@ const childEnv = {
 if (CASES.get(caseId)) childEnv.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB = "1";
 
 const started = Date.now();
-const inner = spawnSync("/usr/bin/sandbox-exec", [
-  "-p",
-  sandboxProfile,
+const inner = spawnSync(isPreflight ? realBinary : "/usr/bin/sandbox-exec", isPreflight ? [
+  "--fixture-preflight",
+  caseId,
+] : [
+  "-p", sandboxProfile,
   realBinary,
-  "-p",
-  PROMPT,
-  "--max-turns",
-  "1",
-  "--output-format",
-  "stream-json",
+  "-p", PROMPT,
+  "--max-turns", "1",
+  "--output-format", "stream-json",
   "--verbose",
   "--no-session-persistence",
-  "--setting-sources",
-  "project",
+  "--setting-sources", "project",
 ], {
   cwd: projectDir,
   encoding: "utf8",
@@ -197,12 +204,13 @@ const result = {
   safety: {
     fake_home_is_case_child: fakeHome.startsWith(`${caseRoot}${path.sep}`),
     fake_home_differs_from_host_home: hostHome === null || path.resolve(fakeHome) !== hostHome,
+    preflight: isPreflight,
     inherited_environment_forwarded: false,
     runner_environment_names: Object.keys(process.env).sort(),
     passed_environment_names: Object.keys(childEnv).sort(),
-    network_enforcement: "sandbox-exec deny network*",
-    write_enforcement: "sandbox-exec deny file-write* except case root and /dev/null",
-    credential_service_enforcement: "sandbox-exec denies securityd and security.agent lookup",
+    network_enforcement: isPreflight ? "offline fixture preflight CLI" : "sandbox-exec deny network*",
+    write_enforcement: isPreflight ? "fixture preflight case root" : "sandbox-exec deny file-write* except case root and /dev/null",
+    credential_service_enforcement: isPreflight ? "not applicable to offline fixture preflight" : "sandbox-exec denies securityd and security.agent lookup",
   },
   process: {
     exit_code: inner.error?.code === "ETIMEDOUT" ? 124 : (inner.status ?? 127),

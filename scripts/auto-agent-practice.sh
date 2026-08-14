@@ -75,7 +75,7 @@ if [ "$DRY_RUN" = 1 ]; then
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
   result: a reviewed article prepared and submitted for Zenn publication
 EOF
   exit 0
@@ -163,10 +163,12 @@ SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-
 run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
 REPORT="$STAGE_ARTIFACT"
 
-PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible manifest for the selected claim. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
+PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
 run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
 MANIFEST="$STAGE_ARTIFACT"
 node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null || die "generated manifest failed independent validation"
+node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
+  || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
 
 RUN_PROMPT="Experiment manifest: $MANIFEST. Execute it once with the deterministic repository runner. Preserve its redacted evidence and return only the generated execution-log.md as the primary artifact."
 run_stage run 3 zenn-agent-run-practice logs/agent 0 "$RUN_PROMPT"
