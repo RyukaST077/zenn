@@ -1,0 +1,46 @@
+{
+  "version": 2,
+  "id": "codex-ephemeral-resume-persistence-20260814-1130",
+  "topic": "Codex ephemeral resume rollout persistence boundary",
+  "claim": "With locally installed Codex CLI 0.147.0, one successful codex exec resume of an exact persisted session with --ephemeral appends the harmless resumed turn to that session's existing rollout: its SHA-256 and byte size change, its line count does not decrease, its prior bytes remain an unchanged prefix, and the unique resume marker appears in appended bytes.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-codex-ephemeral-resume-persistence-20260814-1130.md",
+  "plan": "practice/agent/agent-practice-codex-ephemeral-resume-persistence-20260814-1130.md",
+  "fixture": "fixtures/agent-practice/codex-ephemeral-resume-persistence",
+  "prompt": "Run the fixture's bounded Codex resume-persistence probe exactly once. Do not perform any additional task.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "codex-0147-ephemeral-resume",
+      "provider": "codex",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "codex-resume-wrapper.mjs",
+        "preflight_cli": "preflight-codex.mjs",
+        "environment": "inherit"
+      }
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "markers.json",
+      "codex-resume-wrapper.mjs",
+      "preflight-codex.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "probe-result.json",
+      "verification.txt"
+    ]
+  }
+}

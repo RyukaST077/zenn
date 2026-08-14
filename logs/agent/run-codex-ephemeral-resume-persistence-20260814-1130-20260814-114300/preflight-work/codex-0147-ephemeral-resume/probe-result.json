@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "preflight": true,
+  "codex_version": "codex-cli 0.147.0",
+  "session_id": "11111111-2222-4333-8444-555555555555",
+  "target_relative_path": "sessions/2026/08/14/rollout-2026-08-14T00-00-00-11111111-2222-4333-8444-555555555555.jsonl",
+  "runner_controls": {
+    "approval": "never",
+    "sandbox": "read-only",
+    "network": false,
+    "ignore_user_config": true,
+    "ignore_rules": true,
+    "model_override": null
+  },
+  "baseline": {
+    "code": 0,
+    "signal": null,
+    "timed_out": false,
+    "thread_ids": [
+      "11111111-2222-4333-8444-555555555555"
+    ],
+    "completed": 1,
+    "failed": 0,
+    "tool_events": 0
+  },
+  "resume": {
+    "code": 0,
+    "signal": null,
+    "timed_out": false,
+    "thread_ids": [
+      "11111111-2222-4333-8444-555555555555"
+    ],
+    "completed": 1,
+    "failed": 0,
+    "tool_events": 0
+  },
+  "before": {
+    "sha256": "c91796a72a868af4a0512ad9e2d01808d6a7ee263eb17ad9ded9b8d77f609a25",
+    "bytes": 217,
+    "lines": 2,
+    "baseline_marker_count": 1,
+    "resume_marker_count": 0
+  },
+  "after": {
+    "sha256": "c6f999ef5cc3d19f47eb39b2f30036b464d4e848746dc49ed27c73a0796e1ef3",
+    "bytes": 367,
+    "lines": 3,
+    "baseline_marker_count": 1,
+    "resume_marker_count": 1
+  },
+  "delta": {
+    "bytes": 150,
+    "lines": 1,
+    "prefix_unchanged": true,
+    "appended_resume_marker_count": 1
+  },
+  "observation": "claim-supported"
+}

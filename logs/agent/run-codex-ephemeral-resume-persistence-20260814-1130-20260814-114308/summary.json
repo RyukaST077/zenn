@@ -1,0 +1,38 @@
+{
+  "manifest": "practice/agent/agent-practice-codex-ephemeral-resume-persistence-20260814-1130.json",
+  "started_at": "2026-08-14T02:43:08.662Z",
+  "finished_at": "2026-08-14T02:43:22.257Z",
+  "versions": {
+    "codex": "codex-cli 0.147.0"
+  },
+  "cases": [
+    {
+      "id": "codex-0147-ephemeral-resume",
+      "provider": "codex",
+      "provider_version": "codex-cli 0.147.0",
+      "execution_mode": "fixture-wrapper",
+      "execution_environment": "inherit",
+      "preflight_status": "passed",
+      "guidance": null,
+      "model_override": null,
+      "effort_override": null,
+      "network_requested": false,
+      "network_enforcement": "codex-workspace-sandbox",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 13018,
+      "verifier_exit_code": 0,
+      "marker_expected": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+      "marker_observed": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+      "marker_matches": true,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "probe-result.json",
+        "verification.txt"
+      ],
+      "unexpected_changes": [],
+      "passed": true,
+      "evidence": "logs/agent/run-codex-ephemeral-resume-persistence-20260814-1130-20260814-114308/codex-0147-ephemeral-resume"
+    }
+  ]
+}
