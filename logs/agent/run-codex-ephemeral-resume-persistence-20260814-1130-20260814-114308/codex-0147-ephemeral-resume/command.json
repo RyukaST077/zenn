@@ -1,0 +1,26 @@
+{
+  "executable": "/var/folders/vj/8z7_h0hd27s_ynbc9364mcnr0000gn/T/zenn-agent-codex-ephemeral-resume-persistence-20260814-1130-AQiJQc/codex-0147-ephemeral-resume/codex-resume-wrapper.mjs",
+  "real_executable": "$HOME/.nvm/versions/node/v22.17.0/lib/node_modules/@openai/codex/bin/codex.js",
+  "execution_mode": "fixture-wrapper",
+  "environment_mode": "inherit",
+  "args": [
+    "-a",
+    "never",
+    "exec",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "-C",
+    "$RUN_WORKSPACE/codex-0147-ephemeral-resume",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "--json",
+    "-o",
+    "$HOME/workspace/024_zenn/logs/agent/run-codex-ephemeral-resume-persistence-20260814-1130-20260814-114308/codex-0147-ephemeral-resume/result.txt",
+    "Run the fixture's bounded Codex resume-persistence probe exactly once. Do not perform any additional task."
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

@@ -1,0 +1,13 @@
+{
+  "status": "failed",
+  "provider": "codex",
+  "wrapper": "codex-resume-wrapper.mjs",
+  "fake_cli": "preflight-codex.mjs",
+  "environment": "minimal",
+  "wrapper_exit_code": 2,
+  "verifier_exit_code": 1,
+  "marker_expected": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+  "marker_observed": null,
+  "protected_paths_changed": [],
+  "unexpected_changes": []
+}

@@ -1,0 +1,18 @@
+{
+  "manifest": "practice/agent/agent-practice-codex-ephemeral-resume-persistence-20260814-1130.json",
+  "cases": {
+    "codex-0147-ephemeral-resume": {
+      "status": "passed",
+      "provider": "codex",
+      "wrapper": "codex-resume-wrapper.mjs",
+      "fake_cli": "preflight-codex.mjs",
+      "environment": "minimal",
+      "wrapper_exit_code": 0,
+      "verifier_exit_code": 0,
+      "marker_expected": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+      "marker_observed": "RESUME_PERSISTENCE_BOUNDARY_OBSERVED",
+      "protected_paths_changed": [],
+      "unexpected_changes": []
+    }
+  }
+}

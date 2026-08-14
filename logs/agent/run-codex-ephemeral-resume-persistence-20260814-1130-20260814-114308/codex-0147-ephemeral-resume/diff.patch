@@ -1,0 +1,71 @@
+diff --git a$RUN_WORKSPACE/codex-0147-ephemeral-resume/probe-result.json b$RUN_WORKSPACE/codex-0147-ephemeral-resume/probe-result.json
+new file mode 100644
+index 0000000..fee908c
+--- /dev/null
++++ b$RUN_WORKSPACE/codex-0147-ephemeral-resume/probe-result.json
+@@ -0,0 +1,58 @@
++{
++  "schema_version": 1,
++  "preflight": false,
++  "codex_version": "codex-cli 0.147.0",
++  "session_id": "019ffe26-e42a-7fa2-b7fc-4f492570cf43",
++  "target_relative_path": "sessions/2026/08/14/rollout-2026-08-14T11-43-09-019ffe26-e42a-7fa2-b7fc-4f492570cf43.jsonl",
++  "runner_controls": {
++    "approval": "never",
++    "sandbox": "read-only",
++    "network": false,
++    "ignore_user_config": true,
++    "ignore_rules": true,
++    "model_override": null
++  },
++  "baseline": {
++    "code": 0,
++    "signal": null,
++    "timed_out": false,
++    "thread_ids": [
++      "019ffe26-e42a-7fa2-b7fc-4f492570cf43"
++    ],
++    "completed": 1,
++    "failed": 0,
++    "tool_events": 0
++  },
++  "resume": {
++    "code": 0,
++    "signal": null,
++    "timed_out": false,
++    "thread_ids": [
++      "019ffe26-e42a-7fa2-b7fc-4f492570cf43"
++    ],
++    "completed": 1,
++    "failed": 0,
++    "tool_events": 0
++  },
++  "before": {
++    "sha256": "ee691034ed3b91dea72ff792c96c7b5030024b1d26a22f56846e5c40f28637d6",
++    "bytes": 38025,
++    "lines": 14,
++    "baseline_marker_count": 5,
++    "resume_marker_count": 0
++  },
++  "after": {
++    "sha256": "3ed77b333ea06276977f72b8ccbda440bee3681d9fbbb1ec985801ff252d44f1",
++    "bytes": 42427,
++    "lines": 23,
++    "baseline_marker_count": 5,
++    "resume_marker_count": 5
++  },
++  "delta": {
++    "bytes": 4402,
++    "lines": 9,
++    "prefix_unchanged": true,
++    "appended_resume_marker_count": 5
++  },
++  "observation": "claim-supported"
++}
+diff --git a$RUN_WORKSPACE/codex-0147-ephemeral-resume/verification.txt b$RUN_WORKSPACE/codex-0147-ephemeral-resume/verification.txt
+new file mode 100644
+index 0000000..158f46c
+--- /dev/null
++++ b$RUN_WORKSPACE/codex-0147-ephemeral-resume/verification.txt
+@@ -0,0 +1 @@
++RESUME_PERSISTENCE_BOUNDARY_OBSERVED
