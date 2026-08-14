@@ -36,7 +36,15 @@ try {
   assert.equal(dryRun.status, 0, dryRun.stderr);
   assert.match(dryRun.stdout, /scheduled: 1/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
+  assert.match(dryRun.stdout, /auto merge: 1/);
+  assert.match(dryRun.stdout, /zenn-prepare-publish -> commit\/push -> PR -> merge/);
+  assert.match(dryRun.stdout, /submitted for Zenn publication/);
+  assert.doesNotMatch(dryRun.stdout, /reviewed unpublished/);
   assert.doesNotMatch(dryRun.stdout, /first end-to-end proof/);
+  const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
+  assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
+  assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
+  assert.match(prOnlyDryRun.stdout, /PR -> human merge/);
 
   assert.ok(!redactText(`${os.homedir()}/${os.userInfo().username}/fixture`).includes(os.userInfo().username));
   assert.equal(redactValue({ signature: "opaque-thinking-signature" }).signature, "[REDACTED]");

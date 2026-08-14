@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft -> review/revise.
+# AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft ->
+# review/revise -> publication PR -> merge.
 # The run stage starts authenticated Claude Code and Codex processes, so the outer Codex stage uses
 # danger-full-access. Run this only on the dedicated local machine used for these experiments.
 set -euo pipefail
@@ -10,15 +11,20 @@ set -euo pipefail
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
 : "${MAX_AGENT_REVIEW_ROUNDS:=3}"
+: "${AGENT_PIPELINE_BASE_BRANCH:=main}"
+: "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 
 TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository"
 DRY_RUN=0
 SCHEDULED=0
+AUTO_MERGE=1
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --topic) TOPIC="${2:?--topic requires text}"; shift ;;
     --max-rounds) MAX_AGENT_REVIEW_ROUNDS="${2:?--max-rounds requires a number}"; shift ;;
     --scheduled) SCHEDULED=1 ;;
+    --auto-merge) AUTO_MERGE=1 ;;
+    --pr-only) AUTO_MERGE=0 ;;
     --dry-run) DRY_RUN=1 ;;
     -h|--help) sed -n '1,100p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -29,6 +35,10 @@ case "$MAX_AGENT_REVIEW_ROUNDS" in
   *[!0-9]*|0) echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
 esac
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
+case "$AGENT_PIPELINE_MERGE_METHOD" in
+  --merge|--rebase|--squash) ;;
+  *) echo "AGENT_PIPELINE_MERGE_METHOD must be --merge, --rebase, or --squash" >&2; exit 2 ;;
+esac
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -37,6 +47,8 @@ PIPE_DIR="logs/agent/pipeline-$TS"
 PLOG="$PIPE_DIR/pipeline.log"
 CONTRACT_TOOL="scripts/agent-stage-result-contract.mjs"
 RESULT_TOOL="scripts/validate-agent-stage-result.mjs"
+PUBLISH_CONTRACT_TOOL="scripts/stage-result-contract.mjs"
+PUBLISH_RESULT_TOOL="scripts/validate-stage-result.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 stage_timeout() {
@@ -48,6 +60,7 @@ stage_timeout() {
     draft) echo "${TIMEOUT_AGENT_DRAFT:=1200}" ;;
     review) echo "${TIMEOUT_AGENT_REVIEW:=900}" ;;
     revise) echo "${TIMEOUT_AGENT_REVISE:=1200}" ;;
+    prepare_publish) echo "${TIMEOUT_AGENT_PREPARE_PUBLISH:=900}" ;;
   esac
 }
 
@@ -63,8 +76,10 @@ if [ "$DRY_RUN" = 1 ]; then
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article
-  result: a reviewed unpublished Zenn article; no Git, GitHub, or publication operation
+  base branch: $AGENT_PIPELINE_BASE_BRANCH
+  auto merge: $AUTO_MERGE
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  result: a reviewed article prepared and submitted for Zenn publication
 EOF
   exit 0
 fi
@@ -78,16 +93,35 @@ die() { log "ERROR: $*"; log "pipeline evidence: $PIPE_DIR"; exit 1; }
 command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"
 command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN"
 command -v node >/dev/null 2>&1 || die "node is required"
+command -v git >/dev/null 2>&1 || die "git is required"
+command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
+[ -f "$PUBLISH_CONTRACT_TOOL" ] || die "publication stage contract tool is missing"
+[ -f "$PUBLISH_RESULT_TOOL" ] || die "publication stage result validator is missing"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
+GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
+git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
+git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
+  || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
 log "WARN: outer Codex stages use danger-full-access so the run stage can start both authenticated CLIs"
 
 LOCK="$ROOT/.agent-practice-pipeline.lock"
+for other_lock in "$ROOT/.auto-publish.lock" "$ROOT/.auto-publish-codex.lock"; do
+  [ ! -d "$other_lock" ] || die "another article pipeline holds $other_lock"
+done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another AI agent practice pipeline holds $LOCK"; fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+
+[ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
+  || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
+if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
+  die "tracked files contain uncommitted changes"
+fi
+GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" \
+  || die "git pull --ff-only failed"
 
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
@@ -126,6 +160,43 @@ run_stage() {
   fi
   [ "$result_rc" = 0 ] || die "$stage result contract failed: $result"
   STAGE_RESULT="$result"
+  log "$stage complete: $STAGE_ARTIFACT"
+}
+
+run_publish_stage() {
+  local article="$1" review="$2"
+  local stage="prepare_publish" idx="8"
+  local marker="$PIPE_DIR/.$idx-$stage.marker"
+  local events="$PIPE_DIR/$idx-$stage.events.jsonl"
+  local result="$PIPE_DIR/$idx-$stage.result.json"
+  local schema="$PIPE_DIR/$idx-$stage.schema.json"
+  local seconds contract repaired rc
+  seconds="$(stage_timeout "$stage")"
+  node "$PUBLISH_CONTRACT_TOOL" schema "$stage" "$schema" \
+    || die "$stage schema generation failed"
+  contract="$(node "$PUBLISH_CONTRACT_TOOL" prompt "$stage")" \
+    || die "$stage result prompt generation failed"
+  touch "$marker"
+
+  local cmd=("$CODEX_BIN" "-a" "never" "exec" "--ephemeral" "--ignore-user-config"
+    "--sandbox" "danger-full-access" "-c" "model_reasoning_effort=\"$AGENT_PIPELINE_EFFORT\"")
+  [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
+  cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result")
+  cmd+=("Use \$zenn-prepare-publish. Article: $article. Passing review: $review. Pipeline directory: $PIPE_DIR. Prepare publication and PR metadata. Do not ask questions, perform Git or GitHub operations, modify the article body, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract")
+
+  log "$stage start (timeout=${seconds}s, skill=zenn-prepare-publish)"
+  set +e
+  "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
+  rc=$?
+  set -e
+  [ "$rc" != 124 ] || die "$stage timed out; events: $events"
+  [ "$rc" = 0 ] || die "$stage failed with exit $rc; events: $events"
+  repaired="$(node "$PUBLISH_CONTRACT_TOOL" normalize "$stage" "$result")" \
+    || die "$stage result normalization failed"
+  [ -z "$repaired" ] || log "$stage result normalization: set $repaired to null"
+  STAGE_ARTIFACT="$(node "$PUBLISH_RESULT_TOOL" "$result" articles "$marker" "$stage" 2>>"$PLOG")" \
+    || die "$stage result contract failed: $result"
+  PUBLISH_STAGE_RESULT="$result"
   log "$stage complete: $STAGE_ARTIFACT"
 }
 
@@ -183,10 +254,70 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
 done
 [ "${VERDICT:-}" = pass ] || die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
 
-log "complete: reviewed unpublished article $ARTICLE"
+SLUG="$(basename "$ARTICLE" .md)"
+BRANCH="publish/$SLUG"
+if git show-ref --verify --quiet "refs/heads/$BRANCH" \
+    || GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+  BRANCH="$BRANCH-$TS"
+fi
+git switch -c "$BRANCH" || die "failed to create publication branch $BRANCH"
+
+run_publish_stage "$ARTICLE" "$REVIEW"
+ARTICLE="$STAGE_ARTIFACT"
+bash scripts/check-article.sh "$ARTICLE" --expect-published true \
+  || die "publication article check failed"
+PR_METADATA="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.pr_metadata)' "$PUBLISH_STAGE_RESULT")"
+case "$PR_METADATA" in "$PIPE_DIR"/*) ;; *) die "PR metadata is outside pipeline directory: $PR_METADATA" ;; esac
+metadata_lines="$(node scripts/validate-pr-metadata.mjs "$PR_METADATA" "$PIPE_DIR")" \
+  || die "PR metadata validation failed"
+PR_TITLE="$(printf '%s\n' "$metadata_lines" | sed -n '1p')"
+PR_BODY="$(printf '%s\n' "$metadata_lines" | sed -n '2p')"
+
+git add -- "$ARTICLE"
+[ -d "images/$SLUG" ] && git add -- "images/$SLUG"
+staged="$(git diff --cached --name-only)"
+[ -n "$staged" ] || die "nothing was staged for publication"
+while IFS= read -r staged_path; do
+  case "$staged_path" in
+    "$ARTICLE"|images/"$SLUG"/*) ;;
+    *) die "disallowed staged path: $staged_path" ;;
+  esac
+done <<EOF
+$staged
+EOF
+git diff --cached --check || die "staged publication diff failed whitespace checks"
+git commit -m "publish: $SLUG" || die "publication commit failed"
+COMMIT="$(git rev-parse HEAD)"
+GIT_TERMINAL_PROMPT=0 git push --set-upstream origin "$BRANCH" \
+  || die "publication push failed"
+
+PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$AGENT_PIPELINE_BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY")" \
+  || die "PR creation failed"
+git switch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null \
+  || die "failed to return to $AGENT_PIPELINE_BASE_BRANCH"
+
+if [ "$AUTO_MERGE" = 1 ]; then
+  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --auto --delete-branch; then
+    MERGE_RESULT="auto-merge requested"
+  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --delete-branch; then
+    MERGE_RESULT="merged immediately"
+  else
+    die "PR merge failed: $PR_URL"
+  fi
+  GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
+    || log "WARN: could not refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
+else
+  MERGE_RESULT="PR created; waiting for human merge"
+fi
+
+log "complete: publication submitted for $ARTICLE"
 log "research: $REPORT"
 log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"
 log "analysis: $ANALYSIS"
 log "review: $REVIEW"
-printf '%s\n' "$ARTICLE"
+log "commit: $COMMIT"
+log "PR: $PR_URL"
+log "merge: $MERGE_RESULT"
+printf 'Article: %s\nPR: %s\nPipeline: %s\nMerge: %s\n' \
+  "$ARTICLE" "$PR_URL" "$PIPE_DIR" "$MERGE_RESULT"

@@ -267,6 +267,8 @@ zenn-agent-analyze-results     → 事実分析 + 編集ブリーフ
 zenn-agent-draft-article       → 記事タイプ別の articles/<slug>.md（published: false）
 zenn-agent-review-article      → 証拠監査 + 100点の編集品質レビュー
 zenn-agent-revise-article      → 構成を含む記事修正（必要な場合だけ）
+zenn-prepare-publish           → published: true + 公開PRメタデータ
+GitHub                         → publish/<slug>をpush → PR → 自動マージ
 ```
 
 記事は正確性・安全性・再現性の必須条件に加え、読者の問題、独自価値、説明、証拠、実用性、
@@ -286,16 +288,22 @@ redactする。manifestは変更許可ファイル、保護ファイル、timeou
 # 設定と段構成だけ確認
 bash scripts/auto-agent-practice.sh --dry-run
 
-# 未掲載のAI coding-agentテーマを選び、実CLI検証からレビュー済み未公開記事まで生成
+# 未掲載のAI coding-agentテーマを選び、実CLI検証からPRの自動マージ（Zenn公開）まで実行
 bash scripts/auto-agent-practice.sh
+
+# 公開PRを作成し、人間が確認してマージする場合
+bash scripts/auto-agent-practice.sh --pr-only
 
 # 調査テーマを指定（実験可能な1 claimへsearch段が絞り込む）
 bash scripts/auto-agent-practice.sh --topic "Claude Code hooksでformatを強制できる条件"
 ```
 
-前提は、ログイン済みの `claude` と `codex`、`node`、`rg`、`timeout` または `gtimeout`。
+前提は、ログイン済みの `claude`、`codex`、`gh`、`node`、`git`、`rg`、`timeout` または `gtimeout`。
 run段から両方の認証済みCLIを起動するため、外側のCodexは `danger-full-access` で動く。専用の
-ローカル環境でのみ使うこと。パイプラインはGit操作、PR作成、`published: true`への変更を行わない。
+ローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上を満たした
+場合だけ、`publish/<slug>` ブランチで `published: true` に変更してPRを作成する。通常実行はPRを
+自動マージし、`--pr-only` を付けた場合は人間の確認・マージを待つ。既存の未追跡ファイルは公開
+コミットに含めず、記事と同じslugの画像だけを明示的にstageする。
 
 | 環境変数 | 意味 | 既定 |
 |---|---|---|
@@ -303,6 +311,8 @@ run段から両方の認証済みCLIを起動するため、外側のCodexは `d
 | `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
 | `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
 | `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `3` |
+| `AGENT_PIPELINE_BASE_BRANCH` | 公開PRのbaseブランチ | `main` |
+| `AGENT_PIPELINE_MERGE_METHOD` | `gh pr merge`方式 | `--squash` |
 | `TIMEOUT_AGENT_<STAGE>` | 専用段ごとのtimeout秒 | 段ごと |
 
 開発時の決定論的テストは `node scripts/test-agent-practice.mjs`、全体は `npm test` で実行する。
@@ -310,9 +320,9 @@ run段から両方の認証済みCLIを起動するため、外側のCodexは `d
 ### AI記事の定期実行（毎日5:00）
 
 従来記事の4:00ジョブとは別に、`scripts/auto-agent-practice-launchd.sh`を
-`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はGit操作、PR作成、公開を行わず、
-レビューを通過した`published: false`の記事まで作成する。4:00側のパイプラインロックが残っている場合は、
-同じリポジトリを同時更新しないよう5:00側を正常終了扱いでスキップする。
+`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側もレビュー合格後に公開PRを作成し、
+自動マージしてZenn公開へ進める。4:00側のパイプラインロックが残っている場合は、同じリポジトリを
+同時更新しないよう5:00側を正常終了扱いでスキップする。
 
 ```bash
 # launchdと同じ経路をdry-run
