@@ -1,7 +1,9 @@
 # zenn
 
 Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆 → レビュー → 公開準備まで行うリポジトリ。
-GitHub 連携により、`published: true` の記事が `main` にマージされると Zenn で公開される。
+投稿上限で保留された記事とAI coding-agent記事は公開キューへ入り、AIを使わないワーカーが
+投稿上限を見ながら1件ずつ`published: true`にする。GitHub 連携により、その変更が`main`へ
+マージされるとZennで公開される。
 
 ## パイプライン全体像
 
@@ -247,11 +249,37 @@ resume は `state.json` を読み、完了済みの段をスキップして失�
 `scripts/auto-publish-codex-launchd.sh` が launchd 用ラッパー（ログは `logs/launchd/` に出力、
 引数は環境変数 `CODEX_AP_ARGS` で渡す。例: `CODEX_AP_ARGS="--auto-merge"`）。
 
-> ⚠ **Zenn の投稿数レートリミットに注意**: Zenn は新規記事の公開数を制限している
-> （具体数は非公開。目安 1〜2 本/日）。上限を超えた記事はデプロイ通知に
-> 「投稿数の上限に達したためデプロイされませんでした」と表示され、main にマージ済みでも
-> Zenn には反映されない（次回以降の push 時に枠が空いていれば自動で再処理される）。
-> 高頻度の定期実行は未反映記事が溜まるだけなので、公開ペースは 1 日 1 本程度に抑えるのが安全。
+> **Zenn の投稿数レートリミット**: Zenn の正確な上限判定は非公開。そのためこのリポジトリは
+> `config/zenn-publish-queue.json` で直近24時間を保守的に最大2件として扱い、先頭の記事だけを
+> 公開する。公開できなかった記事は6時間空けて再試行し、公開APIで確認できるまで次へ進まない。
+
+## Zenn公開キュー
+
+`scripts/zenn-publish-queue.sh` はClaude/Codexを呼ばず、Node.js、Zenn公開API、Git、GitHub CLIだけで
+動く。1回の実行で行う変更は最大1件である。
+
+```bash
+# キューと記事の整合性確認
+node scripts/zenn-publish-queue.mjs validate
+
+# 実APIを見て、いま何をするか確認（変更なし）
+bash scripts/zenn-publish-queue.sh --dry-run
+
+# 先頭1件を公開・再試行・公開確認のいずれかへ進める
+bash scripts/zenn-publish-queue.sh
+```
+
+ワーカーは次の順で動く。
+
+1. `https://zenn.dev/api/articles?username=clopy&order=latest` から直近24時間の公開数を数える
+2. 2件以上なら何もせず待つ
+3. 枠があれば先頭記事だけを `published: true` にしてPRをマージする
+4. 次回実行で公開APIに記事があればキューから削除する
+5. 見つからなければ6時間の間隔を空け、キュー状態の更新pushでZennデプロイを再試行する
+
+`config/launchd/com.zenn.publish-queue.plist` はこのワーカーを1時間ごとに実行する設定で、ログは
+`logs/launchd/zenn-publish-queue-*.log` に残る。キューが空でない間は、従来記事、Codex記事、
+AI coding-agent記事のlaunchdラッパーが新しい記事生成をスキップするため、保留記事が増え続けない。
 
 ## AI coding-agent know-how pipeline
 
@@ -267,8 +295,8 @@ zenn-agent-analyze-results     → 事実分析 + 編集ブリーフ
 zenn-agent-draft-article       → 記事タイプ別の articles/<slug>.md（published: false）
 zenn-agent-review-article      → 証拠監査 + 100点の編集品質レビュー
 zenn-agent-revise-article      → 構成を含む記事修正（必要な場合だけ）
-zenn-prepare-publish           → published: true + 公開PRメタデータ
-GitHub                         → publish/<slug>をpush → PR → 自動マージ
+publication queue              → published: false のままキュー追加PR
+AI非依存ワーカー               → 投稿枠を確認 → published: true → PR → 自動マージ
 ```
 
 記事は正確性・安全性・再現性の必須条件に加え、読者の問題、独自価値、説明、証拠、実用性、
@@ -290,7 +318,7 @@ fixture固有のCLIラッパーを使うケースは、オフラインのfake CL
 # 設定と段構成だけ確認
 bash scripts/auto-agent-practice.sh --dry-run
 
-# 未掲載のAI coding-agentテーマを選び、実CLI検証からPRの自動マージ（Zenn公開）まで実行
+# 未掲載のAI coding-agentテーマを選び、実CLI検証から公開キュー追加まで実行
 bash scripts/auto-agent-practice.sh
 
 # 公開PRを作成し、人間が確認してマージする場合
@@ -303,10 +331,11 @@ bash scripts/auto-agent-practice.sh --topic "Claude Code hooksでformatを強制
 前提は、ログイン済みの `claude`、`codex`、`gh`、`node`、`git`、`rg`、`timeout` または `gtimeout`。
 run段から両方の認証済みCLIを起動するため、外側のCodexは `danger-full-access` で動く。専用の
 ローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上を満たした
-場合だけ、`publish/<slug>` ブランチで `published: true` に変更してPRを作成する。通常実行はPRを
-自動マージし、`--pr-only` を付けた場合は人間の確認・マージを待つ。既存の未追跡ファイルは公開
+場合だけ、`queue/<slug>` ブランチで `published: false` の記事とキュー更新のPRを作成する。通常実行はPRを
+自動マージし、`--pr-only` を付けた場合は人間の確認・マージを待つ。既存の未追跡ファイルはキュー
 コミットに含めず、記事と同じslugの画像だけを明示的にstageする。公開準備からpushまでは一時Git
 worktree内で行うため、途中で失敗しても呼び出し元の`main` checkoutと下書き記事は変更されない。
+実際の`published: true`への変更と再試行は、上記のAI非依存ワーカーが担当する。
 
 初回の実運用や公開設定を変更した直後は `--pr-only` でPR内容を確認し、問題がなければ通常実行へ
 切り替える。統合テストでは隔離した実Gitリポジトリとfake Codex / GitHub CLIを使い、`--pr-only`、
@@ -327,9 +356,9 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 ### AI記事の定期実行（毎日5:00）
 
 従来記事の4:00ジョブとは別に、`scripts/auto-agent-practice-launchd.sh`を
-`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側もレビュー合格後に公開PRを作成し、
-自動マージしてZenn公開へ進める。4:00側のパイプラインロックが残っている場合は、同じリポジトリを
-同時更新しないよう5:00側を正常終了扱いでスキップする。
+`com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はレビュー合格後に公開キュー追加PRを
+自動マージする。公開キューに保留記事がある場合や、4:00側のパイプラインロックが残っている場合は、
+記事を増やさないよう5:00側を正常終了扱いでスキップする。
 
 ```bash
 # launchdと同じ経路をdry-run

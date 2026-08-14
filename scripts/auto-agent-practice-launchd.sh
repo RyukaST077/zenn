@@ -20,6 +20,22 @@ read -r -a AGENT_ARGS <<< "$ARG_TEXT"
   echo "args: ${AGENT_ARGS[*]}"
   echo
 
+  case " ${AGENT_ARGS[*]} " in
+    *" --dry-run "*) ;;
+    *)
+      pending="$(node "$REPO/scripts/zenn-publish-queue.mjs" pending-count 2>/dev/null)" || {
+        echo "RESULT: skipped (publication queue could not be validated safely)"
+        echo "===== AI agent practice end: $(date) exit=0 ====="
+        exit 0
+      }
+      if [ "$pending" -gt 0 ]; then
+        echo "RESULT: skipped (publication queue has $pending pending article(s))"
+        echo "===== AI agent practice end: $(date) exit=0 ====="
+        exit 0
+      fi
+      ;;
+  esac
+
   for other_lock in "$REPO/.auto-publish.lock" "$REPO/.auto-publish-codex.lock"; do
     if [ -d "$other_lock" ]; then
       echo "RESULT: skipped (another article pipeline holds $other_lock)"

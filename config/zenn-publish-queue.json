@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "zennUsername": "clopy",
+  "maxPublicationsPer24Hours": 2,
+  "retryAfterHours": 6,
+  "entries": [
+    {
+      "article": "articles/playwright-passkey-dependency-failure.md",
+      "enqueuedAt": "2026-07-10T15:04:57.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/typescript7-tsc-bin-collision-log.md",
+      "enqueuedAt": "2026-07-11T08:25:24.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/npm12-allowscripts-local-fixture.md",
+      "enqueuedAt": "2026-07-11T19:07:04.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/using-symbol-dispose-try-finally-compare.md",
+      "enqueuedAt": "2026-07-16T19:26:21.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/opentelemetry-js-collector-jaeger-first-trace.md",
+      "enqueuedAt": "2026-07-26T15:14:50.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/typescript6-deprecated-tsconfig-already-error.md",
+      "enqueuedAt": "2026-07-26T19:37:32.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
+      "enqueuedAt": "2026-08-07T19:45:52.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-pretooluse-dispatch-preflight.md",
+      "enqueuedAt": "2026-08-13T10:34:59.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/project-root-agent-instructions.md",
+      "enqueuedAt": "2026-08-13T10:34:59.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/deno29-test-each-snapshot.md",
+      "enqueuedAt": "2026-08-13T19:39:39.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-resume-ephemeral-rollout-gate.md",
+      "enqueuedAt": "2026-08-14T03:04:36.000Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    }
+  ]
+}

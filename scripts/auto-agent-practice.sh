@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft ->
-# review/revise -> publication PR -> merge.
+# review/revise -> publication queue PR -> merge.
 # The run stage starts authenticated Claude Code and Codex processes, so the outer Codex stage uses
 # danger-full-access. Run this only on the dedicated local machine used for these experiments.
 set -euo pipefail
@@ -78,8 +78,8 @@ if [ "$DRY_RUN" = 1 ]; then
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
   resume after run: ${RESUME_RUN_LOG:-none}
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
-  result: a reviewed article prepared and submitted for Zenn publication
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  result: a reviewed article added to the rate-limited Zenn publication queue
 EOF
   exit 0
 fi
@@ -98,7 +98,7 @@ command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
-[ -x scripts/agent-practice/publish-reviewed-article.sh ] || die "publication helper is missing or not executable"
+[ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
@@ -247,10 +247,10 @@ done
 
 PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
 [ "$AUTO_MERGE" = 1 ] && PUBLISH_ARGS+=(--auto-merge) || PUBLISH_ARGS+=(--pr-only)
-PUBLISH_SUMMARY="$(bash scripts/agent-practice/publish-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
-  || die "publication helper failed"
+PUBLISH_SUMMARY="$(bash scripts/agent-practice/enqueue-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
+  || die "publication queue helper failed"
 
-log "complete: publication submitted for $ARTICLE"
+log "complete: publication queued for $ARTICLE"
 log "research: $REPORT"
 log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"

@@ -3,7 +3,7 @@ title: "Codex PreToolUseのdenyを信じる前に副作用で確かめる"
 emoji: "🛑"
 type: tech
 topics: ["codex", "aiagent", "security", "cli"]
-published: true
+published: false
 ---
 
 無人の`codex exec`で、モデルが生成した特定のシェルコマンドを`PreToolUse`フックで止めたいとします。このとき、リポジトリに`.codex/hooks.json`があり、起動時にhook trust bypassの通知が出たことだけを見て「denyが効いている」と判断するのは危険です。
