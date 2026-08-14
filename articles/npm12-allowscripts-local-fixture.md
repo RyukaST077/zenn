@@ -3,7 +3,7 @@ title: "npm v12のallowScriptsを無害なlocal fixtureで試す"
 emoji: "🔐"
 type: tech
 topics: ["npm", "nodejs", "security"]
-published: false
+published: true
 ---
 
 ## 対象読者
