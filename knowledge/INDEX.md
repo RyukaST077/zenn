@@ -7,6 +7,8 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-08-14] [Deno.test.each() で TestContext を受け取ると TS2339 になる（引数の順序）](./2026-08-14-deno-test-each-testcontext-arg-order.md) — `API` / tags: deno, Deno.test.each, TestContext, assertSnapshot, TS2339
+- [2026-08-14] [deno upgrade が built without the upgrade feature で拒否される](./2026-08-14-deno-upgrade-built-without-upgrade-feature.md) — `Environment` / tags: deno, Homebrew, UpgradeFeatureDisabled, brew upgrade deno
 - [2026-08-09] [zshでglobを含む引数（--include=*.js / --test-coverage-include=src/**）が no matches found で実行前に落ちる](./2026-08-09-zsh-nomatch-glob-argument.md) — `Configuration` / tags: zsh, bash, NoMatchesFound, glob, クォート
 - [2026-07-11] [Biome の linter.domains.types を "all" にしても nursery の型認識ルールが自動発火しない](./2026-07-11-biome-types-domain-all-not-enabling-nursery-rules.md) — `Configuration` / tags: biome, typescript, SilentNoOp, type-aware
 - [2026-07-11] [planステージがCodexサンドボックスで実行できない検証計画（実ブラウザ起動・deno upgrade等）を立ててしまう](./2026-07-11-codex-sandbox-infeasible-practice-plans.md) — `Environment` / tags: codex, sandbox, playwright, deno, docker

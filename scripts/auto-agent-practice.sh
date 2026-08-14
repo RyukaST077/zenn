@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft -> review/revise.
+# AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft ->
+# review/revise -> publication PR -> merge.
 # The run stage starts authenticated Claude Code and Codex processes, so the outer Codex stage uses
 # danger-full-access. Run this only on the dedicated local machine used for these experiments.
 set -euo pipefail
@@ -10,15 +11,20 @@ set -euo pipefail
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
 : "${MAX_AGENT_REVIEW_ROUNDS:=3}"
+: "${AGENT_PIPELINE_BASE_BRANCH:=main}"
+: "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 
 TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository"
 DRY_RUN=0
 SCHEDULED=0
+AUTO_MERGE=1
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --topic) TOPIC="${2:?--topic requires text}"; shift ;;
     --max-rounds) MAX_AGENT_REVIEW_ROUNDS="${2:?--max-rounds requires a number}"; shift ;;
     --scheduled) SCHEDULED=1 ;;
+    --auto-merge) AUTO_MERGE=1 ;;
+    --pr-only) AUTO_MERGE=0 ;;
     --dry-run) DRY_RUN=1 ;;
     -h|--help) sed -n '1,100p' "$0"; exit 0 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
@@ -29,6 +35,10 @@ case "$MAX_AGENT_REVIEW_ROUNDS" in
   *[!0-9]*|0) echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
 esac
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
+case "$AGENT_PIPELINE_MERGE_METHOD" in
+  --merge|--rebase|--squash) ;;
+  *) echo "AGENT_PIPELINE_MERGE_METHOD must be --merge, --rebase, or --squash" >&2; exit 2 ;;
+esac
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -63,8 +73,10 @@ if [ "$DRY_RUN" = 1 ]; then
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article
-  result: a reviewed unpublished Zenn article; no Git, GitHub, or publication operation
+  base branch: $AGENT_PIPELINE_BASE_BRANCH
+  auto merge: $AUTO_MERGE
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> zenn-prepare-publish -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  result: a reviewed article prepared and submitted for Zenn publication
 EOF
   exit 0
 fi
@@ -78,16 +90,34 @@ die() { log "ERROR: $*"; log "pipeline evidence: $PIPE_DIR"; exit 1; }
 command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"
 command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN"
 command -v node >/dev/null 2>&1 || die "node is required"
+command -v git >/dev/null 2>&1 || die "git is required"
+command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
+[ -x scripts/agent-practice/publish-reviewed-article.sh ] || die "publication helper is missing or not executable"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
+GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
+git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
+git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
+  || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
 log "WARN: outer Codex stages use danger-full-access so the run stage can start both authenticated CLIs"
 
 LOCK="$ROOT/.agent-practice-pipeline.lock"
+for other_lock in "$ROOT/.auto-publish.lock" "$ROOT/.auto-publish-codex.lock"; do
+  [ ! -d "$other_lock" ] || die "another article pipeline holds $other_lock"
+done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another AI agent practice pipeline holds $LOCK"; fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+
+[ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
+  || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
+if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
+  die "tracked files contain uncommitted changes"
+fi
+GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" \
+  || die "git pull --ff-only failed"
 
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
@@ -183,10 +213,15 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
 done
 [ "${VERDICT:-}" = pass ] || die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
 
-log "complete: reviewed unpublished article $ARTICLE"
+PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
+[ "$AUTO_MERGE" = 1 ] && PUBLISH_ARGS+=(--auto-merge) || PUBLISH_ARGS+=(--pr-only)
+PUBLISH_SUMMARY="$(bash scripts/agent-practice/publish-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
+  || die "publication helper failed"
+
+log "complete: publication submitted for $ARTICLE"
 log "research: $REPORT"
 log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"
 log "analysis: $ANALYSIS"
 log "review: $REVIEW"
-printf '%s\n' "$ARTICLE"
+printf '%s\n' "$PUBLISH_SUMMARY"
