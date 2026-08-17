@@ -3,7 +3,7 @@ title: "OpenTelemetryを初めて計装して、ローカルのCollector＋Jaege
 emoji: "🔭"
 type: "tech"
 topics: ["opentelemetry", "jaeger", "nodejs", "express", "observability"]
-published: false
+published: true
 ---
 
 ## はじめに

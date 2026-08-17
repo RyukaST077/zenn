@@ -7,8 +7,8 @@
     {
       "article": "articles/opentelemetry-js-collector-jaeger-first-trace.md",
       "enqueuedAt": "2026-07-26T15:14:50.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-17T04:56:28.475Z"
     },
     {
       "article": "articles/typescript6-deprecated-tsconfig-already-error.md",
