@@ -7,8 +7,8 @@
     {
       "article": "articles/npm12-allowscripts-local-fixture.md",
       "enqueuedAt": "2026-07-11T19:07:04.000Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-08-14T16:51:30.696Z"
+      "attempts": 2,
+      "lastAttemptAt": "2026-08-17T02:36:59.932Z"
     },
     {
       "article": "articles/using-symbol-dispose-try-finally-compare.md",
