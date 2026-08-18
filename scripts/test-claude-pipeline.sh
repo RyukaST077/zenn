@@ -9,7 +9,15 @@ ARTICLE="articles/$SLUG.md"
 INVALID_ARTICLE="articles/claude-invalid-type-$$.md"
 REPORT="logs/review-$SLUG-test.md"
 LEGACY_PIPELINE="logs/pipeline-legacy-test-$$"
-trap 'rm -rf "$TMP" "$ARTICLE" "$INVALID_ARTICLE" "$REPORT" "$LEGACY_PIPELINE"' EXIT
+RUNTIME_PIPELINE="logs/pipeline-runtime-test-$$"
+RUNTIME_REPORT="research/search-topic-runtime-test-$$.md"
+RUNTIME_TASK="practice/practice-runtime-test-$$.md"
+RUNTIME_RUN_DIR="logs/run-runtime-test-$$"
+RUNTIME_RUNLOG="$RUNTIME_RUN_DIR/execution-log.md"
+RUNTIME_SLUG="claude-command-runtime-$$"
+RUNTIME_ARTICLE="articles/$RUNTIME_SLUG.md"
+RUNTIME_REVIEW="logs/review-$RUNTIME_SLUG-test.md"
+trap 'rm -rf "$TMP" "$ARTICLE" "$INVALID_ARTICLE" "$REPORT" "$LEGACY_PIPELINE" "$RUNTIME_PIPELINE" "$RUNTIME_REPORT" "$RUNTIME_TASK" "$RUNTIME_RUN_DIR" "$RUNTIME_ARTICLE" "$RUNTIME_REVIEW"' EXIT
 
 bash -n scripts/auto-publish.sh scripts/auto-publish-launchd.sh \
   .claude/skills/review-article/scripts/check-article.sh
@@ -120,5 +128,78 @@ PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN=true \
 [ -f "$LEGACY_PIPELINE/state.json" ]
 [ "$(node scripts/pipeline-state.mjs get "$LEGACY_PIPELINE/state.json" completed.review)" = true ]
 [ "$(node scripts/pipeline-state.mjs get "$LEGACY_PIPELINE/state.json" completed.pr)" = true ]
+
+# macOS Bash 3.2 + set -u で、schemaを使わない段の空オプション配列が
+# unbound variable にならないことを、実際のrun_claude経路で確認する。
+cat >"$TMP/fake-claude" <<'EOF'
+#!/bin/sh
+set -eu
+prompt=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -p) prompt="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+case "$prompt" in
+  /search-topic*)
+    printf '%s\n' '# Runtime search fixture' >"$FAKE_REPORT"
+    printf '%s\n' search >>"$FAKE_CALLS" ;;
+  /plan-practice*)
+    printf '%s\n' '# Runtime plan fixture' >"$FAKE_TASK"
+    printf '%s\n' plan >>"$FAKE_CALLS" ;;
+  /run-practice*)
+    mkdir -p "$(dirname "$FAKE_RUNLOG")"
+    printf '%s\n' '# Runtime execution fixture' >"$FAKE_RUNLOG"
+    printf '%s\n' run >>"$FAKE_CALLS" ;;
+  /draft-article*)
+    printf '%s\n' \
+      '---' \
+      'title: "Claude command runtime fixture"' \
+      'emoji: "🧪"' \
+      'type: tech' \
+      'topics: ["claude", "test"]' \
+      'published: false' \
+      '---' \
+      '' \
+      'Runtime fixture.' >"$FAKE_ARTICLE"
+    printf '%s\n' draft >>"$FAKE_CALLS" ;;
+  /review-article*)
+    printf '%s\n' \
+      '# 公開前レビュー' \
+      '' \
+      '## 判定' \
+      '' \
+      '**判定: 公開可**' \
+      '' \
+      '- blocker: 0 件 / warning: 0 件 / suggestion: 0 件' >"$FAKE_REVIEW"
+    printf '%s\n' review >>"$FAKE_CALLS"
+    printf '{"type":"result","structured_output":{"status":"ok","artifact":"%s","reason":"","metadata":{"verdict":"pass","slug":"%s","pr_metadata":null}}}\n' \
+      "$FAKE_REVIEW" "$FAKE_SLUG" ;;
+  *)
+    printf 'unexpected prompt: %s\n' "$prompt" >&2
+    exit 64 ;;
+esac
+EOF
+chmod +x "$TMP/fake-claude"
+mkdir -p "$RUNTIME_PIPELINE"
+node scripts/pipeline-state.mjs init "$RUNTIME_PIPELINE/state.json" "$CURRENT_BRANCH"
+node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.preflight true
+node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.pr true
+node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.merge true
+node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" publish.pr_url '"https://example.invalid/pull/runtime"'
+PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN="$TMP/fake-claude" \
+  CLAUDE_USAGE_GATE_ENABLED=0 AP_MODEL= AP_EFFORT= \
+  FAKE_REPORT="$RUNTIME_REPORT" FAKE_TASK="$RUNTIME_TASK" FAKE_RUNLOG="$RUNTIME_RUNLOG" \
+  FAKE_ARTICLE="$RUNTIME_ARTICLE" FAKE_REVIEW="$RUNTIME_REVIEW" \
+  FAKE_SLUG="$RUNTIME_SLUG" FAKE_CALLS="$TMP/runtime.calls" \
+  bash scripts/auto-publish.sh --resume "$RUNTIME_PIPELINE" \
+  >"$TMP/runtime.stdout" 2>"$TMP/runtime.stderr"
+[ "$(node scripts/pipeline-state.mjs get "$RUNTIME_PIPELINE/state.json" completed.review)" = true ]
+[ "$(tr '\n' ' ' <"$TMP/runtime.calls")" = 'search plan run draft review ' ]
+if rg -q 'unbound variable' "$TMP/runtime.stderr"; then
+  echo "Bash 3.2 empty-array regression detected" >&2
+  exit 1
+fi
 
 echo "Claude pipeline tests passed"
