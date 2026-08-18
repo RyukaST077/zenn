@@ -43,8 +43,21 @@ const testWorkerFlow = () => {
   const integration = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-publish-worker-test-"));
   const remote = path.join(integration, "remote.git");
   const checkout = path.join(integration, "checkout");
+  const updater = path.join(integration, "updater");
   const bin = path.join(integration, "bin");
   const api = path.join(integration, "api.json");
+  const workerArticle = "articles/worker-queue-fixture.md";
+  const remoteArticleBody = `---
+title: "Worker queue fixture"
+emoji: "🧪"
+type: tech
+topics: ["test"]
+published: false
+---
+
+Remote worker fixture body.
+`;
+  const localCollisionBody = `${remoteArticleBody}\nLocal untracked copy must remain untouched.\n`;
   try {
     fs.mkdirSync(checkout, { recursive: true });
     fs.mkdirSync(bin, { recursive: true });
@@ -54,23 +67,13 @@ const testWorkerFlow = () => {
     fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
     fs.mkdirSync(path.join(checkout, "config"), { recursive: true });
     fs.mkdirSync(path.join(checkout, "scripts"), { recursive: true });
-    fs.writeFileSync(path.join(checkout, "articles/worker-queue-fixture.md"), `---
-title: "Worker queue fixture"
-emoji: "🧪"
-type: tech
-topics: ["test"]
-published: false
----
-
-Worker fixture body.
-`);
     fs.writeFileSync(path.join(checkout, queueRelative), `${JSON.stringify({
       version: 1,
       zennUsername: "clopy",
       maxPublicationsPer24Hours: 2,
       retryAfterHours: 6,
       entries: [{
-        article: "articles/worker-queue-fixture.md",
+        article: workerArticle,
         enqueuedAt: "2026-08-13T00:00:00.000Z",
         attempts: 0,
         lastAttemptAt: null,
@@ -86,6 +89,25 @@ Worker fixture body.
     assertRun(runAt(integration, "git", ["init", "--bare", remote]), "worker git init bare");
     assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "worker git remote add");
     assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "worker git push main");
+
+    // Reproduce the production failure: origin/main adds an article at a path
+    // that is still an untracked, user-owned file in the shared checkout.
+    assertRun(runAt(integration, "git", ["clone", "--branch", "main", remote, updater]),
+      "worker clone updater");
+    assertRun(runAt(updater, "git", ["config", "user.name", "Publish Worker Updater"]),
+      "worker updater user.name");
+    assertRun(runAt(updater, "git", ["config", "user.email", "updater@example.com"]),
+      "worker updater user.email");
+    fs.mkdirSync(path.join(updater, "articles"), { recursive: true });
+    fs.writeFileSync(path.join(updater, workerArticle), remoteArticleBody);
+    assertRun(runAt(updater, "git", ["add", "--", workerArticle]), "worker updater git add");
+    assertRun(runAt(updater, "git", ["commit", "-m", "add queued article"]),
+      "worker updater git commit");
+    assertRun(runAt(updater, "git", ["push", "origin", "main"]), "worker updater git push");
+
+    fs.writeFileSync(path.join(checkout, workerArticle), localCollisionBody);
+    const checkoutHeadBefore = runAt(checkout, "git", ["rev-parse", "HEAD"]);
+    assertRun(checkoutHeadBefore, "worker read shared checkout head");
 
     const fakeGh = path.join(bin, "gh");
     fs.writeFileSync(fakeGh, `#!/bin/sh
@@ -116,6 +138,7 @@ exit 2
     ]);
     assertRun(remoteArticle, "worker read remote article");
     assert.match(remoteArticle.stdout, /^published: true$/m);
+    assert.match(remoteArticle.stdout, /Remote worker fixture body\./);
     const remoteQueue = runAt(integration, "git", [
       `--git-dir=${remote}`, "show", `${ref}:${queueRelative}`,
     ]);
@@ -124,6 +147,15 @@ exit 2
     const worktrees = runAt(checkout, "git", ["worktree", "list", "--porcelain"]);
     assert.equal((worktrees.stdout.match(/^worktree /gm) || []).length, 1,
       `worker leaked a temporary worktree:\n${worktrees.stdout}`);
+    const checkoutHeadAfter = runAt(checkout, "git", ["rev-parse", "HEAD"]);
+    assertRun(checkoutHeadAfter, "worker re-read shared checkout head");
+    assert.equal(checkoutHeadAfter.stdout, checkoutHeadBefore.stdout,
+      "worker must not update the shared checkout branch");
+    assert.equal(fs.readFileSync(path.join(checkout, workerArticle), "utf8"), localCollisionBody,
+      "worker must not overwrite the shared checkout's untracked article");
+    const sharedStatus = runAt(checkout, "git", ["status", "--porcelain", "--", workerArticle]);
+    assertRun(sharedStatus, "worker read shared checkout status");
+    assert.equal(sharedStatus.stdout, `?? ${workerArticle}\n`);
   } finally {
     fs.rmSync(integration, { recursive: true, force: true });
   }
