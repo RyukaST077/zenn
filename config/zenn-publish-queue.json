@@ -7,8 +7,8 @@
     {
       "article": "articles/typescript6-deprecated-tsconfig-already-error.md",
       "enqueuedAt": "2026-07-26T19:37:32.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-18T08:58:51.842Z"
     },
     {
       "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
