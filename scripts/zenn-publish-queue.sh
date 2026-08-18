@@ -27,11 +27,9 @@ esac
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
-QUEUE_TOOL="$ROOT/scripts/zenn-publish-queue.mjs"
-[ -f "$QUEUE_TOOL" ] || { echo "queue tool is missing: $QUEUE_TOOL" >&2; exit 2; }
+command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 2; }
 command -v node >/dev/null 2>&1 || { echo "node is required" >&2; exit 2; }
 command -v curl >/dev/null 2>&1 || { echo "curl is required" >&2; exit 2; }
-node "$QUEUE_TOOL" validate --queue "$PUBLISH_QUEUE_FILE" >/dev/null
 
 TMP_BASE="${TMPDIR:-/tmp}"
 WORK_DIR="$(mktemp -d "$TMP_BASE/zenn-publish-queue.XXXXXX")"
@@ -62,12 +60,22 @@ if [ "$DRY_RUN" = 0 ]; then
   LOCK_ACTIVE=1
 fi
 
+# Always inspect and mutate a fresh origin snapshot. The shared checkout may be
+# behind, on another branch, or contain user-owned changes and untracked files.
+GIT_TERMINAL_PROMPT=0 git -C "$ROOT" fetch --quiet origin "$PUBLISH_QUEUE_BASE_BRANCH"
+WORKTREE="$WORK_DIR/worktree"
+git -C "$ROOT" worktree add --detach "$WORKTREE" "origin/$PUBLISH_QUEUE_BASE_BRANCH" >/dev/null
+WORKTREE_ACTIVE=1
+QUEUE_TOOL="$WORKTREE/scripts/zenn-publish-queue.mjs"
+[ -f "$QUEUE_TOOL" ] || { echo "queue tool is missing: $QUEUE_TOOL" >&2; exit 2; }
+(cd "$WORKTREE" && node "$QUEUE_TOOL" validate --queue "$PUBLISH_QUEUE_FILE") >/dev/null
+
 API_JSON="$WORK_DIR/zenn-articles.json"
 if [ -n "${PUBLISH_QUEUE_API_FILE:-}" ]; then
   cp "$PUBLISH_QUEUE_API_FILE" "$API_JSON"
 else
   if [ -z "$PUBLISH_QUEUE_API_URL" ]; then
-    ZENN_USER="$(node -e 'const q=require(process.argv[1]); process.stdout.write(q.zennUsername)' "$ROOT/$PUBLISH_QUEUE_FILE")"
+    ZENN_USER="$(node -e 'const q=require(process.argv[1]); process.stdout.write(q.zennUsername)' "$WORKTREE/$PUBLISH_QUEUE_FILE")"
     PUBLISH_QUEUE_API_URL="https://zenn.dev/api/articles?username=$ZENN_USER&order=latest"
   fi
   curl --fail --silent --show-error --location --retry 2 --max-time 30 \
@@ -76,7 +84,7 @@ fi
 
 DECIDE_ARGS=(decide --queue "$PUBLISH_QUEUE_FILE" --api-json "$API_JSON")
 [ -z "$NOW" ] || DECIDE_ARGS+=(--now "$NOW")
-PLAN="$(node "$QUEUE_TOOL" "${DECIDE_ARGS[@]}")"
+PLAN="$(cd "$WORKTREE" && node "$QUEUE_TOOL" "${DECIDE_ARGS[@]}")"
 printf '%s\n' "$PLAN"
 ACTION="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.action)' "$PLAN")"
 case "$ACTION" in
@@ -86,28 +94,13 @@ case "$ACTION" in
 esac
 [ "$DRY_RUN" = 0 ] || exit 0
 
-command -v git >/dev/null 2>&1 || { echo "git is required" >&2; exit 2; }
 command -v gh >/dev/null 2>&1 || { echo "gh is required" >&2; exit 2; }
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || { echo "GitHub CLI is not authenticated" >&2; exit 2; }
-[ "$(git branch --show-current)" = "$PUBLISH_QUEUE_BASE_BRANCH" ] \
-  || { echo "current branch must be $PUBLISH_QUEUE_BASE_BRANCH" >&2; exit 2; }
-if git status --porcelain --untracked-files=no | grep -q .; then
-  echo "tracked files contain uncommitted changes" >&2
-  exit 2
-fi
-GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$PUBLISH_QUEUE_BASE_BRANCH" >/dev/null
-
-# Recalculate after pull so a stale local queue can never publish the wrong head.
-PLAN="$(node "$QUEUE_TOOL" "${DECIDE_ARGS[@]}")"
-ACTION="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.action)' "$PLAN")"
-case "$ACTION" in publish|retry|reconcile) ;; *) printf '%s\n' "$PLAN"; exit 0 ;; esac
 ARTICLE="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.article)' "$PLAN")"
 SLUG="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.slug)' "$PLAN")"
 TS="$(date +%Y%m%d-%H%M%S)"
 BRANCH="publish-queue/$ACTION-$SLUG-$TS"
-WORKTREE="$WORK_DIR/worktree"
-git worktree add -b "$BRANCH" "$WORKTREE" "$PUBLISH_QUEUE_BASE_BRANCH" >/dev/null
-WORKTREE_ACTIVE=1
+git -C "$WORKTREE" switch -c "$BRANCH" >/dev/null
 
 APPLY_ARGS=(apply --queue "$PUBLISH_QUEUE_FILE" --action "$ACTION" --slug "$SLUG")
 [ -z "$NOW" ] || APPLY_ARGS+=(--now "$NOW")
@@ -145,8 +138,6 @@ if [ "$AUTO_MERGE" = 1 ]; then
     echo "PR merge failed: $PR_URL" >&2
     exit 1
   fi
-  GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$PUBLISH_QUEUE_BASE_BRANCH" >/dev/null \
-    || echo "WARN: could not refresh $PUBLISH_QUEUE_BASE_BRANCH after merge" >&2
 else
   MERGE_RESULT="PR created; waiting for human merge"
 fi
