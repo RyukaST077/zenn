@@ -7,6 +7,7 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-08-18] [macOS Bash 3.2でset -u下の空配列展開がunbound variableになる](./2026-08-18-bash32-empty-array-nounset.md) — `Environment` / tags: bash, macos, bash-3.2, nounset, empty-array
 - [2026-08-18] [Claude版記事パイプラインが過去の要修正判定を誤読してsession limitで停止する](./2026-08-18-claude-review-verdict-first-match-session-limit.md) — `Code/Logic` / tags: claude-code, verdict, structured-output, session-limit, auto-publish
 - [2026-08-14] [macOSのNode製fake CLIが unexpected environment name で事前検証に失敗する](./2026-08-14-macos-node-fake-cli-cf-user-text-encoding.md) — `Environment` / tags: macos, node, fake-cli, preflight, __CF_USER_TEXT_ENCODING
 - [2026-08-14] [Deno.test.each() で TestContext を受け取ると TS2339 になる（引数の順序）](./2026-08-14-deno-test-each-testcontext-arg-order.md) — `API` / tags: deno, Deno.test.each, TestContext, assertSnapshot, TS2339
