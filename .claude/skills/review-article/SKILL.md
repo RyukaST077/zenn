@@ -103,9 +103,10 @@ description: 【コマンド起動】draft-article が生成した記事ドラ�
 （記事パス／出典ログ／修正適用の有無）を控えておく。
 
 ### Step 2: 機械チェックを実行する
-`bash .claude/skills/review-article/scripts/check-article.sh <記事パス>` を実行し、
-Front Matter・slug・画像参照の解決・コードフェンス/`:::`の対応・`要素材`マーカー・
-秘密情報パターン・誇大表現などの機械的な結果を得る。出力をレポートに引用する。
+`bash scripts/check-article.sh <記事パス> --expect-published false` を実行し、
+Front Matter・slug・画像参照の解決・コードフェンス・`要素材`マーカー・
+秘密情報パターンなどの決定的な結果を得る。終了コードが非0なら blocker とし、
+出力をレポートに引用する。タイトル表現などの編集上の観点は Step 4 で確認する。
 
 ### Step 3: 事実整合をチェックする（ログ照合）
 出典ログ（`execution-log.md`）と記事を突き合わせ、記事の主張・実行コマンド・エラー・結果・

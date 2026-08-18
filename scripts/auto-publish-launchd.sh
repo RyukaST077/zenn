@@ -22,9 +22,23 @@ mkdir -p "$LOG_DIR"
 TS="$(date +%Y%m%d-%H%M%S)"
 LOG="$LOG_DIR/auto-publish-$TS.log"
 
-# 既定は本番運用（--auto-merge）。AP_ARGS で上書き可能（例: --dry-run）。
-ARGS="${AP_ARGS:---auto-merge}"
+# 既定は本番運用（--auto-merge）。上限などで一時停止したstateがあれば先に再開する。
+PENDING_RESUME_FILE="$REPO/logs/.auto-publish-resume"
+if [ -n "${AP_ARGS:-}" ]; then
+  ARGS="$AP_ARGS"
+elif [ -f "$PENDING_RESUME_FILE" ]; then
+  pending_pipeline="$(sed -n '1p' "$PENDING_RESUME_FILE")"
+  if printf '%s\n' "$pending_pipeline" | grep -Eq '^logs/pipeline-[A-Za-z0-9._-]+$'; then
+    ARGS="--resume $pending_pipeline --auto-merge"
+  else
+    echo "invalid pending pipeline: $pending_pipeline" >&2
+    exit 2
+  fi
+else
+  ARGS="--auto-merge"
+fi
 USAGE_GATE="$REPO/scripts/check-claude-session-usage.sh"
+: "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 
 {
   echo "===== auto-publish (launchd) start: $(date) ====="
@@ -54,6 +68,11 @@ USAGE_GATE="$REPO/scripts/check-claude-session-usage.sh"
   # shellcheck disable=SC2086
   bash "$REPO/scripts/auto-publish.sh" $ARGS
   rc=$?
+  if [ "$rc" = "$AGENT_PIPELINE_RETRYABLE_EXIT" ]; then
+    echo "RESULT: paused (Claude allowance; state will resume on the next scheduled run)"
+    echo "===== auto-publish (launchd) end: $(date) exit=0 ====="
+    exit 0
+  fi
   echo
   echo "===== auto-publish (launchd) end: $(date) exit=$rc ====="
   exit $rc
