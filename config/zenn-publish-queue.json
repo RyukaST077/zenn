@@ -5,6 +5,12 @@
   "retryAfterHours": 6,
   "entries": [
     {
+      "article": "articles/typescript7-alias-tsc6.md",
+      "enqueuedAt": "2026-08-18T03:42:30.029Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
       "article": "articles/opentelemetry-js-collector-jaeger-first-trace.md",
       "enqueuedAt": "2026-07-26T15:14:50.000Z",
       "attempts": 4,
@@ -49,12 +55,6 @@
     {
       "article": "articles/codex-ignore-flags-user-skill-boundary.md",
       "enqueuedAt": "2026-08-14T20:25:01.102Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/typescript7-alias-tsc6.md",
-      "enqueuedAt": "2026-08-18T03:42:30.029Z",
       "attempts": 0,
       "lastAttemptAt": null
     }
