@@ -137,7 +137,7 @@ description: 【コマンド起動】review-article のレビューレポート�
 suggestion は安全で機械的なもの（誤字・alt追記など）だけ適用し、任意である旨を記録する。
 
 ### Step 5: セルフチェックを行う
-`bash .claude/skills/review-article/scripts/check-article.sh <記事パス>` を再実行し、
+`bash scripts/check-article.sh <記事パス> --expect-published false` を再実行し、
 機械検出できる指摘（published / slug / 画像 / フェンス / 要素材 / 秘密情報）が解消したことを
 確認する。残っていれば Step 4 に戻って直す（このループは2回まで。解消できなければ
 「修正不能」として扱う）。`published: false` のままであることを必ず最終確認する。

@@ -574,7 +574,7 @@ bash scripts/auto-publish-codex.sh --auto-merge
 
 ### Phase 5: 定期実行
 
-- Codex版の通し試験完了後、Claude版skillの記事検査参照を`scripts/check-article.sh`へ切り替えて一本化
+- [x] Claude版skillの記事検査参照を`scripts/check-article.sh`へ切り替えて一本化
 - launchdラッパー
 - 認証更新の確認
 - ログローテーション
