@@ -232,7 +232,7 @@ TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 run_claude() {
   local name="$1" logfile="$2" prompt="$3" schema_file="${4:-}" rc=0
   local secs turns usage_output usage_rc retry_at schema_json model effort
-  local -a output_flags model_flags
+  local -a claude_cmd
   secs="$(stage_timeout "$name")"; turns="$(stage_turns "$name")"
   model="$(stage_model "$name")"; effort="$(stage_effort "$name")"
 
@@ -250,24 +250,29 @@ run_claude() {
     fi
   fi
 
-  output_flags=()
-  model_flags=()
-  [ -z "$model" ] || model_flags+=(--model "$model")
-  [ -z "$effort" ] || model_flags+=(--effort "$effort")
+  # macOS 標準の Bash 3.2 は set -u 下で空配列の "${array[@]}" を
+  # unbound variable として扱う。常に先頭要素を持つ単一配列へ条件付きで追記する。
+  claude_cmd=("$CLAUDE_BIN" -p "$prompt")
+  if [ -n "$CLAUDE_FLAGS" ]; then
+    # CLAUDE_FLAGS は従来どおり空白区切りの複数オプションを許容する。
+    # shellcheck disable=SC2206
+    claude_cmd+=($CLAUDE_FLAGS)
+  fi
+  [ -z "$model" ] || claude_cmd+=(--model "$model")
+  [ -z "$effort" ] || claude_cmd+=(--effort "$effort")
+  claude_cmd+=(--max-turns "$turns")
   if [ -n "$schema_file" ]; then
     schema_json="$(tr -d '\n' <"$schema_file")"
-    output_flags=(--output-format json --json-schema "$schema_json")
+    claude_cmd+=(--output-format json --json-schema "$schema_json")
   fi
   log "── $name 開始 (timeout=${secs}s, max-turns=$turns, model=${model:-default}, effort=${effort:-default})"
   log "   prompt: $prompt"
   set +e
   if [ -n "$TIMEOUT_BIN" ]; then
-    "$TIMEOUT_BIN" "$secs" "$CLAUDE_BIN" -p "$prompt" $CLAUDE_FLAGS "${model_flags[@]}" \
-      --max-turns "$turns" "${output_flags[@]}" >"$logfile" 2>&1
+    "$TIMEOUT_BIN" "$secs" "${claude_cmd[@]}" >"$logfile" 2>&1
   else
     [ -n "${WARNED_TIMEOUT:-}" ] || { log "WARN: timeout/gtimeout が無いためタイムアウト無しで実行する"; WARNED_TIMEOUT=1; }
-    "$CLAUDE_BIN" -p "$prompt" $CLAUDE_FLAGS "${model_flags[@]}" \
-      --max-turns "$turns" "${output_flags[@]}" >"$logfile" 2>&1
+    "${claude_cmd[@]}" >"$logfile" 2>&1
   fi
   rc=$?
   set -e
