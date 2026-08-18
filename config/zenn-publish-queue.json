@@ -7,8 +7,8 @@
     {
       "article": "articles/typescript7-alias-tsc6.md",
       "enqueuedAt": "2026-08-18T03:42:30.029Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-18T07:37:11.141Z"
     },
     {
       "article": "articles/opentelemetry-js-collector-jaeger-first-trace.md",
