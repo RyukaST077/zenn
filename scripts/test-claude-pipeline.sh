@@ -26,6 +26,12 @@ node --check scripts/extract-claude-stage-result.mjs
 node --check scripts/validate-claude-review-result.mjs
 node --check scripts/pipeline-state.mjs
 
+node scripts/stage-result-contract.mjs schema review "$TMP/claude-review.schema.json"
+if rg -q '"\$schema"' "$TMP/claude-review.schema.json"; then
+  echo "Claude schema must not declare an unsupported meta-schema URI" >&2
+  exit 1
+fi
+
 printf '%s\n' \
   '---' \
   'title: "日本語タイトルの文字数はロケールに依存しない"' \

@@ -23,7 +23,9 @@ const nullableString = (pattern) => ({
 export function schemaFor(stage) {
   const contract = contractFor(stage);
   return {
-    $schema: "https://json-schema.org/draft/2020-12/schema",
+    // Claude Code 2.1.227 rejects the 2020-12 meta-schema URI before model
+    // execution. The constraints below use only the CLI-supported subset, so
+    // leave the dialect implicit when passing the object to --json-schema.
     type: "object",
     properties: {
       status: { type: "string", enum: ["ok", "abort"] },
