@@ -25,10 +25,22 @@ const fm = text.match(/^---\n([\s\S]*?)\n---\n/);
 if (!fm) errors.push("YAML front matter is missing or malformed");
 const front = fm?.[1] || "";
 const scalar = (name) => front.match(new RegExp(`^${name}:\\s*(.+?)\\s*$`, "m"))?.[1];
-const title = scalar("title")?.replace(/^['"]|['"]$/g, "");
-const published = scalar("published");
+const unquoteScalar = (raw) => {
+  if (typeof raw !== "string") return raw;
+  const trimmed = raw.trim();
+  const doubleQuoted = trimmed.match(/^("(?:\\.|[^"\\])*")\s*(?:#.*)?$/);
+  if (doubleQuoted) {
+    try { return JSON.parse(doubleQuoted[1]); } catch { return trimmed; }
+  }
+  const singleQuoted = trimmed.match(/^'((?:''|[^'])*)'\s*(?:#.*)?$/);
+  if (singleQuoted) return singleQuoted[1].replace(/''/g, "'");
+  return trimmed.replace(/\s+#.*$/, "").trim();
+};
+const title = unquoteScalar(scalar("title"));
+const published = unquoteScalar(scalar("published"));
+const articleType = unquoteScalar(scalar("type"));
 if (!title || title.length > 70) errors.push("title must be non-empty and at most 70 characters");
-if (scalar("type") !== "tech") errors.push("type must be tech");
+if (articleType !== "tech") errors.push("type must be tech");
 if (!/^emoji:\s*.+$/m.test(front)) errors.push("emoji is required");
 const inlineTopics = front.match(/^topics:\s*\[([^\]]*)\]\s*$/m)?.[1]
   .split(",").map((item) => item.trim()).filter(Boolean);

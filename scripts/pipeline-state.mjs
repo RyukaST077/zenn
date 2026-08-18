@@ -23,17 +23,24 @@ function baseState(baseBranch = "main") {
       revise: null, pr_metadata: null
     },
     review: { rounds: 0, last_verdict: null, next_stage: "review", history: [] },
-    publish: { branch: null, commit: null, pr_url: null }
+    publish: { branch: null, commit: null, pr_url: null },
+    retry: { pending: false, reason: null, retry_at: null }
   };
 }
 
 function validate(state) {
   if (!state || state.version !== 1) fail("unsupported or missing state version");
+  // Older pipeline states predate retry metadata. Upgrade them in memory so
+  // the next atomic write persists the backward-compatible default.
+  if (!("retry" in state)) state.retry = { pending: false, reason: null, retry_at: null };
   for (const key of ["base_branch", "completed", "artifacts", "review", "publish"])
     if (!(key in state)) fail(`state is missing ${key}`);
   if (!Number.isInteger(state.review.rounds) || state.review.rounds < 0) fail("invalid review.rounds");
   if (!["review", "revise"].includes(state.review.next_stage)) fail("invalid review.next_stage");
   if (!Array.isArray(state.review.history)) fail("invalid review.history");
+  if (typeof state.retry?.pending !== "boolean") fail("invalid retry.pending");
+  for (const key of ["reason", "retry_at"])
+    if (state.retry[key] !== null && typeof state.retry[key] !== "string") fail(`invalid retry.${key}`);
   return state;
 }
 
@@ -104,7 +111,7 @@ switch (command) {
     if (!["pass", "fix", "blocker"].includes(verdict)) fail("invalid verdict");
     state.review.rounds += 1;
     state.review.last_verdict = verdict;
-    state.review.next_stage = verdict === "fix" ? "revise" : "review";
+    state.review.next_stage = verdict === "pass" ? "review" : "revise";
     state.review.history.push({ round: state.review.rounds, verdict, report, timestamp });
     state.artifacts.review = report;
     state.completed.review = verdict === "pass";

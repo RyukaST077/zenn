@@ -92,7 +92,7 @@ TIMEOUT_RUN=7200 bash scripts/auto-publish.sh
 ```
 logs/pipeline-<日時>/     ← このパイプライン実行の記録
 ├── pipeline.log          ← 進行ログ（何をいつ実行したか）
-├── state.sh              ← 段ごとの完了状態と成果物パス（resume が読む）
+├── state.json            ← 段ごとの完了状態・レビュー履歴・再試行状態
 ├── 1-search.log          ← 各段の claude 標準出力（失敗調査はここを見る）
 ├── ...
 └── 6-publish.log
@@ -108,8 +108,9 @@ logs/pipeline-<日時>/     ← このパイプライン実行の記録
 bash scripts/auto-publish.sh --resume logs/pipeline-20260702-193000
 ```
 
-resume は `state.sh` を読み、**完了済みの段をスキップして失敗した段からやり直す**
-（数時間かかる run-practice を再実行せずに済む）。
+resume は `state.json` を読み、**完了済みの段をスキップして失敗した段からやり直す**
+（数時間かかる run-practice を再実行せずに済む）。旧実行ディレクトリに`state.sh`しかない場合は、
+初回resume時に`state.json`へ自動移行する。
 
 主な中断ポイントと対処:
 
@@ -143,9 +144,20 @@ resume は `state.sh` を読み、**完了済みの段をスキップして失�
 ### launchd実行時のClaude利用率ゲート
 
 `scripts/auto-publish-launchd.sh` は開始前にClaude.aiの5時間枠を確認する。残り利用可能量が
-80%以下なら正常なスキップ（exit 0）として終了し、記事生成やPR作成を開始しない。利用率を
-取得できない場合も、上限保護を優先してスキップする。しきい値は
-`CLAUDE_USAGE_MIN_REMAINING_PERCENT` で変更でき、`--dry-run` ではゲートを通さない。
+80%以下なら正常なスキップ（exit 0）として終了し、記事生成やPR作成を開始しない。開始後も
+各AIステージの直前に再確認し、既定では残量20%以下で安全に一時停止する。途中でsession limitに
+達した場合も失敗済み成果物を捨てず、`state.json`と`logs/.auto-publish-resume`へ再開情報を保存する。
+次回のlaunchd実行は新規パイプラインを作らず、停止したパイプラインを自動再開する。
+
+開始時のしきい値は`CLAUDE_USAGE_MIN_REMAINING_PERCENT`、段ごとのしきい値は
+`CLAUDE_STAGE_MIN_REMAINING_PERCENT`で変更できる。`--dry-run`ではゲートを通さない。
+モデルとeffortは`AP_MODEL` / `AP_EFFORT`の全体設定に加え、`AP_MODEL_REVIEW`や
+`AP_EFFORT_RUN`のような`AP_MODEL_<STAGE>` / `AP_EFFORT_<STAGE>`で段ごとに上書きできる。
+
+Claude版のreview判定もMarkdown本文の文字列検索ではなく、`scripts/stage-result-contract.mjs`が
+生成するJSON Schemaとstage resultを使う。Markdownレポート内の現在判定とも照合し、両者が
+一致しない場合は公開キューへ進まない。記事の決定的チェックはClaude/Codex/公開キューのすべてで
+`scripts/check-article.sh`を使う。
 
 ## auto-publish-codex.sh の使い方（Codex 版）
 

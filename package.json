@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "bash scripts/test-codex-pipeline.sh && bash scripts/test-claude-usage-gate.sh && node scripts/test-zenn-publish-queue.mjs && node scripts/test-agent-practice.mjs"
+    "test": "bash scripts/test-codex-pipeline.sh && bash scripts/test-claude-pipeline.sh && bash scripts/test-claude-usage-gate.sh && node scripts/test-zenn-publish-queue.mjs && node scripts/test-agent-practice.mjs"
   },
   "repository": {
     "type": "git",
