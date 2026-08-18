@@ -3,7 +3,7 @@ title: "TypeScript 6で「警告」だと思っていたtsconfigは、6の時点
 emoji: "🚧"
 type: "tech"
 topics: ["typescript", "tsconfig", "nodejs", "npm"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-typescript7-tsconfig-defaults-20260727-0411/execution-log.md / 記事タイプ: 検証ログ（3世代の比較） / slug: typescript6-deprecated-tsconfig-already-error / published: false -->
