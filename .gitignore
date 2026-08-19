@@ -12,3 +12,5 @@ logs/agent/pipeline-*/
 logs/agent/launchd/
 # このリポジトリは package-lock.json を正とする
 pnpm-lock.yaml
+# 個人用のトラブルシューティング知識はリポジトリへ含めない
+/knowledge/
