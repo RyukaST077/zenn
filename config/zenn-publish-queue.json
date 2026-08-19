@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
-      "enqueuedAt": "2026-08-07T19:45:52.000Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-08-19T11:03:29.536Z"
-    },
-    {
       "article": "articles/codex-pretooluse-dispatch-preflight.md",
       "enqueuedAt": "2026-08-13T10:34:59.000Z",
       "attempts": 0,
