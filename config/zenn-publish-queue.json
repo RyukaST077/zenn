@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/typescript6-deprecated-tsconfig-already-error.md",
-      "enqueuedAt": "2026-07-26T19:37:32.000Z",
-      "attempts": 4,
-      "lastAttemptAt": "2026-08-19T03:01:48.832Z"
-    },
-    {
       "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
       "enqueuedAt": "2026-08-07T19:45:52.000Z",
       "attempts": 0,
