@@ -7,8 +7,8 @@
     {
       "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
       "enqueuedAt": "2026-08-07T19:45:52.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-19T05:02:29.938Z"
     },
     {
       "article": "articles/codex-pretooluse-dispatch-preflight.md",

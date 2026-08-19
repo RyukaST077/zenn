@@ -3,7 +3,7 @@ title: "pnpm 11のminimumReleaseAge既定24hを踏みに行ったら、手元で
 emoji: "⏳"
 type: "tech"
 topics: ["pnpm", "nodejs", "npm", "security", "ci"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-pnpm11-minimum-release-age-20260808-0411/execution-log.md / 記事タイプ 検証ログ（試してみた） / slug pnpm11-minimum-release-age-ci-only-failure / published: false -->
