@@ -34,21 +34,15 @@ knowledge/
                                                                           └──▶ 次回はヒットになる（ループが閉じる）
 ```
 
-## 自動で回す仕組み（hooks）
+## 発火のしかた
 
-スキルは本来「エージェントが自発的に気づいたら発火」ですが、それを取りこぼさないよう
-Claude Code では `.claude/hooks/`、Codex では `.codex/hooks/` の3つのフックが発火を後押しします。
+このリポジトリでは hooks を使いません。`consult-knowledge` / `save-knowledge` は
+スキルとして `.claude/skills/` から読み込まれ、エージェントが状況に気づいたときに自発的に起動します。
 
-| hook | イベント | 動き |
-|------|----------|------|
-| `consult-on-prompt.sh` | UserPromptSubmit | ユーザーがトラブルを記述したら **consult-knowledge** を促すヒントを注入 |
-| `consult-on-failure.sh` | PostToolUse (Bash) | コマンドが実際に失敗したら **consult** を促す＋「未保存トラブル」マーカーを設置（セッション単位で1回・連発防止） |
-| `save-nudge-on-stop.sh` | Stop | マーカーがあればターン終了時に **save-knowledge** を1回だけ提案（セッションID照合で持ち越し防止） |
-
-- フックは**ヒントを出すだけ**で、作業をブロックしたりループさせたりしません。
-- うるさい / 不要なら `.claude/settings.json` または `.codex/hooks.json` の該当エントリを外せば無効化できます。
+- トラブルに遭遇したら、調査を始める前に `consult-knowledge` で `knowledge/` を検索する。
+- 未記録のトラブルを解決したら、`save-knowledge` で記録する。
+- 発火しないときは `/consult-knowledge` `/save-knowledge` のように明示的に呼び出す（または下の手動コマンドを使う）。
 - Codex の reasoning / memory / permissions は `.codex/config.toml` に入ります。
-- マーカーは `.claude/.cache/knowledge/` または `.codex/.cache/knowledge/`（git管理外）に置かれます。
 
 ## 手で使うとき
 
