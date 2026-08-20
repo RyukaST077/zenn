@@ -7,8 +7,8 @@
     {
       "article": "articles/deno29-test-each-snapshot.md",
       "enqueuedAt": "2026-08-13T19:39:39.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-20T13:09:52.792Z"
     },
     {
       "article": "articles/codex-resume-ephemeral-rollout-gate.md",
