@@ -1,0 +1,103 @@
+diff --git a$RUN_WORKSPACE/control-nosandbox/case-result.json b$RUN_WORKSPACE/control-nosandbox/case-result.json
+new file mode 100644
+index 0000000..6886895
+--- /dev/null
++++ b$RUN_WORKSPACE/control-nosandbox/case-result.json
+@@ -0,0 +1,90 @@
++{
++  "schema_version": 1,
++  "case_id": "control-nosandbox",
++  "preflight": false,
++  "cli_version": "2.1.236 (Claude Code)",
++  "sandbox_profile": "control-nosandbox",
++  "sandbox_settings": {
++    "enabled": false
++  },
++  "settings_sha256": "64a4d6cf01a54a92c4db974ad4451c4023ed260ee3467cf97d1c95fc2fa4f9ac",
++  "prompt_sha256": "035da99a1ddb8bfd9610d1eca264260100d382c151778a2a1145c4e67bd5c8f6",
++  "launch": {
++    "runner_args_verified": true,
++    "settings_source": "cli-settings-flag",
++    "permission_mode": "dontAsk",
++    "tools": [
++      "Bash"
++    ],
++    "setting_sources": [],
++    "allow_rule": "Bash(node probe.mjs)",
++    "strict_mcp_config": true,
++    "mcp_servers": 0,
++    "slash_commands_disabled": true,
++    "chrome_disabled": true,
++    "session_persistence": false,
++    "max_turns": 4,
++    "max_budget_usd": 0.2,
++    "model": "sonnet",
++    "effort": "low"
++  },
++  "safety": {
++    "preflight_offline_fake_cli": false,
++    "preflight_home_is_workspace_child": null,
++    "credential_environment_names_forwarded": [],
++    "live_model_calls": 1,
++    "network_or_paid_request_possible_in_preflight": false,
++    "listener_bound_host": "127.0.0.1",
++    "transport_scope": "loopback-only",
++    "external_hosts_contacted": 0,
++    "name_resolution_used": false,
++    "raw_stream_forwarded_to_runner_evidence": true,
++    "normalized_workspace_hid_case_id": true,
++    "workspace_unexpected_entries": []
++  },
++  "process": {
++    "exit_code": 0,
++    "signal": null,
++    "timed_out": false,
++    "stream_overflowed": false,
++    "authentication_failure_observed": false,
++    "service_failure_observed": false
++  },
++  "observations": {
++    "parsed_json_lines": 7,
++    "malformed_nonempty_lines": 0,
++    "init_event_count": 1,
++    "init_permission_mode": "dontAsk",
++    "init_tools": [
++      "Bash"
++    ],
++    "tool_use_count": 1,
++    "bash_tool_use_count": 1,
++    "bash_command": "node probe.mjs",
++    "matching_tool_result_count": 1,
++    "tool_result_is_error": false,
++    "tool_result_excerpt": "PROBE_CONNECTED 200 PROBE_CONNECTED 200",
++    "final_result_count": 1,
++    "final_result_is_error": false,
++    "total_cost_usd": 0.0187279,
++    "probe_present": true,
++    "probe_connected": true,
++    "probe_status": 200,
++    "probe_body_marker_present": true,
++    "probe_error_code": null,
++    "probe_error_syscall": null,
++    "probe_error_message": null,
++    "probe_proxy_environment_names": [],
++    "listener_request_count": 1,
++    "listener_probe_request_count": 1,
++    "listener_requests": [
++      {
++        "seq": 1,
++        "method": "GET",
++        "url": "/loopback-probe"
++      }
++    ],
++    "sandbox_denial_pattern": null
++  },
++  "observation": "connected"
++}
+diff --git a$RUN_WORKSPACE/control-nosandbox/verification.txt b$RUN_WORKSPACE/control-nosandbox/verification.txt
+new file mode 100644
+index 0000000..3c7c416
+--- /dev/null
++++ b$RUN_WORKSPACE/control-nosandbox/verification.txt
+@@ -0,0 +1 @@
++LOOPBACK_CONTROL_COMPLETED

@@ -1,0 +1,103 @@
+############ [3-10] 04:20:29 npx vitest run (vitest 5.0.0-rc.1, 無修正) ############
+
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+ ❯ test/f-tothrow-empty.test.ts (1 test | 1 failed) 19ms
+   × F: toThrow('') against a non-empty message 14ms
+ ❯ test/e-sequential.test.ts (0 test)
+ ❯ test/d-vimock-inline.test.ts (0 test)
+ ❯ test/a-unawaited.test.ts (1 test | 1 failed) 28ms
+   × A: resolves without await 16ms
+ ❯ test/b-clearmocks.test.ts (1 test | 1 failed) 13ms
+   × B: mock call history survives into the test 10ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/d-vimock-inline.test.ts [ test/d-vimock-inline.test.ts ]
+Error: 1 call in "test/d-vimock-inline.test.ts" was defined outside of the module's top level scope:
+
+- vi.mock("./fixtures/greeter.ts") at test/d-vimock-inline.test.ts:8:3
+
+Although it appears nested, it will be hoisted and executed before anything in this file. Move it to the top level to reflect its actual execution order.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+  Plugin: vitest:mocks
+  File: /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/test/d-vimock-inline.test.ts
+ ❯ EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/node.js:30851:51
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/node.js:20619:26
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/e-sequential.test.ts [ test/e-sequential.test.ts ]
+TypeError: test.sequential is not a function
+ ❯ test/e-sequential.test.ts:6:6
+      4| import { expect, test } from 'vitest'
+      5|
+      6| test.sequential('E: runs sequentially', () => {
+       |      ^
+      7|   expect(true).toBe(true)
+      8| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/a-unawaited.test.ts > A: resolves without await
+Error: Promise returned by `expect(actual).resolves.toBe(expected)` was not awaited. This assertion is asynchronous and must be awaited; otherwise, it is not guaranteed to complete before the test finishes:
+
+await expect(actual).resolves.toBe(expected)
+
+ ❯ test/a-unawaited.test.ts:8:29
+      6| test('A: resolves without await', () => {
+      7|   // ここが意図的に await されていない
+      8|   expect(Promise.resolve(1)).resolves.toBe(1)
+       |                             ^
+      9| })
+     10|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/b-clearmocks.test.ts > B: mock call history survives into the test
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/b-clearmocks.test.ts:15:33
+     13|   // 4.1: clearMocks 既定 false → 履歴が残るので 1
+     14|   // 5:   clearMocks 既定 true  → 各テスト前に clearAllMocks されるので 0 になるはず
+     15|   expect(spy.mock.calls.length).toBe(1)
+       |                                 ^
+     16| })
+     17|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/f-tothrow-empty.test.ts > F: toThrow('') against a non-empty message
+AssertionError: expected [Function boom] to throw error not including ''
+
+- Expected
++ Received
+
++ boom happened
+
+ ❯ test/f-tothrow-empty.test.ts:13:20
+     11| test("F: toThrow('') against a non-empty message", () => {
+     12|   // 4.1 でベースラインを緑にするため .not 側で書いている（5 でこの not が落ちる想定）
+     13|   expect(boom).not.toThrow('')
+       |                    ^
+     14| })
+     15|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  5 failed | 3 passed (8)
+      Tests  3 failed | 3 passed (6)
+   Start at  04:20:35
+   Duration  1.27s (transform 47%, import 25%, worker 20%, tests 7%)
+
+--- (exit code checked separately) ---

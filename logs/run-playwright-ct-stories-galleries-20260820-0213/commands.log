@@ -1,0 +1,1417 @@
+### 2026-08-20 02:13:34 env
+$ node -v; npm -v; sw_vers -productVersion; uname -m
+v22.17.0
+10.9.2
+26.5
+arm64
+
+### 02:13:34 phase1-1
+$ npm view @playwright/test dist-tags
+{
+  rc: '1.18.0-rc1',
+  beta: '1.62.1-beta-1785366875000',
+  latest: '1.62.1',
+  next: '1.63.0-alpha-2026-08-19'
+}
+exit=0
+
+### 02:13:39 phase1-1b
+$ npm view @playwright/test versions --json | tail -20
+  "1.63.0-alpha-2026-08-01",
+  "1.63.0-alpha-2026-08-02",
+  "1.63.0-alpha-2026-08-03",
+  "1.63.0-alpha-2026-08-04",
+  "1.63.0-alpha-2026-08-05",
+  "1.63.0-alpha-2026-08-06",
+  "1.63.0-alpha-2026-08-07",
+  "1.63.0-alpha-2026-08-08",
+  "1.63.0-alpha-2026-08-09",
+  "1.63.0-alpha-2026-08-10",
+  "1.63.0-alpha-2026-08-11",
+  "1.63.0-alpha-2026-08-12",
+  "1.63.0-alpha-2026-08-13",
+  "1.63.0-alpha-2026-08-14",
+  "1.63.0-alpha-2026-08-15",
+  "1.63.0-alpha-2026-08-16",
+  "1.63.0-alpha-2026-08-17",
+  "1.63.0-alpha-2026-08-18",
+  "1.63.0-alpha-2026-08-19"
+]
+$ npm view @playwright/experimental-ct-react dist-tags
+{
+  beta: '1.62.1-beta-1785366875000',
+  latest: '1.62.1',
+  next: '1.63.0-alpha-1786107553000'
+}
+
+### 02:13:44 phase1-2 release notes v1.62.1
+$ gh release view v1.62.1 --repo microsoft/playwright
+title:	v1.62.1
+tag:	v1.62.1
+draft:	false
+prerelease:	false
+immutable:	false
+author:	dgozman
+created:	2026-07-29T23:14:35Z
+published:	2026-07-30T16:35:55Z
+url:	https://github.com/microsoft/playwright/releases/tag/v1.62.1
+--
+### Bug Fixes
+
+- #41989 [Regression]: tsconfig "extends" bare specifier isn't resolved via node_modules walk-up like tsc (fatal since 1.62)
+- #41998 [Regression]: directory-form tsconfig project references ("path": "../pkg") fail to resolve (fatal since 1.62)
+- #41985 Accessibility snapshot drops button name when text is nested inside spans with aria-hidden SVG
+- #42000 [Regression]: page.evaluate() arg of a branded primitive type (string & { brand }) no longer type-checks since 1.62
+- #42013 [BUG]Image-type actionable elements are not presented in the snapshot.
+exit=0
+
+### 02:13:49 phase1-2b release notes v1.62.0
+$ gh release view v1.62.0 --repo microsoft/playwright
+title:	v1.62.0
+tag:	v1.62.0
+draft:	false
+prerelease:	false
+immutable:	false
+author:	dcrousso
+created:	2026-07-24T21:40:55Z
+published:	2026-07-24T21:55:03Z
+url:	https://github.com/microsoft/playwright/releases/tag/v1.62.0
+--
+## 🧱 New component testing model
+
+[Component testing](https://playwright.dev/docs/test-components) moves to a **stories and galleries** model.
+A **story** wraps your component in one specific scenario — hard-coded props, mock data, providers — and a **gallery** page that you serve renders stories on demand.
+The new [fixtures.mount()](https://playwright.dev/docs/api/class-fixtures#fixtures-mount) fixture navigates to the gallery, mounts a story by id, and returns a [Locator](https://playwright.dev/docs/api/class-locator) scoped to the story's root element:
+
+```js
+test('click should expand', async ({ mount }) => {
+  const component = await mount('components/Expandable/Stateful');
+  await component.getByRole('button').click();
+  await expect(component.getByTestId('expanded')).toHaveValue('true');
+});
+```
+
+Pass a story type as a template argument to type-check its props, and use `update(props)` / `unmount()` on the returned locator to re-render or tear down within a test.
+
+## 🛑 Cancel operations with AbortSignal
+
+Most operations and web-first assertions now accept a `signal` option that takes an [`AbortSignal`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal), letting you cancel long-running actions, navigations, waits, and assertions:
+
+```js
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 1000);
+
+await page.getByRole('button', { name: 'Submit' }).click({ signal: controller.signal });
+await expect(page.getByText('Done')).toBeVisible({ signal: controller.signal });
+```
+
+Providing a signal does not disable the default timeout; pass `timeout: 0` to disable it.
+
+## 🖼️ WebP screenshots
+
+[expect(page).toHaveScreenshot()](https://playwright.dev/docs/api/class-pageassertions#page-assertions-to-have-screenshot-1) and [expect(locator).toHaveScreenshot()](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-have-screenshot-1) can now store snapshots in the WebP format — just give the snapshot a `.webp` name:
+
+```js
+// Visual comparisons store the golden snapshot as lossless WebP.
+await expect(page).toHaveScreenshot('homepage.webp');
+
+// Standalone screenshots can trade quality for size with lossy WebP.
+await page.screenshot({ path: 'homepage.webp', quality: 50 });
+```
+
+[page.screenshot()](https://playwright.dev/docs/api/class-page#page-screenshot) and [locator.screenshot() (https://playwright.dev/docs/api/class-locator#locator-screenshot) also accept `webp` as a `type`, where quality `100` (the default) is lossless and lower values use lossy compression.
+
+## 🧩 Custom test filtering with Reporter.preprocess()
+
+New [reporter.preprocess()](https://playwright.dev/docs/api/class-reporter#reporter-preprocess) hook runs after the configuration is resolved and before [reporter.onBegin()](https://playwright.dev/docs/api/class-reporter#reporter-on-begin), letting a reporter mark individual tests as skipped, excluded, fixed, or failing through a [TestRun](https://playwright.dev/docs/api/class-testrun) object:
+
+```js
+class MyReporter {
+  async preprocess({ config, suite, testRun }) {
+    for (const test of suite.allTests()) {
+      if (shouldSkip(test))
+        testRun.skip(test);
+    }
+  }
+}
+```
+
+## 🔁 Isolated retries
+
+New [testConfig.retryStrategy](https://playwright.dev/docs/api/class-testconfig#test-config-retry-strategy) controls when failed tests are retried.
+The default `'immediate'` retries as soon as a worker is free; `'isolated'` runs all retries at the end, one by one in a single worker, to minimize interference with the rest of the suite:
+
+```js
+// playwright.config.ts
+export default defineConfig({
+  retries: 2,
+  retryStrategy: 'isolated',
+});
+```
+
+## New APIs
+
+### Browser and Context
+- New option [`credentials`](https://playwright.dev/docs/api/class-browsercontext#browser-context-storage-state-option-credentials) includes the context's virtual WebAuthn [Credentials](https://playwright.dev/docs/api/class-credentials) (passkeys) in the storage state, so they can be persisted and re-seeded into later contexts.
+
+### Actions
+- New `scroll` option (`"auto"` | `"none"`) on actions to opt out of Playwright's automatic scroll-into-view.
+
+### Network
+- New [apiResponse.timing()](https://playwright.dev/docs/api/class-apiresponse#api-response-timing) returns resource timing information for an API response.
+
+### Evaluation
+- New [locator.waitForFunction()](https://playwright.dev/docs/api/class-locator#locator-wait-for-function) waits until a function — called with the matching element — returns a truthy value.
+- [page.evaluate()](https://playwright.dev/docs/api/class-page#page-evaluate) and related methods now accept functions as evaluate arguments.
+- [page.addInitScript()](https://playwright.dev/docs/api/class-page#page-add-init-script) / [browserContext.addInitScript()](https://playwright.dev/docs/api/class-browsercontext#browser-context-add-init-script) now accept functions as init-script arguments.
+
+### Command line & MCP
+- Playwright now bundles the [Playwright MCP](https://playwright.dev/docs/getting-started-mcp) server and [`playwright-cli`](https://playwright.dev/docs/getting-started-cli), runnable via `npx playwright mcp` and `npx playwright cli`.
+
+### Reporters
+- The HTML report's **Merge files** grouping — previously only a UI toggle — can now be enabled from the config with the new `mergeFiles` reporter option:
+
+```js
+// playwright.config.ts
+export default defineConfig({
+  reporter: [['html', { mergeFiles: true }]],
+});
+```
+
+## Announcements
+* ⚠️ Debian 11 is not supported anymore.
+
+## Browser Versions
+- Chromium 151.0.7922.34
+- Mozilla Firefox 153.0
+- WebKit 26.5
+
+This version was also tested against the following stable channels:
+- Google Chrome 151
+- Microsoft Edge 151
+exit=0
+
+### 02:14:14 phase1-3 docs read via WebFetch https://playwright.dev/docs/test-components
+(a) story files: *.story.tsx next to component; each named export = one scenario
+(b) gallery exposes window.mount({story, props}) -> renders into #root, window.unmount(); unknown story or render error must reject
+(c) story id = path under src/ without .story.* ext + export name => components/Button/Primary; any unique suffix works (Button/Primary)
+(d) mount() returns a Locator scoped to story root; locator.update(props) / locator.unmount()
+(e) components project: baseURL=<gallery index.html>, serviceWorkers:'block', reuseContext:true, webServer{command,url,reuseExistingServer}
+
+### 02:14:19 phase2-1 create vite app
+$ npm create vite@latest . -- --template react-ts
+npm warn exec The following package was not found and will be installed: create-vite@9.1.2
+
+> 024_zenn@1.0.0 npx
+> create-vite . --template react-ts
+
+│
+◇  Scaffolding project in /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct...
+│
+└  Done. Now run:
+
+  npm install
+  npm run dev
+
+exit=0
+
+### 02:14:25 phase2-1b npm install
+$ npm install
+
+added 27 packages, and audited 28 packages in 7s
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+--- package.json ---
+{
+  "name": "pw162-ct",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "oxlint": "^1.75.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0"
+  }
+}
+--- tsconfig.json ---
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+### 02:14:39 phase2-1c installed versions
+$ npm ls --depth=0
+pw162-ct@0.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct
+├── @types/node@24.13.3
+├── @types/react-dom@19.2.4
+├── @types/react@19.2.18
+├── @vitejs/plugin-react@6.0.5
+├── oxlint@1.79.0
+├── react-dom@19.2.8
+├── react@19.2.8
+├── typescript@6.0.3
+└── vite@8.2.1
+
+$ npx vite --version
+vite/8.2.1 darwin-arm64 node-v22.17.0
+$ npx tsc --version
+Version 6.0.3
+
+### 02:14:56 phase2-1d npm run dev (background)
+$ npm run dev
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 113 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+$ curl -s -o /dev/null -w 'http=%{http_code}' http://localhost:5173/
+http=200
+
+### 02:15:02 phase2-3 git init + initial commit (BEFORE init-skills)
+$ git init && git add -A && git commit -m 'chore: vite react-ts scaffold + Button/Counter'
+Initialized empty Git repository in /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/.git/
+exit=0
+7e2006e chore: vite react-ts scaffold + Button/Counter
+(status empty = clean)
+
+### 02:15:07 phase2-4 install @playwright/test@1.62.1
+$ npm i -D @playwright/test@1.62.1
+
+added 4 packages, and audited 32 packages in 986ms
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+$ npx playwright --version
+Version 1.62.1
+
+### 02:15:14 phase2-4b install chromium
+$ npx playwright install chromium
+exit=0
+
+### 02:15:21 phase2-4c browser cache check (install was a no-op: already cached)
+$ ls ~/Library/Caches/ms-playwright
+b
+chromium_headless_shell-1194
+chromium_headless_shell-1200
+chromium_headless_shell-1208
+chromium_headless_shell-1217
+chromium_headless_shell-1223
+chromium_headless_shell-1228
+chromium_headless_shell-1234
+chromium-1194
+chromium-1200
+chromium-1208
+chromium-1217
+chromium-1223
+chromium-1228
+chromium-1234
+ffmpeg-1011
+firefox-1495
+firefox-1497
+firefox-1509
+firefox-1538
+mcp-chrome
+mcp-chrome-beb3d75
+webkit-2215
+webkit-2227
+webkit-2248
+webkit-2336
+$ du -sh ~/Library/Caches/ms-playwright/chromium-* 2>/dev/null
+299M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1194
+324M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1200
+330M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1208
+336M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1217
+341M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1223
+344M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1228
+356M	/Users/katayamaryuunosuke/Library/Caches/ms-playwright/chromium-1234
+
+### 02:15:26 phase2-5 init-skills
+$ npx playwright init-skills --help
+Usage: npx playwright init-skills [options]
+
+Install Playwright agent skills
+
+Options:
+  --loop <loop>  Agentic loop provider (choices: "claude", "agents", default:
+                 "claude")
+  -h, --help     display help for command
+exit=0
+
+$ npx playwright init-skills --loop claude
+✅ Skill installed to `.claude/skills/playwright-cli`.
+✅ Skill installed to `.claude/skills/playwright-component-testing`.
+✅ Skill installed to `.claude/skills/playwright-trace`.
+exit=0
+
+### 02:15:33 phase2-5b what did init-skills generate?
+$ git status --porcelain
+ M package-lock.json
+ M package.json
+?? .claude/
+$ git status --short --untracked-files=all
+ M package-lock.json
+ M package.json
+?? .claude/skills/playwright-cli/SKILL.md
+?? .claude/skills/playwright-cli/references/element-attributes.md
+?? .claude/skills/playwright-cli/references/playwright-tests.md
+?? .claude/skills/playwright-cli/references/request-mocking.md
+?? .claude/skills/playwright-cli/references/running-code.md
+?? .claude/skills/playwright-cli/references/session-management.md
+?? .claude/skills/playwright-cli/references/storage-state.md
+?? .claude/skills/playwright-cli/references/test-generation.md
+?? .claude/skills/playwright-cli/references/tracing.md
+?? .claude/skills/playwright-cli/references/video-recording.md
+?? .claude/skills/playwright-component-testing/SKILL.md
+?? .claude/skills/playwright-component-testing/references/gallery-spec.md
+?? .claude/skills/playwright-component-testing/references/migration.md
+?? .claude/skills/playwright-component-testing/references/react.md
+?? .claude/skills/playwright-component-testing/references/vue.md
+?? .claude/skills/playwright-trace/SKILL.md
+$ find .claude -type f | sort
+.claude/skills/playwright-cli/references/element-attributes.md
+.claude/skills/playwright-cli/references/playwright-tests.md
+.claude/skills/playwright-cli/references/request-mocking.md
+.claude/skills/playwright-cli/references/running-code.md
+.claude/skills/playwright-cli/references/session-management.md
+.claude/skills/playwright-cli/references/storage-state.md
+.claude/skills/playwright-cli/references/test-generation.md
+.claude/skills/playwright-cli/references/tracing.md
+.claude/skills/playwright-cli/references/video-recording.md
+.claude/skills/playwright-cli/SKILL.md
+.claude/skills/playwright-component-testing/references/gallery-spec.md
+.claude/skills/playwright-component-testing/references/migration.md
+.claude/skills/playwright-component-testing/references/react.md
+.claude/skills/playwright-component-testing/references/vue.md
+.claude/skills/playwright-component-testing/SKILL.md
+.claude/skills/playwright-trace/SKILL.md
+$ find .claude -type d | sort
+.claude
+.claude/skills
+.claude/skills/playwright-cli
+.claude/skills/playwright-cli/references
+.claude/skills/playwright-component-testing
+.claude/skills/playwright-component-testing/references
+.claude/skills/playwright-trace
+$ wc -l $(find .claude -type f)
+     143 .claude/skills/playwright-component-testing/SKILL.md
+     420 .claude/skills/playwright-cli/SKILL.md
+     171 .claude/skills/playwright-trace/SKILL.md
+     144 .claude/skills/playwright-component-testing/references/gallery-spec.md
+      75 .claude/skills/playwright-component-testing/references/vue.md
+      85 .claude/skills/playwright-component-testing/references/migration.md
+      67 .claude/skills/playwright-component-testing/references/react.md
+     433 .claude/skills/playwright-cli/references/test-generation.md
+      23 .claude/skills/playwright-cli/references/element-attributes.md
+     143 .claude/skills/playwright-cli/references/video-recording.md
+      39 .claude/skills/playwright-cli/references/playwright-tests.md
+     241 .claude/skills/playwright-cli/references/running-code.md
+     275 .claude/skills/playwright-cli/references/storage-state.md
+     139 .claude/skills/playwright-cli/references/tracing.md
+      87 .claude/skills/playwright-cli/references/request-mocking.md
+     225 .claude/skills/playwright-cli/references/session-management.md
+    2710 total
+$ ls playwright.config.ts playwright/ src/components/*.story.tsx tests/ 2>&1
+(eval):1: no matches found: src/components/*.story.tsx
+exit=1
+
+### 02:16:31 phase3-3 first test run
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (341ms)
+  ✓  3 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (83ms)
+  ✘  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (5.3s)
+  ✓  4 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (146ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (74ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (78ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (125ms)
+
+
+  1) [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#root').getByRole('button')
+    Expected: "Submit"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#root').getByRole('button')
+        - waiting for "http://localhost:5173/playwright/gallery/index.html" navigation to finish...
+        - navigated to "http://localhost:5173/playwright/gallery/index.html"
+
+
+      4 | test('Primary story mounts and exposes a button', async ({ mount }) => {
+      5 |   const component = await mount('components/Button/Primary');
+    > 6 |   await expect(component.getByRole('button')).toHaveText('Submit');
+        |                                               ^
+      7 |   await expect(component.getByRole('button')).toBeEnabled();
+      8 | });
+      9 |
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:6:47
+
+    Error Context: test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+
+  1 failed
+    [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button ─
+  6 passed (8.2s)
+exit=1
+
+### 02:16:55 phase3-3b diagnose: dev server log + error-context
+$ cat /tmp/pw_dev.log  (the reused dev server started in phase2)
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 113 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:16:07 AM [vite] (client) page reload playwright/gallery/index.html
+2:16:40 AM [vite] (client) page reload playwright-report/index.html
+
+$ cat test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: tests/components/button.spec.ts >> Primary story mounts and exposes a button
+- Location: tests/components/button.spec.ts:4:1
+
+# Error details
+
+```
+Error: expect(locator).toHaveText(expected) failed
+
+Locator: locator('#root').getByRole('button')
+Expected: "Submit"
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toHaveText" with timeout 5000ms
+  - waiting for locator('#root').getByRole('button')
+    - waiting for "http://localhost:5173/playwright/gallery/index.html" navigation to finish...
+    - navigated to "http://localhost:5173/playwright/gallery/index.html"
+
+```
+
+```yaml
+- heading "Playwright story gallery" [level=1]
+- paragraph:
+  - text: Discovered story files (call
+  - code: "window.mount({ story })"
+  - text: "to render one):"
+- list:
+  - listitem:
+    - code: components/Button
+  - listitem:
+    - code: components/Counter
+- separator
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | import type { WithTitle } from '../../src/components/Button.story';
+  3  | 
+  4  | test('Primary story mounts and exposes a button', async ({ mount }) => {
+  5  |   const component = await mount('components/Button/Primary');
+> 6  |   await expect(component.getByRole('button')).toHaveText('Submit');
+     |                                               ^ Error: expect(locator).toHaveText(expected) failed
+  7  |   await expect(component.getByRole('button')).toBeEnabled();
+  8  | });
+  9  | 
+  10 | test('Disabled story renders a disabled button', async ({ mount }) => {
+  11 |   const component = await mount('components/Button/Disabled');
+  12 |   await expect(component.getByRole('button')).toBeDisabled();
+  13 | });
+  14 | 
+  15 | test('short-form story id resolves', async ({ mount }) => {
+  16 |   const component = await mount('Button/Primary');
+  17 |   await expect(component.getByRole('button')).toHaveText('Submit');
+  18 | });
+  19 | 
+  20 | test('per-test props reach the story', async ({ mount }) => {
+  21 |   const component = await mount<typeof WithTitle>('components/Button/WithTitle', {
+  22 |     title: 'Hello',
+  23 |   });
+  24 |   await expect(component.getByRole('button')).toHaveText('Hello');
+  25 | });
+  26 | 
+  27 | test('story records callbacks into a hidden form', async ({ mount }) => {
+  28 |   const component = await mount('components/Button/CountsClicks');
+  29 |   await expect(component.getByTestId('clicks')).toHaveValue('0');
+  30 |   await component.getByRole('button').click();
+  31 |   await expect(component.getByTestId('clicks')).toHaveValue('1');
+  32 |   await component.getByRole('button').click();
+  33 |   await expect(component.getByTestId('clicks')).toHaveValue('2');
+  34 | });
+  35 | 
+```
+### 02:17:15 phase3-3c fix: optimizeDeps.entries incl. gallery, restart dev server, rerun
+--- vite.config.ts ---
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    // gallery も dep スキャンの入口にする。これが無いと gallery を初めて開いた瞬間に
+    // Vite が新しい依存を見つけて full reload し、直後の mount() が空振りする。
+    entries: ['index.html', 'playwright/gallery/index.html'],
+  },
+})
+
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (417ms)
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (486ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (108ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (102ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (86ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (80ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (111ms)
+
+  7 passed (1.5s)
+exit=0
+
+### 02:17:30 phase3-3d control: revert optimizeDeps.entries, cold cache -> does it fail again?
+$ rm -rf node_modules/.vite && npm run dev && npx playwright test --project=components (WITHOUT optimizeDeps.entries)
+
+Running 7 tests using 2 workers
+
+  ✓  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (359ms)
+  ✓  2 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (431ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (115ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (103ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (87ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (76ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (126ms)
+
+  7 passed (1.5s)
+--- dev log ---
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 101 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:17:35 AM [vite] (client) page reload playwright-report/index.html
+
+### 02:18:00 phase3-3e decisive control: dev server started BEFORE the gallery existed (= what happened in the first run)
+$ # 1) rm -rf node_modules/.vite; 2) hide playwright/ ; 3) npm run dev ; 4) restore playwright/ ; 5) run tests
+$ npx playwright test --project=components
+
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (529ms)
+  ✓  3 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (104ms)
+  ✘  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (5.4s)
+  ✓  4 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (142ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (81ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (76ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (124ms)
+
+
+  1) [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#root').getByRole('button')
+    Expected: "Submit"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#root').getByRole('button')
+        - waiting for "http://localhost:5173/playwright/gallery/index.html" navigation to finish...
+        - navigated to "http://localhost:5173/playwright/gallery/index.html"
+
+
+      4 | test('Primary story mounts and exposes a button', async ({ mount }) => {
+      5 |   const component = await mount('components/Button/Primary');
+    > 6 |   await expect(component.getByRole('button')).toHaveText('Submit');
+        |                                               ^
+      7 |   await expect(component.getByRole('button')).toBeEnabled();
+      8 | });
+      9 |
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:6:47
+
+    Error Context: test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+
+  1 failed
+    [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button ─
+  6 passed (7.0s)
+--- dev log ---
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 137 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:18:03 AM [vite] (client) page reload playwright/gallery/index.html
+2:18:12 AM [vite] (client) page reload playwright-report/index.html
+
+### 02:18:27 phase3-3f fix candidate A (optimizeDeps.entries) under the SAME stale-server condition
+$ npx playwright test --project=components   # vite.config.ts HAS optimizeDeps.entries, but gallery was absent at server start
+
+      4 | test('update() re-renders without remounting: internal state survives', async ({ mount }) => {
+      5 |   const c = await mount<typeof Default>('components/Counter/Default', { value: 1 });
+    > 6 |   await expect(c.getByTestId('count')).toHaveText('1');
+        |                                        ^
+      7 |
+      8 |   // 内部 state を動かす（1 -> 3）
+      9 |   await c.getByRole('button', { name: 'inc' }).click();
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/counter.spec.ts:6:40
+
+    Error Context: test-results/counter-update-re-renders--f6abb-ing-internal-state-survives-components/error-context.md
+
+  1 failed
+    [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+  6 passed (6.7s)
+--- dev log ---
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 105 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:18:30 AM [vite] (client) page reload playwright/gallery/index.html
+
+### 02:18:56 phase3-3g CONCLUSION: minimal vite.config + dev server restarted AFTER the gallery exists
+--- vite.config.ts (back to the scaffold default) ---
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (396ms)
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (475ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (149ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (106ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (92ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (74ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (122ms)
+
+  7 passed (1.5s)
+exit=0
+--- dev log (no 'page reload' line = no mid-run full reload) ---
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 108 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+
+### 02:19:52 phase3-6 deliberately break the gallery: recreate the root on every mount
+--- diff ---
+$ npx playwright test --project=components tests/components/counter.spec.ts
+
+Running 2 tests using 1 worker
+
+  ✘  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (5.2s)
+  ✓  2 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (143ms)
+
+
+  1) [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('#root').getByTestId('count')
+    Expected: "1"
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#root').getByTestId('count')
+        - waiting for "http://localhost:5173/playwright/gallery/index.html" navigation to finish...
+        - navigated to "http://localhost:5173/playwright/gallery/index.html"
+
+
+      4 | test('update() re-renders without remounting: internal state survives', async ({ mount }) => {
+      5 |   const c = await mount<typeof Default>('components/Counter/Default', { value: 1 });
+    > 6 |   await expect(c.getByTestId('count')).toHaveText('1');
+        |                                        ^
+      7 |
+      8 |   // 内部 state を動かす（1 -> 3）
+      9 |   await c.getByRole('button', { name: 'inc' }).click();
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/counter.spec.ts:6:40
+
+    Error Context: test-results/counter-update-re-renders--f6abb-ing-internal-state-survives-components/error-context.md
+
+  1 failed
+    [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+  1 passed (6.4s)
+exit=1
+
+### 02:20:11 phase3-6b same broken gallery, but dev server restarted first (isolates the state-reset effect from the HMR reload)
+--- diff vs the working gallery (git diff was empty: playwright/ was never committed) ---
+$ diff -u /tmp/main.good.tsx playwright/gallery/main.tsx
+--- /tmp/main.good.tsx	2026-08-20 02:19:52
++++ playwright/gallery/main.tsx	2026-08-20 02:19:52
+@@ -37,8 +37,10 @@
+ window.mount = async ({ story, props }) => {
+   const Story = await resolveStory(story);
+   if (!Story) throw new Error(`Unknown story: ${story}`);
+-  // create the root once and reuse it, so update() reconciles instead of remounting
+-  root ??= createRoot(rootEl);
++  // BROKEN ON PURPOSE: recreate the root on every mount -> update() remounts, state is lost
++  root?.unmount();
++  rootEl.innerHTML = '';
++  root = createRoot(rootEl);
+   // flushSync so a render error rejects this promise instead of being swallowed
+   flushSync(() => {
+     root!.render(
+$ npx playwright test --project=components tests/components/counter.spec.ts
+
+Running 2 tests using 1 worker
+
+  ✘  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (5.4s)
+  ✓  2 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (148ms)
+
+
+  1) [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator:  locator('#root').getByTestId('count')
+    Expected: "3"
+    Received: "2"
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toHaveText" with timeout 5000ms
+      - waiting for locator('#root').getByTestId('count')
+        14 × locator resolved to <output data-testid="count">2</output>
+           - unexpected value "2"
+
+
+      15 |   await c.update({ value: 2, label: 'updated' });
+      16 |   await expect(c.getByTestId('label')).toHaveText('updated');
+    > 17 |   await expect(c.getByTestId('count')).toHaveText('3');
+         |                                        ^
+      18 | });
+      19 |
+      20 | test('unmount() clears the root', async ({ mount, page }) => {
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/counter.spec.ts:17:40
+
+    Error Context: test-results/counter-update-re-renders--f6abb-ing-internal-state-survives-components/error-context.md
+
+  1 failed
+    [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+  1 passed (6.7s)
+exit=1
+
+### 02:20:33 phase3-6c restore root reuse -> green again
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (486ms)
+  ✓  2 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (574ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (119ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (87ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (84ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (72ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (118ms)
+
+  7 passed (1.6s)
+exit=0
+
+### 02:20:45 phase3-5 props type-checking: mount<typeof Story> vs untyped
+--- tests/components/typecheck.spec.ts ---
+import { test, expect } from '@playwright/test';
+import type { WithTitle } from '../../src/components/Button.story';
+
+test('typed: bogus prop', async ({ mount }) => {
+  // @ts-expect-no-error placeholder — this SHOULD be a type error
+  const component = await mount<typeof WithTitle>('components/Button/WithTitle', {
+    bogusProp: 123,
+  });
+  await expect(component).toBeVisible();
+});
+
+test('untyped: bogus prop', async ({ mount }) => {
+  const component = await mount('components/Button/WithTitle', { bogusProp: 123 });
+  await expect(component).toBeVisible();
+});
+
+$ npx tsc --noEmit -p tsconfig.pw.json  (tsconfig.app.json only includes src/, so specs are NOT type-checked by 'npm run build')
+playwright.config.ts(23,27): error TS2591: Cannot find name 'process'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+tests/components/typecheck.spec.ts(7,5): error TS2353: Object literal may only specify known properties, and 'bogusProp' does not exist in type '{ title?: string | undefined; }'.
+exit=2
+
+### 02:20:55 phase3-5b same check with types:[vite/client,node]
+$ npx tsc --noEmit -p tsconfig.pw.json
+tests/components/typecheck.spec.ts(7,5): error TS2353: Object literal may only specify known properties, and 'bogusProp' does not exist in type '{ title?: string | undefined; }'.
+exit=2
+
+$ # now drop the type argument on line 6 and re-check: the same bogus prop passes silently
+import { test, expect } from '@playwright/test';
+import type { WithTitle } from '../../src/components/Button.story';
+
+test('typed: bogus prop', async ({ mount }) => {
+  // @ts-expect-no-error placeholder — this SHOULD be a type error
+  const component = await mount('components/Button/WithTitle', {
+    bogusProp: 123,
+  });
+  await expect(component).toBeVisible();
+});
+
+test('untyped: bogus prop', async ({ mount }) => {
+tests/components/typecheck.spec.ts(2,1): error TS6133: 'WithTitle' is declared but its value is never read.
+exit=2
+
+### 02:21:05 phase4-1 rename the story export Primary -> PrimaryButton (spec still says 'Primary')
+$ head -5 src/components/Button.story.tsx
+import { useState } from 'react';
+import { Button } from './Button';
+
+export const PrimaryButton = () => <Button title="Submit" />;
+
+
+$ npx tsc --noEmit -p tsconfig.pw.json   # does the type system catch it?
+exit=0
+
+$ npm run build
+
+> pw162-ct@0.0.0 build
+> tsc -b && vite build
+
+vite v8.2.1 building client environment for production...
+transforming...
+✓ 20 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB │ gzip:  0.29 kB
+dist/assets/react-CHdo91hT.svg    4.12 kB │ gzip:  2.06 kB
+dist/assets/vite-BF8QNONU.svg     8.70 kB │ gzip:  1.60 kB
+dist/assets/hero-CLDdwZDr.png    13.05 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:  1.47 kB
+dist/assets/index-NFZp7ZRQ.js   193.28 kB │ gzip: 60.63 kB
+
+✓ built in 380ms
+exit=0
+
+### 02:21:20 phase4-1b tsc/build are green, but what do the tests do?
+$ npx playwright test --project=components tests/components/button.spec.ts
+
+Running 5 tests using 1 worker
+
+  ✘  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (376ms)
+  ✓  2 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (171ms)
+  ✘  3 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (100ms)
+  ✓  4 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (142ms)
+  ✓  5 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (126ms)
+
+
+  1) [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button 
+
+    Error: page.evaluate: Error: Unknown story: components/Button/Primary
+        at window.mount (http://localhost:5173/playwright/gallery/main.tsx:23:20)
+        at async eval (eval at evaluate (:311:30), <anonymous>:5:7)
+        at async <anonymous>:337:30
+        at window.mount (http://localhost:5173/playwright/gallery/main.tsx:23:20)
+        at async eval (eval at evaluate (:311:30), <anonymous>:5:7)
+        at async <anonymous>:337:30
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:5:21
+
+    Error Context: test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+
+  2) [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves ────────────
+
+    Error: page.evaluate: Error: Unknown story: Button/Primary
+        at window.mount (http://localhost:5173/playwright/gallery/main.tsx:23:20)
+        at async eval (eval at evaluate (:311:30), <anonymous>:5:7)
+        at async <anonymous>:337:30
+        at window.mount (http://localhost:5173/playwright/gallery/main.tsx:23:20)
+        at async eval (eval at evaluate (:311:30), <anonymous>:5:7)
+        at async <anonymous>:337:30
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:16:21
+
+    Error Context: test-results/button-short-form-story-id-resolves-components/error-context.md
+
+  2 failed
+    [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button ─
+    [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves ─────────────
+  3 passed (2.5s)
+exit=1
+
+### 02:21:36 phase4-2 dev server dependency: webServer commented out AND no dev server running
+--- playwright.config.ts ---
+import { defineConfig, devices } from '@playwright/test';
+
+const GALLERY_URL = 'http://localhost:5173/playwright/gallery/index.html';
+
+export default defineConfig({
+  reporter: [['list'], ['html', { open: 'never' }]],
+  projects: [
+    {
+      name: 'components',
+      testDir: './tests/components',
+      use: {
+        ...devices['Desktop Chrome'],
+        // mount() が baseURL へ遷移するので、gallery の index.html まで含める
+        baseURL: GALLERY_URL,
+        serviceWorkers: 'block',
+        reuseContext: true,
+      },
+    },
+  ],
+  // webServer をコメントアウト（dev server 依存の実測用）
+});
+$ curl -s -o /dev/null -w 'http=%{http_code}
+' http://localhost:5173/playwright/gallery/index.html
+http=000
+exit=7
+
+$ npx playwright test --project=components tests/components/button.spec.ts
+
+Running 5 tests using 1 worker
+
+  ✘  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (1.3s)
+  ✘  2 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (1.1s)
+  ✘  3 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (1.1s)
+  ✘  4 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (1.1s)
+  ✘  5 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (1.1s)
+
+
+  1) [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/playwright/gallery/index.html
+    Call log:
+      - navigating to "http://localhost:5173/playwright/gallery/index.html", waiting until "load"
+
+
+      3 |
+      4 | test('Primary story mounts and exposes a button', async ({ mount }) => {
+    > 5 |   const component = await mount('components/Button/Primary');
+        |                           ^
+      6 |   await expect(component.getByRole('button')).toHaveText('Submit');
+      7 |   await expect(component.getByRole('button')).toBeEnabled();
+      8 | });
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:5:27
+
+    Error Context: test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+
+  2) [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/playwright/gallery/index.html
+    Call log:
+      - navigating to "http://localhost:5173/playwright/gallery/index.html", waiting until "load"
+
+
+       9 |
+      10 | test('Disabled story renders a disabled button', async ({ mount }) => {
+    > 11 |   const component = await mount('components/Button/Disabled');
+         |                           ^
+      12 |   await expect(component.getByRole('button')).toBeDisabled();
+      13 | });
+      14 |
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:11:27
+
+    Error Context: test-results/button-Disabled-story-renders-a-disabled-button-components/error-context.md
+
+  3) [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves ────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/playwright/gallery/index.html
+    Call log:
+
+### 02:21:57 phase4-x baseURL misconfig: origin only instead of the gallery index.html
+$ grep -n baseURL playwright.config.ts
+13:        // mount() が baseURL へ遷移するので、gallery の index.html まで含める
+14:        baseURL: 'http://localhost:5173', // WRONG ON PURPOSE: origin only, not the gallery page
+$ npx playwright test --project=components tests/components/button.spec.ts
+
+Running 5 tests using 1 worker
+
+  ✘  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (386ms)
+  ✘  2 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (149ms)
+  ✘  3 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (150ms)
+  ✘  4 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (159ms)
+  ✘  5 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (162ms)
+
+
+  1) [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button 
+
+    Error: page.evaluate: Error: The gallery page does not define window.mount().
+        at eval (eval at evaluate (:311:30), <anonymous>:4:15)
+        at UtilityScript.evaluate (<anonymous>:313:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:311:30), <anonymous>:4:15)
+        at UtilityScript.evaluate (<anonymous>:313:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/components/button.spec.ts:5:21
+
+    Error Context: test-results/button-Primary-story-mounts-and-exposes-a-button-components/error-context.md
+
+  2) [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button 
+
+    Error: page.evaluate: Error: The gallery page does not define window.mount().
+        at eval (eval at evaluate (:311:30), <anonymous>:4:15)
+        at UtilityScript.evaluate (<anonymous>:313:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at eval (eval at evaluate (:311:30), <anonymous>:4:15)
+
+### 02:22:09 phase4-3 reproduce #41989: tsconfig 'extends' with a bare specifier resolved via node_modules walk-up
+$ npm i -D @tsconfig/node22
+
+added 2 packages, and audited 34 packages in 1s
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+$ ls node_modules/@tsconfig/node22
+LICENSE
+package.json
+README.md
+tsconfig.json
+
+### 02:22:24 phase4-3a BASELINE on 1.62.1 with tests/tsconfig.json extending a bare specifier
+--- tests/tsconfig.json ---
+{
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["**/*.ts"]
+}
+$ npx playwright --version
+Version 1.62.1
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (455ms)
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (522ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (122ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (96ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (82ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (70ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (122ms)
+
+  7 passed (1.5s)
+exit=0
+
+### 02:22:33 phase4-3b downgrade to 1.62.0, SAME tests/tsconfig.json
+$ npm i -D @playwright/test@1.62.0
+
+changed 3 packages, and audited 34 packages in 694ms
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+exit=0
+$ npx playwright --version
+Version 1.62.0
+$ npx playwright test --project=components
+Error: Failed to load tsconfig file at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json:
+Failed to resolve "extends" path "@tsconfig/node22/tsconfig.json" referenced from /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json
+Error: Failed to load tsconfig file at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json:
+Failed to resolve "extends" path "@tsconfig/node22/tsconfig.json" referenced from /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json
+Error: No tests found
+
+exit=1
+
+### 02:22:44 phase4-3c is the tsconfig itself valid? ask tsc (v6.0.3)
+$ npx tsc -p tests/tsconfig.json --noEmit
+tests/components/button.spec.ts(2,32): error TS2307: Cannot find module '../../src/components/Button.story' or its corresponding type declarations.
+tests/components/counter.spec.ts(2,30): error TS2307: Cannot find module '../../src/components/Counter.story' or its corresponding type declarations.
+exit= (tsc resolves the bare specifier fine -> the failure is Playwright's own tsconfig resolver)
+
+### 02:22:45 phase4-3d back to 1.62.1, SAME tests/tsconfig.json, SAME command
+$ npm i -D @playwright/test@1.62.1
+
+changed 3 packages, and audited 34 packages in 569ms
+
+9 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+$ npx playwright --version
+Version 1.62.1
+$ npx playwright test --project=components
+
+Running 7 tests using 2 workers
+
+  ✓  1 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (397ms)
+  ✓  2 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (467ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (104ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (108ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (87ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (68ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (119ms)
+
+  7 passed (1.5s)
+exit=0
+
+### 02:23:01 phase4-3e bonus: #41998 directory-form project reference ({ path: '../packages/shared' })
+--- tests/tsconfig.json ---
+{
+  "compilerOptions": { "types": ["node"], "noEmit": true },
+  "references": [{ "path": "../packages/shared" }],
+  "include": ["**/*.ts"]
+}
+$ npx playwright --version
+Version 1.62.1
+$ npx playwright test --project=components   # on 1.62.1
+
+    Error Context: test-results/counter-update-re-renders--f6abb-ing-internal-state-survives-components/error-context.md
+
+  1 failed
+    [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives 
+  6 passed (6.6s)
+exit=0
+
+$ npm i -D @playwright/test@1.62.0 && npx playwright test --project=components
+
+found 0 vulnerabilities
+Version 1.62.0
+Error: Failed to load tsconfig file at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json:
+Failed to resolve "references" path "../packages/shared" referenced from /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json
+Error: Failed to load tsconfig file at /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json:
+Failed to resolve "references" path "../packages/shared" referenced from /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-playwright-ct-stories-galleries-20260820-0213/workspace/pw162-ct/tests/tsconfig.json
+Error: No tests found
+
+exit=0
+
+$ npm i -D @playwright/test@1.62.1  # restore
+
+found 0 vulnerabilities
+Version 1.62.1
+
+### 02:23:27 phase4-3f cleanup probes (packages/, tests/tsconfig.json, tsconfig.pw.json) + flake check: run the suite 5x
+--- run 1 ---
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (74ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (109ms)
+
+  7 passed (1.5s)
+--- run 2 ---
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (74ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (111ms)
+
+  7 passed (1.0s)
+--- run 3 ---
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (67ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (113ms)
+
+  7 passed (1.2s)
+--- run 4 ---
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (79ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (132ms)
+
+  7 passed (1.1s)
+--- run 5 ---
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (75ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (111ms)
+
+  7 passed (1.1s)
+--- dev log ---
+
+> pw162-ct@0.0.0 dev
+> vite
+
+
+  VITE v8.2.1  ready in 115 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+2:23:30 AM [vite] (client) page reload playwright-report/index.html
+2:23:31 AM [vite] (client) page reload playwright-report/index.html
+2:23:33 AM [vite] (client) page reload playwright-report/index.html
+2:23:33 AM [vite] (client) page reload playwright-report/index.html
+2:23:35 AM [vite] (client) page reload playwright-report/index.html
+
+### 02:23:49 phase4-3g decisive: create a new watched file DURING the run -> does the gallery full-reload and break a mount?
+$ npx playwright test --project=components   (a new src/*.ts appears ~0.9s in)
+
+Running 7 tests using 2 workers
+
+  ✓  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (451ms)
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (514ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (103ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (86ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (81ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (69ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (113ms)
+
+  7 passed (1.5s)
+--- dev log ---
+2:23:33 AM [vite] (client) page reload playwright-report/index.html
+2:23:33 AM [vite] (client) page reload playwright-report/index.html
+2:23:35 AM [vite] (client) page reload playwright-report/index.html
+2:23:36 AM [vite] (client) page reload playwright-report/index.html
+2:23:52 AM [vite] (client) page reload playwright-report/index.html
+
+### 02:24:10 phase4-3h hypothesis for the one-off failure in 4-3e: an npm install right before the run invalidates Vite's dep cache -> full reload wipes the first mount
+--- attempt 1: npm i -D @playwright/test@1.62.1 (rewrites node_modules), then test immediately, dev server NOT restarted ---
+  7 passed (1.6s)
+--- attempt 2: npm i -D @playwright/test@1.62.1 (rewrites node_modules), then test immediately, dev server NOT restarted ---
+  7 passed (1.1s)
+--- attempt 3: npm i -D @playwright/test@1.62.1 (rewrites node_modules), then test immediately, dev server NOT restarted ---
+  7 passed (1.1s)
+--- dev log tail ---
+2:23:35 AM [vite] (client) page reload playwright-report/index.html
+2:23:36 AM [vite] (client) page reload playwright-report/index.html
+2:23:52 AM [vite] (client) page reload playwright-report/index.html
+2:23:52 AM [vite] (client) page reload playwright-report/index.html
+2:24:13 AM [vite] (client) page reload playwright-report/index.html
+2:24:13 AM [vite] (client) page reload playwright-report/index.html
+2:24:15 AM [vite] (client) page reload playwright-report/index.html
+2:24:15 AM [vite] (client) page reload playwright-report/index.html
+
+### 02:24:30 phase4-4 old CT package still published?
+$ npm view @playwright/experimental-ct-react versions --json | tail -5
+  "1.63.0-alpha-2026-08-04",
+  "1.63.0-alpha-2026-08-05",
+  "1.63.0-alpha-2026-08-06",
+  "1.63.0-alpha-2026-08-07"
+]
+$ npm view @playwright/experimental-ct-react@1.62.1 dist.unpackedSize deprecated
+22976
+(empty = not marked deprecated on npm)
+
+### 02:24:31 phase4-5 does 'vite build' ignore the gallery? (SKILL.md claims it does)
+$ rm -rf dist && npm run build && find dist -name '*.html'
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB │ gzip:  0.29 kB
+dist/assets/react-CHdo91hT.svg    4.12 kB │ gzip:  2.06 kB
+dist/assets/vite-BF8QNONU.svg     8.70 kB │ gzip:  1.60 kB
+dist/assets/hero-CLDdwZDr.png    13.05 kB
+dist/assets/index-D64VDMd1.css    4.10 kB │ gzip:  1.47 kB
+dist/assets/index-NFZp7ZRQ.js   193.28 kB │ gzip: 60.63 kB
+
+✓ built in 112ms
+dist/index.html
+(only dist/index.html -> the gallery is dev-only, confirmed)
+
+### 02:24:47 FINAL verification run (completion condition #1)
+$ npx playwright --version && npx playwright test --project=components
+Version 1.62.1
+
+Running 7 tests using 2 workers
+
+  ✓  2 [components] › tests/components/button.spec.ts:4:1 › Primary story mounts and exposes a button (428ms)
+  ✓  1 [components] › tests/components/counter.spec.ts:4:1 › update() re-renders without remounting: internal state survives (510ms)
+  ✓  3 [components] › tests/components/button.spec.ts:10:1 › Disabled story renders a disabled button (121ms)
+  ✓  4 [components] › tests/components/counter.spec.ts:20:1 › unmount() clears the root (85ms)
+  ✓  5 [components] › tests/components/button.spec.ts:15:1 › short-form story id resolves (78ms)
+  ✓  6 [components] › tests/components/button.spec.ts:20:1 › per-test props reach the story (73ms)
+  ✓  7 [components] › tests/components/button.spec.ts:27:1 › story records callbacks into a hidden form (120ms)
+
+  7 passed (1.6s)
+exit=0
+
+$ ls playwright-report/
+index.html
+
+### file inventory (what I hand-wrote vs what init-skills generated)
+$ git status --short --untracked-files=all
+ M package-lock.json
+ M package.json
+?? .claude/skills/playwright-cli/SKILL.md
+?? .claude/skills/playwright-cli/references/element-attributes.md
+?? .claude/skills/playwright-cli/references/playwright-tests.md
+?? .claude/skills/playwright-cli/references/request-mocking.md
+?? .claude/skills/playwright-cli/references/running-code.md
+?? .claude/skills/playwright-cli/references/session-management.md
+?? .claude/skills/playwright-cli/references/storage-state.md
+?? .claude/skills/playwright-cli/references/test-generation.md
+?? .claude/skills/playwright-cli/references/tracing.md
+?? .claude/skills/playwright-cli/references/video-recording.md
+?? .claude/skills/playwright-component-testing/SKILL.md
+?? .claude/skills/playwright-component-testing/references/gallery-spec.md
+?? .claude/skills/playwright-component-testing/references/migration.md
+?? .claude/skills/playwright-component-testing/references/react.md
+?? .claude/skills/playwright-component-testing/references/vue.md
+?? .claude/skills/playwright-trace/SKILL.md
+?? playwright-report/index.html
+?? playwright.config.ts
+?? playwright/gallery/index.html
+?? playwright/gallery/main.tsx
+?? shot-report.mjs
+?? shot.mjs
+?? src/components/Button.story.tsx
+?? src/components/Counter.story.tsx
+?? test-results/.last-run.json
+?? tests/components/button.spec.ts
+?? tests/components/counter.spec.ts
+$ git diff --stat
+ package-lock.json | 72 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ package.json      |  2 ++
+ 2 files changed, 74 insertions(+)
+$ wc -l playwright/gallery/* playwright.config.ts src/components/*.tsx tests/components/*.ts
+      15 playwright/gallery/index.html
+      67 playwright/gallery/main.tsx
+      25 playwright.config.ts
+      23 src/components/Button.story.tsx
+      13 src/components/Button.tsx
+       7 src/components/Counter.story.tsx
+      23 src/components/Counter.tsx
+      34 tests/components/button.spec.ts
+      25 tests/components/counter.spec.ts
+     232 total

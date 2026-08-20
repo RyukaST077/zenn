@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "provider": "claude",
+  "wrapper": "claude-dontask-wrapper.mjs",
+  "fake_cli": "preflight-claude.mjs",
+  "environment": "minimal",
+  "wrapper_exit_code": 0,
+  "verifier_exit_code": 0,
+  "marker_expected": "BROAD_ALLOW_BOUNDARY_COMPLETED",
+  "marker_observed": "BROAD_ALLOW_BOUNDARY_COMPLETED",
+  "protected_paths_changed": [],
+  "unexpected_changes": []
+}

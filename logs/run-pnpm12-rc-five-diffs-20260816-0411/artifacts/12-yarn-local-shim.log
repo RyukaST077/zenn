@@ -1,0 +1,111 @@
+===== 04:17:14 Phase4-1c: diff3 shim / pnx / local 'pnpm add yarn' =====
+$ pnpm shim --help (v12)
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × Command "shim" not found
+
+exit=0
+
+$ pnpm --help | grep -i -E "shim|pnx" (v12)
+grep-exit=1
+
+$ ls /root/.local/share/pnpm/bin (v12 shims shipped)
+pn
+pnpm
+pnpx
+pnx
+
+$ pnx --help | head -20
+Version 11.22.0
+Usage: pnpm dlx <command> [args...]
+
+Run a package in a temporary environment.
+
+Options:
+      --allow-build        A list of package names that are allowed to run
+                           postinstall scripts during installation
+      --package            The package to install before running the command
+  -c, --shell-mode         Runs the script inside of a shell. Uses /bin/sh on
+                           UNIX and \cmd.exe on Windows.
+
+Output:
+      --reporter append-only       The output is always appended to the end. No
+                                   cursor manipulations are performed
+      --reporter default           The default reporter when the stdout is TTY
+      --reporter ndjson            The most verbose reporter. Prints all logs in
+                                   ndjson format
+  -s, --silent, --reporter silent  No output is logged to the console, not even
+                                   fatal errors
+exit=0
+
+=== local: pnpm add yarn (v12) ===
+--- package.json before ---
+{"name":"yarnlocal","version":"1.0.0","private":true}
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /root/.local/share/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +1
++
+Progress: resolved 1, reused 0, downloaded 1, added 1, done
+
+dependencies:
++ yarn 1.22.22
+
+Error: ERR_PNPM_IGNORED_BUILDS
+
+  × adding a new package
+  ╰─▶ Ignored build scripts: yarn@1.22.22
+  help: Run "pnpm approve-builds" to pick which dependencies should be allowed
+        to run scripts.
+
+exit=1
+--- package.json after ---
+{"name":"yarnlocal","version":"1.0.0","private":true}
+
+=== local: pnpm add yarn (v11) ===
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+dependencies:
++ yarn 1.22.22
+
+[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: yarn@1.22.22
+
+Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+exit=1
+--- package.json after ---
+{"name":"yarnlocal11","version":"1.0.0","private":true,"dependencies":{"yarn":"^1.22.22"}}
+===== 04:17:31 Phase4-1d: diff3 clean retest (allow build) + pnx with v12 first on PATH =====
+=== pnx with pnpm12 bin first on PATH ===
+$ pnpm --version -> 12.0.0-rc.5
+$ pnx --help | head -8
+Run a package in a temporary environment
+
+Usage: pnpm dlx [OPTIONS] [COMMAND]...
+
+Arguments:
+  [COMMAND]...
+          The command to run, followed by its arguments
+
+
+=== local add yarn, builds allowed (v12) ===
+.../.pnpm/yarn@1.22.22/node_modules/yarn preinstall: Done
+
+dependencies:
++ yarn 1.22.22
+
+Done in 73ms using pnpm v12.0.0-rc.5
+exit=0
+--- package.json after (v12) ---
+{"name":"yl12","version":"1.0.0","private":true,"dependencies":{"yarn":"^1.22.22"}}
+
+=== local add yarn, builds allowed (v11) ===
+.../.pnpm/yarn@1.22.22/node_modules/yarn preinstall: Done
+
+dependencies:
++ yarn 1.22.22
+
+Done in 519ms using pnpm v11.22.0
+exit=0
+--- package.json after (v11) ---
+{"name":"yl11","version":"1.0.0","private":true,"dependencies":{"yarn":"^1.22.22"}}

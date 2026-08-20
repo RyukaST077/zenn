@@ -1,0 +1,24 @@
+
+===== 12:16:42 PHASE3: 構成B で eslint . （山場） =====
+$ ./node_modules/.bin/eslint .
+typescript-eslint does not support TS 7.0.
+Please see https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0 to run typescript-eslint using the TS 6 API.
+See also https://github.com/typescript-eslint/typescript-eslint/issues/10940 for tracking typescript-eslint's support for TS >=7.1
+
+Oops! Something went wrong! :(
+
+ESLint: 10.8.1
+
+Error: typescript-eslint does not support TS 7.0.
+    at Object.<anonymous> (/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/node_modules/typescript-eslint/dist/index.js:52:11)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at cjsLoader (node:internal/modules/esm/translators:266:5)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:200:7)
+    at ModuleJob.run (node:internal/modules/esm/module_job:329:25)
+./node_modules/.bin/eslint .  0.08s user 0.03s system 69% cpu 0.167 total
+ESLINT_EXIT=

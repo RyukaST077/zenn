@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "id": "claude-dontask-allow-rule-boundary-20260818-0521",
+  "topic": "Claude Code dontAsk exact versus broad Bash allow rules",
+  "claim": "On Claude Code 2.1.227 for macOS arm64, a fresh non-interactive dontAsk run executes the fixed Bash command when permissions.allow contains its exact rule, but silently denies the same command when the only controlled change is the syntactically valid broad rule Bash(python3:*).",
+  "mode": "ablation",
+  "source_report": "research/agent/agent-knowhow-claude-dontask-broad-allow-rule-drop-20260818-0521.md",
+  "plan": "practice/agent/agent-practice-claude-dontask-allow-rule-boundary-20260818-0521.md",
+  "fixture": "fixtures/agent-practice/claude-dontask-allow-rule-boundary",
+  "prompt": "Use the Bash tool exactly once to run exactly `python3 -c \"print('ALLOW_RULE_PROBE')\"`. Do not use another command, tool, file, network resource, or alternative. After the tool result, stop.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "exact-rule-control",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "EXACT_ALLOW_CONTROL_COMPLETED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-dontask-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "inherit"
+      }
+    },
+    {
+      "id": "broad-wildcard-treatment",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "BROAD_ALLOW_BOUNDARY_COMPLETED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-dontask-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "inherit"
+      }
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "claude-dontask-wrapper.mjs",
+      "preflight-claude.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "case-result.json",
+      "verification.txt"
+    ]
+  }
+}

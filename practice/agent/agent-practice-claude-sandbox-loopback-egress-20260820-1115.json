@@ -1,0 +1,75 @@
+{
+  "version": 2,
+  "id": "claude-sandbox-loopback-egress-20260820-1115",
+  "topic": "Claude Code Bash sandbox egress to a same-host loopback listener",
+  "claim": "On Claude Code 2.1.236 for macOS 26.5 arm64, a non-interactive run whose CLI --settings enables the Bash sandbox cannot open a TCP connection from a sandboxed Bash command to a listener on 127.0.0.1 on the same host, and listing 127.0.0.1, localhost, and [::1] in sandbox.network.allowedDomains does not change that: the listener records no request in either sandboxed case, while the otherwise identical sandbox-disabled case records exactly one.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-claude-sandbox-loopback-egress-20260820-1106.md",
+  "plan": "practice/agent/agent-practice-claude-sandbox-loopback-egress-20260820-1115.md",
+  "fixture": "fixtures/agent-practice/claude-sandbox-loopback-egress",
+  "prompt": "Use the Bash tool exactly once to run exactly `node probe.mjs`. Do not read, edit, create, or delete any file yourself, do not run another command, use another tool, contact any network resource, retry, or substitute an alternative, and do not disable or weaken any sandbox. After the tool result, stop.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "control-nosandbox",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "LOOPBACK_CONTROL_COMPLETED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-sandbox-loopback-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "inherit"
+      }
+    },
+    {
+      "id": "sandbox-deny-empty",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "LOOPBACK_DENY_BASELINE_COMPLETED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-sandbox-loopback-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "inherit"
+      }
+    },
+    {
+      "id": "sandbox-allow-loopback",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "LOOPBACK_ALLOWLIST_BOUNDARY_COMPLETED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-sandbox-loopback-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "inherit"
+      }
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "claude-sandbox-loopback-wrapper.mjs",
+      "preflight-claude.mjs",
+      "probe.mjs",
+      "verify.mjs",
+      "README.md"
+    ],
+    "allowed_changes": [
+      "case-result.json",
+      "verification.txt"
+    ]
+  }
+}

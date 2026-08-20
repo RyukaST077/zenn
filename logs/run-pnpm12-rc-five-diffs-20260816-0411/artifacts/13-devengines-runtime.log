@@ -1,0 +1,94 @@
+===== 04:17:48 Phase4-2: diff1 project-aware global bins (devEngines.runtime) =====
+### fixture devEngines.runtime
+{
+  "name": "pnpm12-five-diffs",
+  "version": "1.0.0",
+  "private": true,
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "22.11.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "is-positive-https": "git+https://github.com/kevva/is-positive.git"
+  },
+  "devDependencies": {}
+}
+
+=== 1) plain node on PATH ===
+in fixture : /usr/local/bin/node -> v24.18.0
+outside    : /usr/local/bin/node -> v24.18.0
+
+=== 2) config: globalShims ===
+$ pnpm config list (v12)
+{
+  "userAgent": "pnpm/12.0.0-rc.5 npm/? node/? linux arm64"
+}
+exit=0
+$ pnpm config get globalShims (v12)
+undefined
+exit=0
+$ pnpm config get global-shims (v12)
+undefined
+exit=0
+
+=== 3) pnpm add -g node (v12) then compare ===
+
+dependencies:
++ node 26.7.0
+
+Done in 311ms using pnpm v12.0.0-rc.5
+exit=0
+yarn
+yarnpkg
+in fixture : bash: line 15: /root/p12home/bin/node: No such file or directory
+outside    : bash: line 16: /root/p12home/bin/node: No such file or directory
+
+=== 4) node in fixture node_modules/.bin ===
+node
+v22.11.0
+===== 04:18:03 Phase4-2b: diff1 follow-up (where did 'pnpm add -g node' put node?) =====
+$ find /root/p12home -maxdepth 4 -name "node*"
+/root/p12home/global/v11/3a3-18cc109dacf5d83a-0/node_modules
+/root/p12home/global/v11/556-18cc10a8ae0472d0-0/node_modules
+$ ls -la /root/p12home /root/p12home/bin
+/root/p12home:
+total 20
+drwxr-xr-x 5 root root 4096 Aug 15 19:17 .
+drwx------ 1 root root 4096 Aug 15 19:17 ..
+drwxr-xr-x 2 root root 4096 Aug 15 19:17 bin
+drwxr-xr-x 3 root root 4096 Aug 15 19:17 global
+drwxr-xr-x 3 root root 4096 Aug 15 19:17 store
+
+/root/p12home/bin:
+total 16
+drwxr-xr-x 2 root root 4096 Aug 15 19:17 .
+drwxr-xr-x 5 root root 4096 Aug 15 19:17 ..
+-rwxr-xr-x 1 root root 1972 Aug 15 19:17 yarn
+-rwxr-xr-x 1 root root 1972 Aug 15 19:17 yarnpkg
+$ pnpm ls -g (v12)
+Legend: production dependency, optional only, dev only
+
+/root/p12home/global/v11 (PRIVATE)
+│
+│   dependencies:
+├── node@26.7.0
+└── yarn@1.22.22
+
+=== pnpm 11: add -g node ===
+
+global:
++ node 26.7.0
+
+Done in 690ms using pnpm v11.22.0
+exit=0
+total 16
+drwxr-xr-x 2 root root 4096 Aug 15 19:18 .
+drwxr-xr-x 5 root root 4096 Aug 15 19:18 ..
+-rwxr-xr-x 1 root root 1970 Aug 15 19:17 yarn
+-rwxr-xr-x 1 root root 1970 Aug 15 19:17 yarnpkg
+node via p11home: bash: line 12: /root/p11home/bin/node: No such file or directory
+in fixture (p11home first): v24.18.0
+outside    (p11home first): v24.18.0

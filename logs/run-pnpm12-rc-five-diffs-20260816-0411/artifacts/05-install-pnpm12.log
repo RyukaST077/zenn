@@ -1,0 +1,54 @@
+===== 04:14:46 Phase3-2b: install pnpm 12 RC via self-update next-12 =====
+$ pnpm --version (before)
+11.22.0
+$ pnpm self-update next-12
+Checking for updates...
+Switching pnpm from v11.22.0 to v12.0.0-rc.5...
+.../v11/18a-1a006d91f2c-ecb17c7a7a778626 | Progress: resolved 1, reused 0, downloaded 0, added 0
+.../v11/18a-1a006d91f2c-ecb17c7a7a778626 |   +2 +
+.../v11/18a-1a006d91f2c-ecb17c7a7a778626 | Progress: resolved 2, reused 0, downloaded 2, added 2, done
+Successfully updated pnpm to v12.0.0-rc.5
+exit=0
+$ hash -r; pnpm --version (after)
+11.22.0
+exit=0
+$ which -a pnpm
+/usr/local/bin/pnpm
+===== 04:14:58 Phase3-2c: where did self-update put pnpm 12? =====
+PNPM_HOME=
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+$ ls -la /root/.local/share/pnpm
+total 24
+drwxr-xr-x 5 root root 4096 Aug 15 19:14 .
+drwxr-xr-x 3 root root 4096 Aug 15 19:12 ..
+drwxr-xr-x 2 root root 4096 Aug 15 19:14 bin
+drwxr-xr-x 3 root root 4096 Aug 15 19:14 global
+-rw-r--r-- 1 root root 2920 Aug 15 19:14 pnpm-lock.yaml
+drwxr-xr-x 3 root root 4096 Aug 15 19:14 store
+$ find / -name pnpm -type f -newermt "-10 minutes" 2>/dev/null
+/usr/local/bin/pnpm
+/usr/local/lib/node_modules/pnpm
+/root/.cache/node/corepack/v1/pnpm
+/root/.cache/pnpm
+/root/.local/state/pnpm
+/root/.local/state/pnpm/pnpm-state.json
+/root/.local/share/pnpm
+/root/.local/share/pnpm/bin/pnpm
+/root/.local/share/pnpm/pnpm-lock.yaml
+/tmp/ctest/pnpm-lock.yaml
+===== 04:15:04 Phase3-2d: fix PATH for pnpm 12 =====
+$ /root/.local/share/pnpm/bin/pnpm --version
+12.0.0-rc.5
+exit=0
+$ ls -la /root/.local/share/pnpm/bin
+total 24
+drwxr-xr-x 2 root root 4096 Aug 15 19:14 .
+drwxr-xr-x 5 root root 4096 Aug 15 19:15 ..
+-rwxr-xr-x 1 root root 1761 Aug 15 19:14 pn
+-rwxr-xr-x 1 root root 1112 Aug 15 19:14 pnpm
+-rwxr-xr-x 1 root root 1773 Aug 15 19:14 pnpx
+-rwxr-xr-x 1 root root 1767 Aug 15 19:14 pnx
+$ file /root/.local/share/pnpm/bin/pnpm
+-rwxr-xr-x 1 root root 1112 Aug 15 19:14 /root/.local/share/pnpm/bin/pnpm
+0000000   #   !   /   b   i   n   /   s   h  \n   #       R   e   s   o
+0000020   l   v   e       $   0       t   h   r   o   u   g   h       s

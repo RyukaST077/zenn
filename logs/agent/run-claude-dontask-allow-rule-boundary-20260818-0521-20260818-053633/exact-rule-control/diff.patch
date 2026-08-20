@@ -1,0 +1,70 @@
+diff --git a$RUN_WORKSPACE/exact-rule-control/case-result.json b$RUN_WORKSPACE/exact-rule-control/case-result.json
+new file mode 100644
+index 0000000..30e7718
+--- /dev/null
++++ b$RUN_WORKSPACE/exact-rule-control/case-result.json
+@@ -0,0 +1,64 @@
++{
++  "schema_version": 1,
++  "case_id": "exact-rule-control",
++  "preflight": false,
++  "cli_version": "2.1.227 (Claude Code)",
++  "rule_type": "exact",
++  "allow_rule": "Bash(python3 -c \"print('ALLOW_RULE_PROBE')\")",
++  "settings_sha256": "cfdfa06ec075905daf9245d0ce4cbf849c2b48191c5d66e764527d26115b82ae",
++  "prompt_sha256": "00b81180b19cd2d6c1190b943e77e6737363ce29dfc532253046cc1b5c3324c8",
++  "launch": {
++    "runner_args_verified": true,
++    "permission_mode": "dontAsk",
++    "tools": [
++      "Bash"
++    ],
++    "setting_sources": [],
++    "strict_mcp_config": true,
++    "mcp_servers": 0,
++    "slash_commands_disabled": true,
++    "chrome_disabled": true,
++    "session_persistence": false,
++    "max_turns": 2,
++    "max_budget_usd": 0.2,
++    "model": "sonnet",
++    "effort": "low"
++  },
++  "safety": {
++    "preflight_offline_fake_cli": false,
++    "preflight_home_is_case_child": null,
++    "credential_environment_names_forwarded": [],
++    "live_model_calls": 1,
++    "network_or_paid_request_possible_in_preflight": false,
++    "raw_stream_forwarded_to_runner_evidence": true,
++    "normalized_workspace_was_empty": true
++  },
++  "process": {
++    "exit_code": 1,
++    "signal": null,
++    "timed_out": false,
++    "authentication_failure_observed": false,
++    "service_failure_observed": false
++  },
++  "observations": {
++    "parsed_json_lines": 4,
++    "malformed_nonempty_lines": 0,
++    "init_event_count": 1,
++    "init_permission_mode": "dontAsk",
++    "init_tools": [
++      "Bash"
++    ],
++    "tool_use_count": 0,
++    "bash_tool_use_count": 0,
++    "bash_command": null,
++    "matching_tool_result_count": 0,
++    "successful_tool_result": false,
++    "execution_marker_in_tool_result": false,
++    "permission_denial_observed": false,
++    "denial_evidence_present": true,
++    "rule_validation_warning_observed": false,
++    "final_result_count": 1,
++    "total_cost_usd": 0
++  },
++  "observation": "unregistered"
++}

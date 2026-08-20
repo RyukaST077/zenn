@@ -1,0 +1,46 @@
+############ [3-7] v4.1.10 :: gh-env single worker ############
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:17:06
+   Duration  465ms (transform 74ms, setup 0ms, import 107ms, tests 10ms, environment 0ms)
+
+--- exit=0 ---
+############ [3-7] v4.1.10 :: json reporter (--outputFile=reports/v4.json) ############
+JSON report written to /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/reports/v4.json
+--- exit=0 ---
+=== ls -la reports/ ===
+total 8
+drwxr-xr-x@ 3 katayamaryuunosuke  staff   96 Aug 17 04:17 .
+drwxr-xr-x@ 8 katayamaryuunosuke  staff  256 Aug 17 04:17 ..
+-rw-r--r--@ 1 katayamaryuunosuke  staff  857 Aug 17 04:17 v4.json
+=== [3-7/G] .vitest check after 4.1 runs ===
+total 96
+drwxr-xr-x@  8 katayamaryuunosuke  staff    256 Aug 17 04:17 .
+drwxr-xr-x   4 katayamaryuunosuke  staff    128 Aug 17 04:12 ..
+-rw-r--r--@  1 katayamaryuunosuke  staff     38 Aug 17 04:14 .gitignore
+drwxr-xr-x@ 40 katayamaryuunosuke  staff   1280 Aug 17 04:14 node_modules
+-rw-r--r--@  1 katayamaryuunosuke  staff  38344 Aug 17 04:14 package-lock.json
+-rw-r--r--@  1 katayamaryuunosuke  staff    362 Aug 17 04:14 package.json
+drwxr-xr-x@  3 katayamaryuunosuke  staff     96 Aug 17 04:17 reports
+drwxr-xr-x@ 11 katayamaryuunosuke  staff    352 Aug 17 04:16 test
+--- find ---
+(empty above = .vitest not created by 4.1.10)
+############ [3-7] v4.1.10 :: gh-env --maxWorkers=1 --reporter=verbose ############
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+stdout | test/gh-env.test.ts > GH: worker/pool ids are exposed via env
+[GH] VITEST_WORKER_ID=0 VITEST_POOL_ID=1
+
+ ✓ test/gh-env.test.ts > GH: worker/pool ids are exposed via env 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:17:25
+   Duration  639ms (transform 258ms, setup 0ms, import 311ms, tests 4ms, environment 0ms)
+
+--- exit=0 ---

@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "case_id": "broad-wildcard-treatment",
+  "preflight": true,
+  "cli_version": "2.1.227 (Claude Code)",
+  "rule_type": "broad-wildcard",
+  "allow_rule": "Bash(python3:*)",
+  "settings_sha256": "8cf910a8650463ad1d47a58b7271fc948c544255f44dc2c923c0a178460fa095",
+  "prompt_sha256": "00b81180b19cd2d6c1190b943e77e6737363ce29dfc532253046cc1b5c3324c8",
+  "launch": {
+    "runner_args_verified": true,
+    "permission_mode": "dontAsk",
+    "tools": [
+      "Bash"
+    ],
+    "setting_sources": [],
+    "strict_mcp_config": true,
+    "mcp_servers": 0,
+    "slash_commands_disabled": true,
+    "chrome_disabled": true,
+    "session_persistence": false,
+    "max_turns": 2,
+    "max_budget_usd": null,
+    "model": null,
+    "effort": null
+  },
+  "safety": {
+    "preflight_offline_fake_cli": true,
+    "preflight_home_is_case_child": true,
+    "credential_environment_names_forwarded": [],
+    "live_model_calls": 0,
+    "network_or_paid_request_possible_in_preflight": false,
+    "raw_stream_forwarded_to_runner_evidence": true,
+    "normalized_workspace_was_empty": true
+  },
+  "process": {
+    "exit_code": 0,
+    "signal": null,
+    "timed_out": false,
+    "authentication_failure_observed": false,
+    "service_failure_observed": false
+  },
+  "observations": {
+    "parsed_json_lines": 4,
+    "malformed_nonempty_lines": 0,
+    "init_event_count": 1,
+    "init_permission_mode": "dontAsk",
+    "init_tools": [
+      "Bash"
+    ],
+    "tool_use_count": 1,
+    "bash_tool_use_count": 1,
+    "bash_command": "python3 -c \"print('ALLOW_RULE_PROBE')\"",
+    "matching_tool_result_count": 1,
+    "successful_tool_result": false,
+    "execution_marker_in_tool_result": false,
+    "permission_denial_observed": true,
+    "denial_evidence_present": true,
+    "rule_validation_warning_observed": false,
+    "final_result_count": 1,
+    "total_cost_usd": 0
+  },
+  "observation": "broad-denied-silent"
+}

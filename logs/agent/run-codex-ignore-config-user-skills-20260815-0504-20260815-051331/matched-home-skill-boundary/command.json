@@ -1,0 +1,26 @@
+{
+  "executable": "/var/folders/vj/8z7_h0hd27s_ynbc9364mcnr0000gn/T/zenn-agent-codex-ignore-config-user-skills-20260815-0504-QdCtu0/matched-home-skill-boundary/ambient-skill-wrapper.mjs",
+  "real_executable": "$HOME/.nvm/versions/node/v22.17.0/lib/node_modules/@openai/codex/bin/codex.js",
+  "execution_mode": "fixture-wrapper",
+  "environment_mode": "inherit",
+  "args": [
+    "-a",
+    "never",
+    "exec",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "--sandbox",
+    "workspace-write",
+    "--skip-git-repo-check",
+    "-C",
+    "$RUN_WORKSPACE/matched-home-skill-boundary",
+    "-c",
+    "sandbox_workspace_write.network_access=false",
+    "--json",
+    "-o",
+    "$HOME/workspace/024_zenn/logs/agent/run-codex-ignore-config-user-skills-20260815-0504-20260815-051331/matched-home-skill-boundary/result.txt",
+    "Explicitly use $ambient-probe and follow it. Use no tools, commands, web search, MCP, hooks, plugins, or file operations. Return exactly one JSON object. If the named skill is available, return status `loaded` and the value it instructs; otherwise return status `unavailable` and an empty value."
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

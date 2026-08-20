@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "preflight": true,
+  "codex_version": "codex-cli 0.147.0",
+  "case_marker": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+  "hidden_marker": "AMBIENT_PROBE_d9f5ff941d80a42f56da32765d4c9f2bc70c1c77660bea11",
+  "hidden_marker_sha256": "185006eb2c334ea9af32bdb195f3aa3d756895a06894747ad188af1e26e70429",
+  "prompt_sha256": "7b08b73aa51ab84691af3ca3720b2b79d915986bcdf59c1f59007b540a2a3dbf",
+  "schema_sha256": "026436e1ca38164024c5f1b5471e52dae3e393abae1f84000458ffa645933d77",
+  "runner_controls": {
+    "approval": "never",
+    "sandbox": "read-only",
+    "network": false,
+    "ignore_user_config": true,
+    "ignore_rules": true,
+    "ephemeral": true,
+    "model_override": null,
+    "effort_override": null,
+    "live_model_calls": 0
+  },
+  "control": {
+    "id": "control",
+    "skill_present": false,
+    "skill_sha256": null,
+    "process": {
+      "code": 0,
+      "signal": null,
+      "timed_out": false,
+      "stderr_bytes": 0
+    },
+    "events": {
+      "lines": 2,
+      "completed": 1,
+      "failed": 0,
+      "tool_events": 0
+    },
+    "final": {
+      "status": "unavailable",
+      "value": ""
+    },
+    "home_inventory": [],
+    "workspace_inventory": [],
+    "marker_occurrences": 0
+  },
+  "treatment": {
+    "id": "treatment",
+    "skill_present": true,
+    "skill_sha256": "3636c431178a8bd1a2274a71765568d1c54a27be1f5ef79de4f6a873aa0921a7",
+    "process": {
+      "code": 0,
+      "signal": null,
+      "timed_out": false,
+      "stderr_bytes": 0
+    },
+    "events": {
+      "lines": 2,
+      "completed": 1,
+      "failed": 0,
+      "tool_events": 0
+    },
+    "final": {
+      "status": "loaded",
+      "value": "AMBIENT_PROBE_d9f5ff941d80a42f56da32765d4c9f2bc70c1c77660bea11"
+    },
+    "home_inventory": [
+      ".agents/skills/ambient-probe/SKILL.md"
+    ],
+    "workspace_inventory": [],
+    "marker_occurrences": 2
+  },
+  "observation": "claim-supported"
+}

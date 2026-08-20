@@ -1,0 +1,27 @@
+{
+  "id": "control-nosandbox",
+  "provider": "claude",
+  "provider_version": "2.1.236 (Claude Code)",
+  "execution_mode": "fixture-wrapper",
+  "execution_environment": "inherit",
+  "preflight_status": "passed",
+  "guidance": null,
+  "model_override": "sonnet",
+  "effort_override": "low",
+  "network_requested": false,
+  "network_enforcement": "not-enforced-for-claude-host-process",
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 13028,
+  "verifier_exit_code": 0,
+  "marker_expected": "LOOPBACK_CONTROL_COMPLETED",
+  "marker_observed": "LOOPBACK_CONTROL_COMPLETED",
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "case-result.json",
+    "verification.txt"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}

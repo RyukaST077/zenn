@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "provider": "claude",
+  "wrapper": "claude-sandbox-loopback-wrapper.mjs",
+  "fake_cli": "preflight-claude.mjs",
+  "environment": "minimal",
+  "wrapper_exit_code": 0,
+  "verifier_exit_code": 0,
+  "marker_expected": "LOOPBACK_DENY_BASELINE_COMPLETED",
+  "marker_observed": "LOOPBACK_DENY_BASELINE_COMPLETED",
+  "protected_paths_changed": [],
+  "unexpected_changes": []
+}

@@ -1,0 +1,28 @@
+===== 04:12:56 Phase3-1: pnpm 11 baseline install =====
+pnpm=11.22.0
+Scope: all 3 workspace projects
+[WARN] There are cyclic workspace dependencies: /work/fixtures/pnpm12-five-diffs/packages/a, /work/fixtures/pnpm12-five-diffs/packages/b
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /work/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 2, reused 0, downloaded 1, added 0
+Packages: +2
+++
+Progress: resolved 2, reused 0, downloaded 1, added 1
+Progress: resolved 2, reused 0, downloaded 2, added 1
+Progress: resolved 2, reused 0, downloaded 2, added 2
+Progress: resolved 2, reused 0, downloaded 2, added 2, done
+
+dependencies:
++ is-positive-https <- is-positive 3.1.0
+
+devDependencies:
++ node 22.11.0
+
+Done in 14.5s using pnpm v11.22.0
+
+real	0m14.636s
+user	0m2.672s
+sys	0m9.611s
+exit=0

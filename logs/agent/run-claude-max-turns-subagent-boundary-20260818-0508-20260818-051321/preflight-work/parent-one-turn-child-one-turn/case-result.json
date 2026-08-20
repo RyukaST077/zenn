@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "case_id": "parent-one-turn-child-one-turn",
+  "preflight": true,
+  "cli": {
+    "expected_version": "2.1.227",
+    "resolved_binary_basename": "offline-preflight-cli",
+    "resolved_binary_sha256": "6175c814d8434b874854fb75dd4f18bfa04cc0fc3ca6c7dc7fdb2f2bcf725f30"
+  },
+  "launch": {
+    "runner_args_verified": true,
+    "top_level_max_turns": 1,
+    "child_max_turns": 1,
+    "max_budget_usd": 0.2,
+    "parent_tools": [
+      "Agent"
+    ],
+    "child_tools": [],
+    "model": "sonnet",
+    "effort": "low",
+    "setting_sources": [
+      "project"
+    ],
+    "session_persistence": false,
+    "forward_subagent_text": true,
+    "builtin_agents_disabled": true
+  },
+  "safety": {
+    "runner_environment_names": [
+      "AGENT_PRACTICE_PREFLIGHT",
+      "CLAUDE_BIN",
+      "PATH",
+      "REAL_CLAUDE_BIN",
+      "TMPDIR",
+      "__CF_USER_TEXT_ENCODING"
+    ],
+    "child_environment_names": [
+      "CI",
+      "CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS",
+      "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY",
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+      "DISABLE_AUTOUPDATER",
+      "DISABLE_ERROR_REPORTING",
+      "DISABLE_TELEMETRY",
+      "HOME",
+      "LANG",
+      "LC_ALL",
+      "LOGNAME",
+      "NO_COLOR",
+      "PATH",
+      "SHELL",
+      "TERM",
+      "TMPDIR",
+      "USER"
+    ],
+    "credential_environment_names": [],
+    "preflight_home_is_case_child": true,
+    "preflight_uses_offline_fake_cli": true,
+    "raw_stdout_retained_in_fixture": false,
+    "raw_stderr_retained_in_fixture": false
+  },
+  "process": {
+    "exit_code": 1,
+    "signal": null,
+    "timed_out": false,
+    "duration_ms": 367,
+    "authentication_failure_observed": false,
+    "service_failure_observed": false
+  },
+  "observations": {
+    "parsed_json_lines": 3,
+    "malformed_nonempty_lines": 0,
+    "parent_agent_call_count": 1,
+    "parent_agent_requested_agent": "one-shot-probe",
+    "forwarded_child_event_count": 1,
+    "forwarded_child_marker_observed": true,
+    "final_result_count": 1,
+    "final_subtype": "error_max_turns",
+    "final_is_error": true,
+    "final_num_turns": 1,
+    "total_cost_usd": 0.03,
+    "parent_usage": {
+      "input_tokens": 2,
+      "output_tokens": 20,
+      "cache_read_input_tokens": 100,
+      "cache_creation_input_tokens": 50
+    },
+    "whole_tree_usage": {
+      "model_count": 1,
+      "input_tokens": 4,
+      "output_tokens": 27,
+      "cache_read_input_tokens": 200,
+      "cache_creation_input_tokens": 75,
+      "cost_usd": 0.03
+    }
+  }
+}

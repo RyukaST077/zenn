@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><title>TypeScript 7.0 alias 併用構成 実測</title>
+<style>
+:root{--fg:#1c2024;--mut:#67707a;--line:#dfe3e8;--ok:#1a7f4b;--ng:#c1341a;--acc:#2f6feb}
+*{box-sizing:border-box}
+body{font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;color:var(--fg);margin:0;padding:40px;background:#f7f8fa}
+.wrap{max-width:1180px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:36px}
+h1{font-size:24px;margin:0 0 6px}
+.sub{color:var(--mut);font-size:13px;margin:0 0 28px;line-height:1.7}
+h2{font-size:16px;margin:34px 0 12px;padding-left:10px;border-left:4px solid var(--acc)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+th{background:#f1f3f6;font-weight:600;white-space:nowrap}
+td.num{text-align:right;font-variant-numeric:tabular-nums;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:#f1f3f6;padding:1px 5px;border-radius:4px}
+.ok{color:var(--ok);font-weight:600}.ng{color:var(--ng);font-weight:600}
+.bar{display:inline-block;height:11px;background:var(--acc);border-radius:2px;vertical-align:middle;margin-right:7px}
+.note{color:var(--mut);font-size:12px;margin-top:9px;line-height:1.7}
+</style></head><body><div class="wrap">
+<h1>TypeScript 7.0 GA：3構成の実測比較</h1>
+<p class="sub">
+fixture: 自作 TS 203ファイル / 13,841行（再帰的な条件型・テンプレートリテラル型・大きめ union）・<code>strict: true</code> / <code>--noEmit</code><br>
+環境: macOS 26.5 (Darwin 25.5.0) arm64 / Apple Silicon・論理10コア / Node v22.17.0 / npm 10.9.2 / 実行日 2026-08-18<br>
+時間は <code>time</code> の <code>real</code> 値。各3回計測。
+</p>
+
+<h2>3構成の比較</h2>
+<table>
+<tr><th>構成</th><th>devDependencies</th><th><code>.bin/tsc</code> の指し先</th><th><code>tsc --version</code></th>
+<th class="num">1回目</th><th class="num">2回目</th><th class="num">3回目</th><th><code>eslint .</code></th></tr>
+<tr>
+<td><b>A</b> ベースライン</td><td><code>typescript@6.0.3</code></td><td><code>../typescript/bin/tsc</code></td><td>6.0.3</td>
+<td class="num">3.478</td><td class="num">3.535</td><td class="num">3.424</td><td class="ok">7 errors（8.5s）</td></tr>
+<tr>
+<td><b>B</b> 単純アップ</td><td><code>typescript@7.0.2</code></td><td><code>../typescript/bin/tsc</code></td><td>7.0.2</td>
+<td class="num">0.365</td><td class="num">0.357</td><td class="num">0.367</td>
+<td class="ng">起動不能<br><span style="font-weight:400">typescript-eslint does not support TS 7.0.</span></td></tr>
+<tr>
+<td><b>C</b> 公式 alias 併用</td>
+<td><code>"@typescript/native": "npm:typescript@^7.0.2"</code><br><code>"typescript": "npm:@typescript/typescript6@^6.0.2"</code></td>
+<td><code>../@typescript/native/bin/tsc</code></td><td>7.0.2</td>
+<td class="num">0.392</td><td class="num">0.362</td><td class="num">0.367</td><td class="ok">7 errors（8.9s）— Aと一致</td></tr>
+<tr>
+<td>C の <code>tsc6</code></td><td>（同上）</td><td><code>../typescript/bin/tsc6</code></td><td>6.0.3</td>
+<td class="num">3.447</td><td class="num">—</td><td class="num">—</td><td>—</td></tr>
+</table>
+<p class="note">
+※ 構成B の <code>eslint</code> は typescript-eslint 8.67.0 が TS7 を検知して自ら throw する（lint は1件も走らない / 0.17s で終了）。<br>
+※ 前回（2026-07-11）は <code>typescript@7.0.2</code> と <code>@typescript/typescript6@6.0.2</code> を素直に併記した結果、<code>.bin/tsc</code> が
+<code>../@typescript/old/bin/tsc</code> に張られ <code>tsc</code> / <code>tsc6</code> の両方が <code>Version 6.0.3</code> を返した。alias 構成では解消した。
+</p>
+
+<h2>型チェック時間（構成A比）</h2>
+<table>
+<tr><th>条件</th><th class="num">中央値 (s)</th><th>相対</th><th class="num">A(6.0.3) 比</th></tr>
+<tr><td>A: tsc 6.0.3（既定）</td><td class="num">3.478</td><td><span class="bar" style="width:640px"></span></td><td class="num">1.0x</td></tr>
+<tr><td>C: tsc 7.0.2 <code>--singleThreaded</code></td><td class="num">1.199</td><td><span class="bar" style="width:221px"></span></td><td class="num">2.9x 速い</td></tr>
+<tr><td>C: tsc 7.0.2 <code>--checkers 1</code></td><td class="num">1.172</td><td><span class="bar" style="width:216px"></span></td><td class="num">3.0x 速い</td></tr>
+<tr><td>C: tsc 7.0.2 <code>--checkers 2</code></td><td class="num">0.617</td><td><span class="bar" style="width:114px"></span></td><td class="num">5.6x 速い</td></tr>
+<tr><td>C: tsc 7.0.2（既定 <code>--checkers 4</code>）</td><td class="num">0.372</td><td><span class="bar" style="width:69px"></span></td><td class="num">9.3x 速い</td></tr>
+<tr><td>C: tsc 7.0.2 <code>--checkers 8</code></td><td class="num">0.302</td><td><span class="bar" style="width:56px"></span></td><td class="num">11.5x 速い</td></tr>
+</table>
+<p class="note">
+※ 公式アナウンスの「7.7x〜11.9x」は実プロダクトのコードベースでの値。上の倍率は本記事の小さな自作 fixture における実測で、別の数字として扱う。<br>
+※ <code>--builders</code> は <code>--build</code> 併用時のみ有効（単体指定は <code>error TS5093</code>）。TS 6.0.3 は <code>--checkers</code> 自体を知らない（<code>error TS5025</code>）。
+</p>
+
+<h2>「TS7 には API が無い」の実物</h2>
+<table>
+<tr><th>確認</th><th>構成B（typescript@7.0.2）</th><th>構成C の lint 側（<code>npm:@typescript/typescript6</code>）</th></tr>
+<tr><td><code>require.resolve('typescript')</code></td><td><code>typescript/lib/version.cjs</code></td><td><code>typescript/lib/typescript.js</code></td></tr>
+<tr><td><code>Object.keys(require('typescript'))</code></td><td><code>['version','versionMajorMinor']</code></td><td>6.0 の API 一式</td></tr>
+<tr><td><code>typeof ts.createProgram</code></td><td class="ng">undefined</td><td class="ok">function</td></tr>
+<tr><td><code>ts.version</code></td><td>7.0.2</td><td>6.0.3</td></tr>
+</table>
+<p class="note">
+※ ただし <code>@typescript/native/unstable/*</code>（<code>ast</code> / <code>fs</code> / <code>sync</code> / <code>async</code> / <code>proto</code> ほか計12サブパス）は 7.0.2 でも実際に import でき、
+<code>unstable/sync</code> は <code>API</code> / <code>Program</code> / <code>Checker</code> など44キーを公開している。「API が無い」のは既存ツールが使う安定版 <code>typescript</code> エントリの話。
+</p>
+</div></body></html>

@@ -1,0 +1,37 @@
+{
+  "manifest": "practice/agent/agent-practice-claude-max-turns-subagent-boundary-20260818-0508.json",
+  "started_at": "2026-08-17T20:13:21.180Z",
+  "finished_at": "2026-08-17T20:13:30.112Z",
+  "versions": {
+    "claude": "2.1.227 (Claude Code)"
+  },
+  "cases": [
+    {
+      "id": "parent-one-turn-child-one-turn",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "execution_mode": "fixture-wrapper",
+      "execution_environment": "minimal",
+      "preflight_status": "passed",
+      "guidance": null,
+      "model_override": "sonnet",
+      "effort_override": "low",
+      "network_requested": false,
+      "network_enforcement": "not-enforced-for-claude-host-process",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 4451,
+      "verifier_exit_code": 1,
+      "marker_expected": "PARENT_CAP_CHILD_USAGE_OBSERVED",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "case-result.json"
+      ],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-claude-max-turns-subagent-boundary-20260818-0508-20260818-051321/parent-one-turn-child-one-turn"
+    }
+  ]
+}

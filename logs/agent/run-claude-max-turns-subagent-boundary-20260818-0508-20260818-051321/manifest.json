@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "id": "claude-max-turns-subagent-boundary-20260818-0508",
+  "topic": "Claude top-level max-turns at a subagent boundary",
+  "claim": "With Claude Code 2.1.227, a parent capped at --max-turns 1 can complete one explicitly requested inline custom subagent before ending with error_max_turns, while whole-tree modelUsage output tokens exceed parent-only usage output tokens, so the top-level turn cap is not a whole-tree spend ceiling.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-claude-max-turns-subagent-budget-boundary-20260818-0503.md",
+  "plan": "practice/agent/agent-practice-claude-max-turns-subagent-boundary-20260818-0508.md",
+  "fixture": "fixtures/agent-practice/claude-max-turns-subagent-boundary",
+  "prompt": "Use the Agent tool exactly once. Delegate only to the inline custom agent named `one-shot-probe` and ask it to return exactly `CHILD_LOOP_COMPLETED`. Do not answer directly, use any other agent, use any other tool, access files, or access external data.",
+  "timeout_seconds": 240,
+  "network": false,
+  "cases": [
+    {
+      "id": "parent-one-turn-child-one-turn",
+      "provider": "claude",
+      "guidance": null,
+      "model": "sonnet",
+      "effort": "low",
+      "expected_marker": "PARENT_CAP_CHILD_USAGE_OBSERVED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "claude-wrapper.mjs",
+        "preflight_cli": "preflight-claude.mjs",
+        "environment": "minimal"
+      }
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "claude-wrapper.mjs",
+      "preflight-claude.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "case-result.json",
+      "verification.txt"
+    ]
+  }
+}

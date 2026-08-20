@@ -1,0 +1,25 @@
+{
+  "executable": "/var/folders/vj/8z7_h0hd27s_ynbc9364mcnr0000gn/T/zenn-agent-claude-max-turns-subagent-boundary-20260818-0508-fn3Qk9/parent-one-turn-child-one-turn/claude-wrapper.mjs",
+  "real_executable": "$HOME/.local/share/claude/versions/2.1.227",
+  "execution_mode": "fixture-wrapper",
+  "environment_mode": "minimal",
+  "args": [
+    "-p",
+    "Use the Agent tool exactly once. Delegate only to the inline custom agent named `one-shot-probe` and ask it to return exactly `CHILD_LOOP_COMPLETED`. Do not answer directly, use any other agent, use any other tool, access files, or access external data.",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--no-session-persistence",
+    "--setting-sources",
+    "project",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Read,Edit,Write,Bash",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

@@ -1,0 +1,13 @@
+############ [3-8] BASELINE 04:17:31 :: npx vitest run (vitest 4.1.10) ############
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+Warning: A vi.mock("./fixtures/greeter.ts") call in "/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/test/d-vimock-inline.test.ts" is not at the top level of the module. Although it appears nested, it will be hoisted and executed before any tests run. Move it to the top level to reflect its actual execution order. This will become an error in a future version.
+See: https://vitest.dev/guide/mocking/modules#how-it-works
+
+ Test Files  8 passed (8)
+      Tests  8 passed (8)
+   Start at  04:17:37
+   Duration  1.45s (transform 983ms, setup 0ms, import 1.61s, tests 166ms, environment 17ms)
+
+--- exit= ---

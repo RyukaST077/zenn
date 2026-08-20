@@ -1,4 +1,5 @@
 node_modules
+fixtures/**/npm-cache/
 .DS_Store
 .claude/.cache/
 # run-practice: 検証で生成した成果物コードは重いので除外（検証ログ・スクショは残す）
@@ -6,6 +7,7 @@ logs/**/workspace/
 logs/**/work/
 # ローカル実行・監査ログはリポジトリへ含めない
 logs/launchd/
+/logs/.auto-publish-resume
 logs/pipeline-*/
 logs/codex-pipeline-*/
 logs/agent/pipeline-*/

@@ -1,0 +1,18 @@
+{
+  "name": "vitest5-rc-breaking-changes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "Vitest 4.1.10 -> 5.0.0-rc.1 breaking change fixture (items A-H)",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.0-rc.1",
+    "vite": "^8.2.1",
+    "vitest": "^5.0.0-rc.1"
+  }
+}

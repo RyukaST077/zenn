@@ -1,0 +1,10 @@
+############ [4-4] 04:22:35 npx vitest run (vitest 5.0.0-rc.1, 修正後) ############
+
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  8 passed (8)
+      Tests  9 passed (9)
+   Start at  04:22:39
+   Duration  1.51s (transform 45%, import 32%, worker 13%, tests 11%)
+

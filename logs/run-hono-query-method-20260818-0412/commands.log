@@ -1,0 +1,557 @@
+########## workspace/logs/browser-cross-no-cors.log ##########
+chromium version: 149.0.7827.55
+[request ] GET http://localhost:3001/page.html?base=http://localhost:3000
+[response] GET http://localhost:3001/page.html?base=http://localhost:3000 -> 200
+[request ] QUERY http://localhost:3000/search
+[console:error] Access to fetch at 'http://localhost:3000/search' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+[reqfail ] QUERY http://localhost:3000/search :: net::ERR_FAILED
+[console:error] Failed to load resource: net::ERR_FAILED
+[request ] POST http://localhost:3000/search
+[console:error] Access to fetch at 'http://localhost:3000/search' from origin 'http://localhost:3001' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+[reqfail ] POST http://localhost:3000/search :: net::ERR_FAILED
+[console:error] Failed to load resource: net::ERR_FAILED
+screenshot saved: ../screenshots/02-browser-cross-origin-no-cors.png
+--- rendered #result text ---
+QUERY → FAILED
+TypeError: Failed to fetch
+stack: TypeError: Failed to fetch
+    at http://localhost:3001/page.html?base=http://localhost:3000:45:29
+GET → FAILED
+TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+stack: TypeError: Request with GET/HEAD method cannot have body.
+    at http://localhost:3001/page.html?base=http://localhost:3000:45:29
+POST → FAILED
+TypeError: Failed to fetch
+stack: TypeError: Failed to fetch
+    at http://localhost:3001/page.html?base=http://localhost:3000:45:29
+
+########## workspace/logs/browser-cross-with-cors.log ##########
+chromium version: 149.0.7827.55
+[request ] GET http://localhost:3001/page.html?base=http://localhost:3000
+[response] GET http://localhost:3001/page.html?base=http://localhost:3000 -> 200
+[request ] QUERY http://localhost:3000/search
+[response] QUERY http://localhost:3000/search -> 200
+           access-control-allow-origin: *
+[request ] POST http://localhost:3000/search
+[response] POST http://localhost:3000/search -> 200
+           access-control-allow-origin: *
+screenshot saved: ../screenshots/03-browser-cross-origin-with-cors.png
+--- rendered #result text ---
+QUERY → OK
+status: 200 OK
+type: cors
+body: {"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+GET → FAILED
+TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+stack: TypeError: Request with GET/HEAD method cannot have body.
+    at http://localhost:3001/page.html?base=http://localhost:3000:45:29
+POST → OK
+status: 200 OK
+type: cors
+body: {"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+
+########## workspace/logs/browser-same-origin.log ##########
+chromium version: 149.0.7827.55
+[request ] GET http://localhost:3000/page.html
+[response] GET http://localhost:3000/page.html -> 200
+[request ] QUERY http://localhost:3000/search
+[response] QUERY http://localhost:3000/search -> 200
+[request ] POST http://localhost:3000/search
+[response] POST http://localhost:3000/search -> 200
+screenshot saved: ../screenshots/01-browser-same-origin.png
+--- rendered #result text ---
+QUERY → OK
+status: 200 OK
+type: basic
+body: {"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+GET → FAILED
+TypeError: Failed to execute 'fetch' on 'Window': Request with GET/HEAD method cannot have body.
+stack: TypeError: Request with GET/HEAD method cannot have body.
+    at http://localhost:3000/page.html:45:29
+POST → OK
+status: 200 OK
+type: basic
+body: {"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+
+########## workspace/logs/curl-2-4-first.log ##########
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* Connected to localhost (::1) port 3000
+> QUERY /search HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 13
+> 
+} [13 bytes data]
+* upload completely sent off: 13 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 36
+< Date: Mon, 17 Aug 2026 19:16:34 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< 
+{ [36 bytes data]
+* Connection #0 to host localhost left intact
+{"ok":true,"received":{"q":"hello"}}
+########## workspace/logs/curl-405-after.log ##########
+########## MNA=1（methodNotAllowed 有効）のとき ##########
+--- curl -i -X POST /only-get ---
+HTTP/1.1 405 Method Not Allowed
+allow: GET, HEAD
+content-type: text/plain; charset=UTF-8
+content-length: 18
+Date: Mon, 17 Aug 2026 19:18:36 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+Method Not Allowed
+--- curl -i -X QUERY /only-get ---
+HTTP/1.1 405 Method Not Allowed
+allow: GET, HEAD
+content-type: text/plain; charset=UTF-8
+content-length: 18
+Date: Mon, 17 Aug 2026 19:18:36 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+Method Not Allowed
+--- curl -i -X DELETE /only-get ---
+HTTP/1.1 405 Method Not Allowed
+allow: GET, HEAD
+content-type: text/plain; charset=UTF-8
+content-length: 18
+Date: Mon, 17 Aug 2026 19:18:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+Method Not Allowed
+--- curl -i -X GET /only-get (正常系) ---
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 11
+Date: Mon, 17 Aug 2026 19:18:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+only-get ok
+--- 参考: /search は query/get/post 定義済み。DELETE を投げると Allow に何が並ぶか ---
+HTTP/1.1 405 Method Not Allowed
+allow: QUERY, GET, HEAD, POST
+content-type: text/plain; charset=UTF-8
+content-length: 18
+Date: Mon, 17 Aug 2026 19:18:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+Method Not Allowed
+--- 参考: 定義していないパス /nope に POST（405 ではなく 404 のはず） ---
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 13
+Date: Mon, 17 Aug 2026 19:18:37 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+404 Not Found
+########## workspace/logs/curl-405-before.log ##########
+########## MNA=0（methodNotAllowed 無し）のとき ##########
+--- curl -i -X POST /only-get ---
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 13
+Date: Mon, 17 Aug 2026 19:18:18 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+404 Not Found
+--- curl -i -X QUERY /only-get ---
+HTTP/1.1 404 Not Found
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 13
+Date: Mon, 17 Aug 2026 19:18:18 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+404 Not Found
+--- curl -i -X GET /only-get (正常系) ---
+HTTP/1.1 200 OK
+Content-Type: text/plain; charset=UTF-8
+Content-Length: 11
+Date: Mon, 17 Aug 2026 19:18:18 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+only-get ok
+########## workspace/logs/curl-accept-query.log ##########
+=== 詰まりポイント#7 の実測: Accept-Query を手で付けた場合 ===
+HTTP/1.1 200 OK
+accept-query: application/json
+content-type: application/json
+
+（比較）AQ 無しのときは上のフェーズ3-2 logs/curl-query.log の通り accept-query は出ていない:
+0
+→ 上が 0 なら Hono は自動付与しない
+
+########## workspace/logs/curl-etag-1.log ##########
+=== 4-3a 1回目 QUERY（ETag を取る）===
+HTTP/1.1 200 OK
+content-type: application/json
+etag: "e11f281396606dc47048206a3857cd8970a978f4"
+content-length: 145
+Date: Mon, 17 Aug 2026 19:21:17 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+########## workspace/logs/curl-etag-2.log ##########
+=== 4-3b 2回目: 同じボディ + If-None-Match: "e11f281396606dc47048206a3857cd8970a978f4" ===
+HTTP/1.1 304 Not Modified
+etag: "e11f281396606dc47048206a3857cd8970a978f4"
+Date: Mon, 17 Aug 2026 19:21:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+=== 4-3c ボディを変えて（q=world）ETag が変わるか ===
+HTTP/1.1 200 OK
+content-type: application/json
+etag: "a24aa2e69354ea6ff555d32d2c6214e7d00aafb0"
+content-length: 145
+Date: Mon, 17 Aug 2026 19:21:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"world\"}","parsed":{"q":"world"},"parseError":null}
+=== 4-3d ボディ違い(q=world) に q=hello の ETag を If-None-Match で付ける（304 になってしまわないか）===
+HTTP/1.1 200 OK
+content-type: application/json
+etag: "a24aa2e69354ea6ff555d32d2c6214e7d00aafb0"
+content-length: 145
+Date: Mon, 17 Aug 2026 19:21:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"world\"}","parsed":{"q":"world"},"parseError":null}
+=== 参考: GET /search の ETag（比較用）===
+HTTP/1.1 200 OK
+content-type: application/json
+etag: "962c8f34f839951e5f7912aa0b0a22ae7766114e"
+content-length: 98
+Date: Mon, 17 Aug 2026 19:21:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+{"handler":"get","receivedMethod":"GET","contentType":"(none)","contentLength":"(none)","body":""}
+########## workspace/logs/curl-get-body.log ##########
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* Connected to localhost (::1) port 3000
+> GET /search HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 13
+> 
+} [13 bytes data]
+* upload completely sent off: 13 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 104
+< Date: Mon, 17 Aug 2026 19:17:16 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< 
+{ [104 bytes data]
+* Connection #0 to host localhost left intact
+{"handler":"get","receivedMethod":"GET","contentType":"application/json","contentLength":"13","body":""}
+########## workspace/logs/curl-lowercase-query.log ##########
+=== curl で小文字 -X query を送る（400 の出どころが Node の HTTP パーサ側かの確認）===
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* Connected to localhost (::1) port 3000
+> query /search HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 13
+> 
+} [13 bytes data]
+* upload completely sent off: 13 bytes
+< HTTP/1.1 400 Bad Request
+< Connection: close
+< 
+{ [0 bytes data]
+* Closing connection
+
+exit=0
+
+########## workspace/logs/curl-post.log ##########
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* Connected to localhost (::1) port 3000
+> POST /search HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 13
+> 
+} [13 bytes data]
+* upload completely sent off: 13 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 102
+< Date: Mon, 17 Aug 2026 19:17:16 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< 
+{ [102 bytes data]
+* Connection #0 to host localhost left intact
+{"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+########## workspace/logs/curl-preflight-with-cors.log ##########
+HTTP/1.1 204 No Content
+access-control-allow-headers: content-type
+access-control-allow-methods: GET,HEAD,PUT,POST,DELETE,PATCH,QUERY
+access-control-allow-origin: *
+vary: Access-Control-Request-Headers
+Date: Mon, 17 Aug 2026 19:20:40 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+
+########## workspace/logs/curl-query.log ##########
+* Host localhost:3000 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:3000...
+* Connected to localhost (::1) port 3000
+> QUERY /search HTTP/1.1
+> Host: localhost:3000
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 13
+> 
+} [13 bytes data]
+* upload completely sent off: 13 bytes
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+< Content-Length: 145
+< Date: Mon, 17 Aug 2026 19:17:16 GMT
+< Connection: keep-alive
+< Keep-Alive: timeout=5
+< 
+{ [145 bytes data]
+* Connection #0 to host localhost left intact
+{"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+########## workspace/logs/node-fetch-lowercase.log ##########
+=== 追加プローブ: method を小文字 'query' で送ると何が届くか（メソッド正規化の確認）===
+process.versions.undici = 6.21.2
+status = 400
+body   = 
+
+=== 比較: 小文字 'post' の場合 ===
+status = 200
+body   = {"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+
+########## workspace/logs/node-fetch-undici8-lowercase.log ##########
+status = 200
+body   = {"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+
+########## workspace/logs/node-fetch-undici8.log ##########
+=== client-node.mjs ===
+node --version           : v22.17.0
+process.versions.undici  : 6.21.2
+fetch impl               : npm undici@8.10.0 の fetch
+targets                  : QUERY, GET, POST
+
+---------- QUERY http://localhost:3000/search ----------
+[OK] status=200 OK
+[OK] response headers:
+       access-control-allow-origin: *
+       connection: keep-alive
+       content-length: 145
+       content-type: application/json
+       date: Mon, 17 Aug 2026 19:21:03 GMT
+       keep-alive: timeout=5
+[OK] body: {"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+
+---------- GET http://localhost:3000/search ----------
+[ERROR] typeof : object
+[ERROR] name   : TypeError
+[ERROR] message: Request with GET/HEAD method cannot have body.
+[ERROR] code   : undefined
+[ERROR] cause  : undefined
+[ERROR] stack  :
+TypeError: Request with GET/HEAD method cannot have body.
+    at new Request (/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace/node_modules/undici/lib/web/fetch/request.js:524:13)
+    at fetch (/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace/node_modules/undici/lib/web/fetch/index.js:171:21)
+    at fetch (/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace/node_modules/undici/index.js:157:10)
+    at file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace/client-node.mjs:36:23
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+---------- POST http://localhost:3000/search ----------
+[OK] status=200 OK
+[OK] response headers:
+       access-control-allow-origin: *
+       connection: keep-alive
+       content-length: 102
+       content-type: application/json
+       date: Mon, 17 Aug 2026 19:21:03 GMT
+       keep-alive: timeout=5
+[OK] body: {"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+
+
+########## workspace/logs/node-fetch.log ##########
+=== client-node.mjs ===
+node --version           : v22.17.0
+process.versions.undici  : 6.21.2
+fetch impl               : Node 同梱 fetch (process.versions.undici=6.21.2)
+targets                  : QUERY, GET, POST
+
+---------- QUERY http://localhost:3000/search ----------
+[OK] status=200 OK
+[OK] response headers:
+       connection: keep-alive
+       content-length: 145
+       content-type: application/json
+       date: Mon, 17 Aug 2026 19:17:40 GMT
+       keep-alive: timeout=5
+[OK] body: {"handler":"query","receivedMethod":"QUERY","contentType":"application/json","body":"{\"q\":\"hello\"}","parsed":{"q":"hello"},"parseError":null}
+
+---------- GET http://localhost:3000/search ----------
+[ERROR] typeof : object
+[ERROR] name   : TypeError
+[ERROR] message: Request with GET/HEAD method cannot have body.
+[ERROR] code   : undefined
+[ERROR] cause  : undefined
+[ERROR] stack  :
+TypeError: Request with GET/HEAD method cannot have body.
+    at node:internal/deps/undici/undici:13510:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace/client-node.mjs:36:17
+
+---------- POST http://localhost:3000/search ----------
+[OK] status=200 OK
+[OK] response headers:
+       connection: keep-alive
+       content-length: 102
+       content-type: application/json
+       date: Mon, 17 Aug 2026 19:17:40 GMT
+       keep-alive: timeout=5
+[OK] body: {"handler":"post","receivedMethod":"POST","contentType":"application/json","body":"{\"q\":\"hello\"}"}
+
+
+########## workspace/logs/npm-undici.log ##########
+=== 4-2 npm i undici@8.10.0 ===
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'undici@8.10.0',
+npm warn EBADENGINE   required: { node: '>=22.19.0' },
+npm warn EBADENGINE   current: { node: 'v22.17.0', npm: '10.9.2' }
+npm warn EBADENGINE }
+
+added 1 package, and audited 4 packages in 5s
+
+found 0 vulnerabilities
+exit=0
+elapsed: 6s
+workspace@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-hono-query-method-20260818-0412/workspace
++-- @hono/node-server@2.1.1
++-- hono@4.13.2
+`-- undici@8.10.0
+
+
+########## workspace/logs/server-3-1.log ##########
+[server] flags MNA=0 ETAG=0 CORS=0 PORT=3000
+[server] listening on http://localhost:3000
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] GET /search method=GET content-type=application/json content-length=13 bodyLen=0 body=""
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] GET /only-get
+
+########## workspace/logs/server-aq.log ##########
+[server] flags MNA=1 ETAG=0 CORS=0 PORT=3000
+[server] listening on http://localhost:3000
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 200
+
+########## workspace/logs/server-cross-cors.log ##########
+[server] flags MNA=1 ETAG=0 CORS=1 PORT=3000
+[server] listening on http://localhost:3000
+[wire] <-- OPTIONS /search origin=http://localhost:3001 acrm=QUERY acrh=content-type
+[wire] --> OPTIONS /search 204
+[wire] <-- QUERY /search origin=http://localhost:3001 acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 200
+[wire] <-- POST /search origin=http://localhost:3001 acrm=(none) acrh=(none)
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> POST /search 200
+[wire] <-- OPTIONS /search origin=http://localhost:3001 acrm=QUERY acrh=content-type
+[wire] --> OPTIONS /search 204
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 200
+[wire] <-- POST /search origin=(none) acrm=(none) acrh=(none)
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> POST /search 200
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 200
+
+########## workspace/logs/server-cross-no-cors.log ##########
+[server] flags MNA=1 ETAG=0 CORS=0 PORT=3000
+[server] listening on http://localhost:3000
+[wire] <-- OPTIONS /search origin=http://localhost:3001 acrm=QUERY acrh=content-type
+[wire] --> OPTIONS /search 405
+[wire] <-- OPTIONS /search origin=http://localhost:3001 acrm=POST acrh=content-type
+[wire] --> OPTIONS /search 405
+
+########## workspace/logs/server-etag.log ##########
+[server] flags MNA=1 ETAG=1 CORS=0 PORT=3000
+[server] listening on http://localhost:3000
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 200
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[wire] --> QUERY /search 304
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"world\"}"
+[wire] --> QUERY /search 200
+[wire] <-- QUERY /search origin=(none) acrm=(none) acrh=(none)
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"world\"}"
+[wire] --> QUERY /search 200
+[wire] <-- GET /search origin=(none) acrm=(none) acrh=(none)
+[server] GET /search method=GET content-type=(none) content-length=(none) bodyLen=0 body=""
+[wire] --> GET /search 200
+
+########## workspace/logs/server-min.log ##########
+[server-min] listening on http://localhost:3000
+
+########## workspace/logs/server-mna.log ##########
+[server] flags MNA=1 ETAG=0 CORS=0 PORT=3000
+[server] listening on http://localhost:3000
+[server] GET /only-get
+[server] QUERY /search method=QUERY content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+[server] POST /search method=POST content-type=application/json content-length=13 bodyLen=13 body="{\"q\":\"hello\"}"
+
+########## workspace/logs/static-server.log ##########
+[static] listening on http://localhost:3001
+

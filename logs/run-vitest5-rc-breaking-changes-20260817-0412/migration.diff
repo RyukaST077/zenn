@@ -1,0 +1,119 @@
+diff -ruN /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/a-unawaited.test.ts /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/a-unawaited.test.ts
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/a-unawaited.test.ts	2026-08-17 04:17:51
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/a-unawaited.test.ts	2026-08-17 04:23:19
+@@ -1,9 +1,8 @@
+ // 項目A: 未 await の非同期 assertion
+-// 4.1: 自動 await されて（警告付きで）緑になるはず
+-// 5:   await されていない非同期 assertion はテストを失敗させる、はず
++// 5 のエラー: Promise returned by `expect(actual).resolves.toBe(expected)` was not awaited.
++// 直し方: テストを async にして assertion を await する（エラーメッセージが直し方をそのまま提示する）
+ import { expect, test } from 'vitest'
+ 
+-test('A: resolves without await', () => {
+-  // ここが意図的に await されていない
+-  expect(Promise.resolve(1)).resolves.toBe(1)
++test('A: resolves with await', async () => {
++  await expect(Promise.resolve(1)).resolves.toBe(1)
+ })
+diff -ruN /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/b-clearmocks.test.ts /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/b-clearmocks.test.ts
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/b-clearmocks.test.ts	2026-08-17 04:17:51
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/b-clearmocks.test.ts	2026-08-17 04:23:19
+@@ -1,6 +1,9 @@
+ // 項目B: clearMocks の既定値が true に
+-// vitest.config.ts に clearMocks を書かないことが観測の条件。
+-// モック呼び出しは beforeEach ではなく beforeAll に置く（beforeEach だと履歴が復活して差が消える）。
++// 5 のエラー: AssertionError: expected +0 to be 1
++//   → 各テスト前に vi.clearAllMocks() が走り、beforeAll で積んだ履歴が消えている
++// 直し方は2通り:
++//   (1) 新しい既定に合わせる: 履歴が必要なら beforeAll ではなくテスト内で呼ぶ（本ファイルはこちら）
++//   (2) 旧挙動を維持する: vitest.config.ts に clearMocks: false を書く
+ import { beforeAll, expect, test, vi } from 'vitest'
+ 
+ const spy = vi.fn(() => 'called')
+@@ -9,8 +12,11 @@
+   spy()
+ })
+ 
+-test('B: mock call history survives into the test', () => {
+-  // 4.1: clearMocks 既定 false → 履歴が残るので 1
+-  // 5:   clearMocks 既定 true  → 各テスト前に clearAllMocks されるので 0 になるはず
++test('B: history from beforeAll is cleared on v5 (default clearMocks: true)', () => {
++  // 5 の既定では beforeAll の呼び出し履歴は消えているので 0
++  expect(spy.mock.calls.length).toBe(0)
++
++  // テスト内で呼べば当然カウントされる
++  spy()
+   expect(spy.mock.calls.length).toBe(1)
+ })
+diff -ruN /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/d-vimock-inline.test.ts /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/d-vimock-inline.test.ts
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/d-vimock-inline.test.ts	2026-08-17 04:17:51
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/d-vimock-inline.test.ts	2026-08-17 04:23:19
+@@ -1,15 +1,11 @@
+ // 項目D: vi.mock / vi.hoisted はトップレベル必須
+-// 4.1: 関数の中で呼ぶと警告は出るが動く、はず
+-// 5:   警告ではなくエラーになる、はず
++// 5 のエラー: Error: 1 call in "..." was defined outside of the module's top level scope
++// 直し方: 関数の中から出して、モジュールのトップレベルに置く
+ import { expect, test, vi } from 'vitest'
+ 
+-function setupMock() {
+-  // トップレベルではなく関数の中で呼んでいる
+-  vi.mock('./fixtures/greeter.ts', () => ({ greet: () => 'mocked' }))
+-}
++vi.mock('./fixtures/greeter.ts', () => ({ greet: () => 'mocked' }))
+ 
+-test('D: vi.mock called inside a function', async () => {
+-  setupMock()
++test('D: vi.mock at top level', async () => {
+   const mod = await import('./fixtures/greeter.ts')
+-  expect(typeof mod.greet).toBe('function')
++  expect(mod.greet()).toBe('mocked')
+ })
+diff -ruN /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/e-sequential.test.ts /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/e-sequential.test.ts
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/e-sequential.test.ts	2026-08-17 04:17:51
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/e-sequential.test.ts	2026-08-17 04:23:19
+@@ -1,8 +1,8 @@
+ // 項目E: test.sequential / describe.sequential の削除
+-// 4.1: 動く（deprecation 警告が出るか要観測）
+-// 5:   削除済み → { concurrent: false } に置き換えが必要、はず
++// 5 のエラー: TypeError: test.sequential is not a function
++// 直し方: オプションオブジェクトで { concurrent: false } を渡す
+ import { expect, test } from 'vitest'
+ 
+-test.sequential('E: runs sequentially', () => {
++test('E: runs sequentially', { concurrent: false }, () => {
+   expect(true).toBe(true)
+ })
+diff -ruN /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/f-tothrow-empty.test.ts /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/f-tothrow-empty.test.ts
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v4-baseline/f-tothrow-empty.test.ts	2026-08-17 04:17:51
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-vitest5-rc-breaking-changes-20260817-0412/workspace/test-v5-fixed/f-tothrow-empty.test.ts	2026-08-17 04:23:19
+@@ -1,14 +1,23 @@
+ // 項目F: toThrow('') の意味変更
+-// 空でないメッセージを投げる関数に toThrow('') を当てる。
+-// 4.1: 空文字は「空メッセージのみ一致」→ マッチしない → .not.toThrow('') が緑
+-// 5:   空文字は「任意のメッセージに一致」→ マッチする → .not 側が落ちるはず
++// 5 のエラー: AssertionError: expected [Function boom] to throw error not including ''
++//   → 空文字はどのメッセージにも「含まれる」ため、toThrow('') が任意のエラーに一致する
++// 直し方: 空文字マッチに頼らず、意図を明示的に書く
+ import { expect, test } from 'vitest'
+ 
+ function boom(): never {
+   throw new Error('boom happened')
+ }
+ 
+-test("F: toThrow('') against a non-empty message", () => {
+-  // 4.1 でベースラインを緑にするため .not 側で書いている（5 でこの not が落ちる想定）
+-  expect(boom).not.toThrow('')
++function silent(): never {
++  throw new Error('')
++}
++
++test("F: toThrow('') now matches any error message", () => {
++  // 5 では空文字が任意一致になったので、これが通る（4.1 では落ちた）
++  expect(boom).toThrow('')
++})
++
++test('F: 「空メッセージだけに一致させたい」ときは正規表現で厳密に書く', () => {
++  expect(silent).toThrow(/^$/)
++  expect(boom).not.toThrow(/^$/)
+ })

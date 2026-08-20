@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "case_id": "sandbox-deny-empty",
+  "preflight": true,
+  "cli_version": "2.1.236 (Claude Code)",
+  "sandbox_profile": "sandbox-deny-empty",
+  "sandbox_settings": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "disabled": true
+    },
+    "network": {
+      "allowedDomains": [],
+      "strictAllowlist": true
+    }
+  },
+  "settings_sha256": "21187bf9e93a3e5e47570ab2946f6dc9fb23a5b0006c95cfac92e375e9d86d54",
+  "prompt_sha256": "035da99a1ddb8bfd9610d1eca264260100d382c151778a2a1145c4e67bd5c8f6",
+  "launch": {
+    "runner_args_verified": true,
+    "settings_source": "cli-settings-flag",
+    "permission_mode": "dontAsk",
+    "tools": [
+      "Bash"
+    ],
+    "setting_sources": [],
+    "allow_rule": "Bash(node probe.mjs)",
+    "strict_mcp_config": true,
+    "mcp_servers": 0,
+    "slash_commands_disabled": true,
+    "chrome_disabled": true,
+    "session_persistence": false,
+    "max_turns": 4,
+    "max_budget_usd": null,
+    "model": null,
+    "effort": null
+  },
+  "safety": {
+    "preflight_offline_fake_cli": true,
+    "preflight_home_is_workspace_child": true,
+    "credential_environment_names_forwarded": [],
+    "live_model_calls": 0,
+    "network_or_paid_request_possible_in_preflight": false,
+    "listener_bound_host": "127.0.0.1",
+    "transport_scope": "loopback-only",
+    "external_hosts_contacted": 0,
+    "name_resolution_used": false,
+    "raw_stream_forwarded_to_runner_evidence": true,
+    "normalized_workspace_hid_case_id": true,
+    "workspace_unexpected_entries": []
+  },
+  "process": {
+    "exit_code": 0,
+    "signal": null,
+    "timed_out": false,
+    "stream_overflowed": false,
+    "authentication_failure_observed": false,
+    "service_failure_observed": false
+  },
+  "observations": {
+    "parsed_json_lines": 4,
+    "malformed_nonempty_lines": 0,
+    "init_event_count": 1,
+    "init_permission_mode": "dontAsk",
+    "init_tools": [
+      "Bash"
+    ],
+    "tool_use_count": 1,
+    "bash_tool_use_count": 1,
+    "bash_command": "node probe.mjs",
+    "matching_tool_result_count": 1,
+    "tool_result_is_error": false,
+    "tool_result_excerpt": "PROBE_CONNECTED 200 PROBE_CONNECTED 200",
+    "final_result_count": 1,
+    "final_result_is_error": false,
+    "total_cost_usd": 0,
+    "probe_present": true,
+    "probe_connected": true,
+    "probe_status": 200,
+    "probe_body_marker_present": true,
+    "probe_error_code": null,
+    "probe_error_syscall": null,
+    "probe_error_message": null,
+    "probe_proxy_environment_names": [],
+    "listener_request_count": 1,
+    "listener_probe_request_count": 1,
+    "listener_requests": [
+      {
+        "seq": 1,
+        "method": "GET",
+        "url": "/loopback-probe"
+      }
+    ],
+    "sandbox_denial_pattern": null
+  },
+  "observation": "connected"
+}

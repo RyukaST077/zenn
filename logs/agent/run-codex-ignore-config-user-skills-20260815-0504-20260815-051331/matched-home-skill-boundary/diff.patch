@@ -1,0 +1,121 @@
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/control-events.jsonl b$RUN_WORKSPACE/matched-home-skill-boundary/control-events.jsonl
+new file mode 100644
+index 0000000..38215fe
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/control-events.jsonl
+@@ -0,0 +1,4 @@
++{"type":"thread.started","thread_id":"01a001e8-8dc8-7fc3-8a1e-02d22386f96e"}
++{"type":"turn.started"}
++{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"{\"status\":\"unavailable\",\"value\":\"\"}"}}
++{"type":"turn.completed","usage":{"input_tokens":13421,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":20,"reasoning_output_tokens":0}}
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/control-final.json b$RUN_WORKSPACE/matched-home-skill-boundary/control-final.json
+new file mode 100644
+index 0000000..5472ef9
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/control-final.json
+@@ -0,0 +1 @@
++{"status":"unavailable","value":""}
+\ No newline at end of file
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/probe-result.json b$RUN_WORKSPACE/matched-home-skill-boundary/probe-result.json
+new file mode 100644
+index 0000000..9d2f9eb
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/probe-result.json
+@@ -0,0 +1,72 @@
++{
++  "schema_version": 1,
++  "preflight": false,
++  "codex_version": "codex-cli 0.147.0",
++  "case_marker": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
++  "hidden_marker": "AMBIENT_PROBE_0c319e06890158f210904ff50487632e5fbccacd9b9b5357",
++  "hidden_marker_sha256": "5880ff01c891199ade1ce03aff0f986bd8ff985c5dc4a120cccb66c7e86c027a",
++  "prompt_sha256": "7b08b73aa51ab84691af3ca3720b2b79d915986bcdf59c1f59007b540a2a3dbf",
++  "schema_sha256": "026436e1ca38164024c5f1b5471e52dae3e393abae1f84000458ffa645933d77",
++  "runner_controls": {
++    "approval": "never",
++    "sandbox": "read-only",
++    "network": false,
++    "ignore_user_config": true,
++    "ignore_rules": true,
++    "ephemeral": true,
++    "model_override": null,
++    "effort_override": null,
++    "live_model_calls": 2
++  },
++  "control": {
++    "id": "control",
++    "skill_present": false,
++    "skill_sha256": null,
++    "process": {
++      "code": 0,
++      "signal": null,
++      "timed_out": false,
++      "stderr_bytes": 39
++    },
++    "events": {
++      "lines": 4,
++      "completed": 1,
++      "failed": 0,
++      "tool_events": 0
++    },
++    "final": {
++      "status": "unavailable",
++      "value": ""
++    },
++    "home_inventory": [],
++    "workspace_inventory": [],
++    "marker_occurrences": 0
++  },
++  "treatment": {
++    "id": "treatment",
++    "skill_present": true,
++    "skill_sha256": "b4910115e3b0d21712df68b0dcb28d7b7d1a0176d844a0a340bee7cfbc5429bf",
++    "process": {
++      "code": 0,
++      "signal": null,
++      "timed_out": false,
++      "stderr_bytes": 39
++    },
++    "events": {
++      "lines": 4,
++      "completed": 1,
++      "failed": 0,
++      "tool_events": 0
++    },
++    "final": {
++      "status": "loaded",
++      "value": "AMBIENT_PROBE_0c319e06890158f210904ff50487632e5fbccacd9b9b5357"
++    },
++    "home_inventory": [
++      ".agents/skills/ambient-probe/SKILL.md"
++    ],
++    "workspace_inventory": [],
++    "marker_occurrences": 2
++  },
++  "observation": "claim-supported"
++}
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/treatment-events.jsonl b$RUN_WORKSPACE/matched-home-skill-boundary/treatment-events.jsonl
+new file mode 100644
+index 0000000..753e353
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/treatment-events.jsonl
+@@ -0,0 +1,4 @@
++{"type":"thread.started","thread_id":"01a001e8-a535-7b90-bb31-69c8df22c7d0"}
++{"type":"turn.started"}
++{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"{\"status\":\"loaded\",\"value\":\"AMBIENT_PROBE_0c319e06890158f210904ff50487632e5fbccacd9b9b5357\"}"}}
++{"type":"turn.completed","usage":{"input_tokens":13688,"cached_input_tokens":0,"cache_write_input_tokens":0,"output_tokens":49,"reasoning_output_tokens":0}}
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/treatment-final.json b$RUN_WORKSPACE/matched-home-skill-boundary/treatment-final.json
+new file mode 100644
+index 0000000..c73fee8
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/treatment-final.json
+@@ -0,0 +1 @@
++{"status":"loaded","value":"AMBIENT_PROBE_0c319e06890158f210904ff50487632e5fbccacd9b9b5357"}
+\ No newline at end of file
+diff --git a$RUN_WORKSPACE/matched-home-skill-boundary/verification.txt b$RUN_WORKSPACE/matched-home-skill-boundary/verification.txt
+new file mode 100644
+index 0000000..ac6b666
+--- /dev/null
++++ b$RUN_WORKSPACE/matched-home-skill-boundary/verification.txt
+@@ -0,0 +1 @@
++AMBIENT_USER_SKILL_BOUNDARY_OBSERVED

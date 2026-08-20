@@ -1,0 +1,16 @@
+{
+  "name": "pnpm12-five-diffs",
+  "version": "1.0.0",
+  "private": true,
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "22.11.0",
+      "onFail": "download"
+    }
+  },
+  "dependencies": {
+    "is-positive-https": "git+https://github.com/kevva/is-positive.git"
+  },
+  "devDependencies": {}
+}

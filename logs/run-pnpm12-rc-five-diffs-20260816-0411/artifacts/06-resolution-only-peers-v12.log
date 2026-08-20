@@ -1,0 +1,50 @@
+===== 04:15:16 Phase3-3: diff5 --resolution-only removed (pnpm 12) =====
+pnpm=12.0.0-rc.5
+$ pnpm install --resolution-only
+error: unexpected argument '--resolution-only' found
+
+Usage: pnpm install [OPTIONS]
+
+For more information, try '--help'.
+exit=2
+
+$ pnpm peers check
+No peer dependency issues found
+exit=0
+
+$ pnpm install --help | grep -i -n resolution
+102:          URL of a pnpr server to offload resolution and file fetching to. `node_modules` is still linked locally from the server-produced lockfile
+grep-exit=0
+
+$ pnpm peers check --help
+Checks for unmet or missing peer dependency issues
+
+Usage: pnpm peers [OPTIONS] [PARAMS]...
+
+Arguments:
+  [PARAMS]...
+          Subcommand and arguments. The only subcommand is `check`, which is also what a bare `pnpm peers` runs
+
+Options:
+      --json
+          
+
+      --lockfile-only
+          
+
+      --color
+          Force colored output
+
+  -y, --yes
+          Automatically answer yes to prompts
+
+  -C, --dir <DIR>
+          Set working directory. Accepted anywhere on the command line, before or after the subcommand, like every other rc-option
+          
+          [default: .]
+
+      --store-dir <DIR>
+          Directory in which the package store is created. Relative paths are resolved from the workspace root, or from `--dir` outside a workspace
+
+      --npmrc-auth-file <NPMRC_AUTH_FILE>
+exit=0

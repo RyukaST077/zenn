@@ -1,0 +1,15 @@
+# versions.log (baseline: Vitest 4.1.10)
+date: 2026-08-17 04:14:57 JST
+os: macOS 26.5 / Darwin 25.5.0 arm64
+node: v22.17.0
+npm: 10.9.2
+vitest: vitest/4.1.10 darwin-arm64 node-v22.17.0
+vite: vite/8.2.1 darwin-arm64 node-v22.17.0
+--- npm ls vitest vite ---
+vitest5-rc-breaking-changes@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
++-- vite@8.2.1
+`-- vitest@4.1.10
+  +-- @vitest/mocker@4.1.10
+  | `-- vite@8.2.1 deduped
+  `-- vite@8.2.1 deduped
+

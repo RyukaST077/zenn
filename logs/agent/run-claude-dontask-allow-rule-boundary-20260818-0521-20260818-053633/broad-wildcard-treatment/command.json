@@ -1,0 +1,25 @@
+{
+  "executable": "/var/folders/vj/8z7_h0hd27s_ynbc9364mcnr0000gn/T/zenn-agent-claude-dontask-allow-rule-boundary-20260818-0521-OLdAzc/broad-wildcard-treatment/claude-dontask-wrapper.mjs",
+  "real_executable": "$HOME/.local/share/claude/versions/2.1.227",
+  "execution_mode": "fixture-wrapper",
+  "environment_mode": "inherit",
+  "args": [
+    "-p",
+    "Use the Bash tool exactly once to run exactly `python3 -c \"print('ALLOW_RULE_PROBE')\"`. Do not use another command, tool, file, network resource, or alternative. After the tool result, stop.",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--no-session-persistence",
+    "--setting-sources",
+    "project",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Read,Edit,Write,Bash",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

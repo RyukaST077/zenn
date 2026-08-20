@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","tools":["Bash"],"permissionMode":"dontAsk","claude_code_version":"2.1.227","mcp_servers":[]}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_fixture_bash_1","name":"Bash","input":{"command":"python3 -c \"print('ALLOW_RULE_PROBE')\""}}]},"parent_tool_use_id":null}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_fixture_bash_1","content":"ALLOW_RULE_PROBE","is_error":false}]},"tool_use_result":{"stdout":"ALLOW_RULE_PROBE","stderr":"","interrupted":false}}
+{"type":"result","subtype":"success","is_error":false,"result":"probe completed","total_cost_usd":0,"permission_denials":[]}
+

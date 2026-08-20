@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "provider": "codex",
+  "wrapper": "ambient-skill-wrapper.mjs",
+  "fake_cli": "preflight-codex.mjs",
+  "environment": "minimal",
+  "wrapper_exit_code": 0,
+  "verifier_exit_code": 0,
+  "marker_expected": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+  "marker_observed": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+  "protected_paths_changed": [],
+  "unexpected_changes": []
+}

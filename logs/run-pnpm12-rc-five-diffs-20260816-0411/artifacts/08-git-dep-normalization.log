@@ -1,0 +1,37 @@
+===== 04:15:46 Phase3-5: diff2 Git dep normalization =====
+### grep -n is-positive lock-v11.yaml
+11:      is-positive-https:
+12:        specifier: git+https://github.com/kevva/is-positive.git
+13:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+24:      is-positive-short:
+25:        specifier: kevva/is-positive
+26:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+33:      is-positive-github:
+34:        specifier: github:kevva/is-positive
+35:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+39:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678:
+40:    resolution: {gitHosted: true, integrity: sha512-ImoN9vdC+9CSDxbHJIcYwImhox3/lvLNqKpX5dNXT9O5Vawb+c4wddQ6KXq8FsFMm4WuSc3nxaWG2Q3iBRcFdA==, tarball: https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678}
+177:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678: {}
+
+### grep -n is-positive lock-v12.yaml
+11:      is-positive-https:
+12:        specifier: git+https://github.com/kevva/is-positive.git
+13:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+24:      is-positive-short:
+25:        specifier: kevva/is-positive
+26:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+33:      is-positive-github:
+34:        specifier: github:kevva/is-positive
+35:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+39:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678:
+40:    resolution: {gitHosted: true, integrity: sha512-ImoN9vdC+9CSDxbHJIcYwImhox3/lvLNqKpX5dNXT9O5Vawb+c4wddQ6KXq8FsFMm4WuSc3nxaWG2Q3iBRcFdA==, tarball: https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678}
+177:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678: {}
+
+### grep -c ssh / git@ in both
+/work/logs/pnpm12/lock-v11.yaml:0
+/work/logs/pnpm12/lock-v12.yaml:0
+/work/logs/pnpm12/lock-v11.yaml:0
+/work/logs/pnpm12/lock-v12.yaml:0
+
+### unique resolved versions (v12)
+is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678

@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "provider": "claude",
+  "wrapper": "claude-wrapper.mjs",
+  "fake_cli": "preflight-claude.mjs",
+  "environment": "minimal",
+  "wrapper_exit_code": 0,
+  "verifier_exit_code": 0,
+  "marker_expected": "PARENT_CAP_CHILD_USAGE_OBSERVED",
+  "marker_observed": "PARENT_CAP_CHILD_USAGE_OBSERVED",
+  "protected_paths_changed": [],
+  "unexpected_changes": []
+}

@@ -1,0 +1,47 @@
+===== 04:16:05 Phase3-5b: diff2 git+ssh:// probe (no SSH key present) =====
+### ssh key present?
+ls: cannot access '/root/.ssh': No such file or directory
+
+=== pnpm 11 (/usr/local/bin/pnpm 11.22.0) ===
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: +1
++
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /work/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+dependencies:
++ is-positive-ssh <- is-positive 3.1.0
+
+Done in 1.9s using pnpm v11.22.0
+exit=0
+--- lock (v11) ---
+11:      is-positive-ssh:
+12:        specifier: git+ssh://git@github.com/kevva/is-positive.git
+13:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+17:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678:
+18:    resolution: {gitHosted: true, tarball: https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678}
+24:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678: {}
+
+=== pnpm 12 (12.0.0-rc.5) ===
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /work/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +1
++
+Progress: resolved 1, reused 1, downloaded 0, added 1, done
+
+dependencies:
++ is-positive-ssh <- is-positive 3.1.0
+
+Done in 1.4s using pnpm v12.0.0-rc.5
+exit=0
+--- lock (v12) ---
+11:      is-positive-ssh:
+12:        specifier: git+ssh://git@github.com/kevva/is-positive.git
+13:        version: is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678
+17:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678:
+18:    resolution: {gitHosted: true, integrity: sha512-ImoN9vdC+9CSDxbHJIcYwImhox3/lvLNqKpX5dNXT9O5Vawb+c4wddQ6KXq8FsFMm4WuSc3nxaWG2Q3iBRcFdA==, tarball: https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678}
+24:  is-positive@https://codeload.github.com/kevva/is-positive/tar.gz/97edff6f525f192a3f83cea1944765f769ae2678: {}

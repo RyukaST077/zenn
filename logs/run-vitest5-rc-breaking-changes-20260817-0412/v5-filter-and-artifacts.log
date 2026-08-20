@@ -1,0 +1,171 @@
+############ [4-2] v5.0.0-rc.1 :: -t 'math adds' ############
+
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 skipped (1)
+      Tests  1 skipped (1)
+   Start at  04:21:02
+   Duration  728ms (import 59%, transform 31%, worker 9%)
+
+--- exit=0 ---
+############ [4-2] v5.0.0-rc.1 :: -t 'math > adds' ############
+
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:21:06
+   Duration  351ms (transform 63%, import 23%, worker 8%, tests 6%)
+
+--- exit=0 ---
+############ [4-3/G+H] v5.0.0-rc.1 :: gh-env --maxWorkers=1 --reporter=verbose ############
+
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+stdout | test/gh-env.test.ts > GH: worker/pool ids are exposed via env
+[GH] VITEST_WORKER_ID=1 VITEST_POOL_ID=1
+
+ ✓ test/gh-env.test.ts > GH: worker/pool ids are exposed via env 3ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:21:09
+   Duration  365ms (transform 46%, import 34%, worker 12%, tests 8%)
+
+--- exit=0 ---
+############ [4-3/G] .vitest ディレクトリの確認 ############
+total 88
+drwxr-xr-x@  8 katayamaryuunosuke  staff    256 Aug 17 04:20 .
+drwxr-xr-x   4 katayamaryuunosuke  staff    128 Aug 17 04:12 ..
+-rw-r--r--@  1 katayamaryuunosuke  staff     38 Aug 17 04:14 .gitignore
+drwxr-xr-x@ 36 katayamaryuunosuke  staff   1152 Aug 17 04:20 node_modules
+-rw-r--r--@  1 katayamaryuunosuke  staff  35067 Aug 17 04:20 package-lock.json
+-rw-r--r--@  1 katayamaryuunosuke  staff    366 Aug 17 04:20 package.json
+drwxr-xr-x@  3 katayamaryuunosuke  staff     96 Aug 17 04:17 reports
+drwxr-xr-x@ 11 katayamaryuunosuke  staff    352 Aug 17 04:16 test
+--- find . -maxdepth 2 -name '.vitest' ---
+--- json reporter を 5 で走らせる ---
+JSON report written to /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/reports/v5.json
+--- 再度 .vitest 探索 ---
+ls: .vitest: No such file or directory
+(.vitest なし)
+=== [4-3/G] 5RC: キャッシュ/成果物の既定パスを探る ===
+--- 実行前: node_modules/.vite* / .vitest の有無 ---
+node_modules/.vite
+ls: .vitest: No such file or directory
+--- 5RC で通常実行 ---
+--- 実行後 ---
+node_modules/.vite
+ls: .vitest: No such file or directory
+--- リポジトリ全体で .vitest を探す（maxdepth 3） ---
+
+=== outputFile を相対名だけ指定した場合（junit） ===
+JUNIT report written to /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/junit.xml
+./junit.xml
+
+=== 参考: 4.1 と 5 の cache ディレクトリ設定 ===
+cwd /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+drwxr-xr-x@  3 katayamaryuunosuke  staff     96 Aug 17 04:20 .vite
+drwxr-xr-x@  4 katayamaryuunosuke  staff    128 Aug 17 04:20 @vitest
+drwxr-xr-x@ 10 katayamaryuunosuke  staff    320 Aug 17 04:20 vite
+drwxr-xr-x@ 27 katayamaryuunosuke  staff    864 Aug 17 04:20 vitest
+=== [4-3/G] coverage を有効にして .vitest が出るか ===
+  run `npm fund` for details
+
+found 0 vulnerabilities
+--- exit=0 ---
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:21:54
+   Duration  689ms (worker 69%, transform 23%, import 7%, tests 1%)
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+----------|---------|----------|---------|---------|-------------------
+File      | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+----------|---------|----------|---------|---------|-------------------
+All files |       0 |        0 |       0 |       0 |                   
+----------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : Unknown% ( 0/0 )
+Branches     : Unknown% ( 0/0 )
+Functions    : Unknown% ( 0/0 )
+Lines        : Unknown% ( 0/0 )
+================================================================================
+--- 実行後の探索 ---
+total 104
+drwxr-xr-x@  9 katayamaryuunosuke  staff    288 Aug 17 04:21 .
+drwxr-xr-x   4 katayamaryuunosuke  staff    128 Aug 17 04:12 ..
+-rw-r--r--@  1 katayamaryuunosuke  staff     38 Aug 17 04:14 .gitignore
+drwxr-xr-x@ 12 katayamaryuunosuke  staff    384 Aug 17 04:21 coverage
+drwxr-xr-x@ 51 katayamaryuunosuke  staff   1632 Aug 17 04:21 node_modules
+-rw-r--r--@  1 katayamaryuunosuke  staff  43328 Aug 17 04:21 package-lock.json
+-rw-r--r--@  1 katayamaryuunosuke  staff    408 Aug 17 04:21 package.json
+drwxr-xr-x@  4 katayamaryuunosuke  staff    128 Aug 17 04:21 reports
+drwxr-xr-x@ 11 katayamaryuunosuke  staff    352 Aug 17 04:16 test
+--- find .vitest ---
+--- .vitest の中身 ---
+ls: .vitest: No such file or directory
+--- coverage ディレクトリ ---
+total 128
+drwxr-xr-x@ 12 katayamaryuunosuke  staff    384 Aug 17 04:21 .
+drwxr-xr-x@  9 katayamaryuunosuke  staff    288 Aug 17 04:21 ..
+-rw-r--r--@  1 katayamaryuunosuke  staff   5394 Aug 17 04:21 base.css
+-rw-r--r--@  1 katayamaryuunosuke  staff   2655 Aug 17 04:21 block-navigation.js
+-rw-r--r--@  1 katayamaryuunosuke  staff    396 Aug 17 04:21 clover.xml
+-rw-r--r--@  1 katayamaryuunosuke  staff      3 Aug 17 04:21 coverage-final.json
+-rw-r--r--@  1 katayamaryuunosuke  staff    445 Aug 17 04:21 favicon.png
+-rw-r--r--@  1 katayamaryuunosuke  staff   3703 Aug 17 04:21 index.html
+-rw-r--r--@  1 katayamaryuunosuke  staff    676 Aug 17 04:21 prettify.css
+=== [4-1補足] clearMocks: false の逃げ道が効くか（5RC） ===
+--- clearMocks 既定(true) のまま実行 → 落ちるはず ---
+       |                                 ^
+      6| })
+      7|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  04:22:56
+   Duration  485ms (transform 42%, import 28%, tests 23%, worker 7%)
+
+--- --clearMocks=false を付けて実行 → 緑になるはず ---
+    at CAC.runMatchedCommand (file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:605:13)
+    at CAC.parse (file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:546:12)
+    at file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/cli.js:10:13
+    at ModuleJob.run (node:internal/modules/esm/module_job:329:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:644:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.17.0
+--- exit=0 ---
+=== [4-1補足] CLI フラグ --clearMocks=false は存在しない（上のエラー全文の先頭） ===
+file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:405
+          throw new CACError(`Unknown option \`${name.length > 1 ? `--${name}` : `-${name}`}\``);
+                ^
+
+CACError: Unknown option `--clearMocks`
+    at Command.checkUnknownOptions (file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:405:17)
+    at CAC.runMatchedCommand (file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:605:13)
+    at CAC.parse (file:///Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes/node_modules/vitest/dist/chunks/cac.CM6y_f_i.js:546:12)
+
+=== 設定ファイルで clearMocks: false を渡す ===
+import { defineConfig } from 'vitest/config'
+export default defineConfig({
+  test: { clearMocks: false },
+})
+ RUN  v5.0.0-rc.1 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:23:11
+   Duration  413ms (transform 51%, import 25%, tests 12%, worker 11%)
+
+--- exit=0 ---

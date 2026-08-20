@@ -1,0 +1,25 @@
+{
+  "executable": "/var/folders/vj/8z7_h0hd27s_ynbc9364mcnr0000gn/T/zenn-agent-claude-sandbox-loopback-egress-20260820-1115-erKdk5/sandbox-allow-loopback/claude-sandbox-loopback-wrapper.mjs",
+  "real_executable": "$HOME/.local/share/claude/versions/2.1.236",
+  "execution_mode": "fixture-wrapper",
+  "environment_mode": "inherit",
+  "args": [
+    "-p",
+    "Use the Bash tool exactly once to run exactly `node probe.mjs`. Do not read, edit, create, or delete any file yourself, do not run another command, use another tool, contact any network resource, retry, or substitute an alternative, and do not disable or weaken any sandbox. After the tool result, stop.",
+    "--output-format",
+    "stream-json",
+    "--verbose",
+    "--no-session-persistence",
+    "--setting-sources",
+    "project",
+    "--permission-mode",
+    "bypassPermissions",
+    "--tools",
+    "Read,Edit,Write,Bash",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "$RUN_WORKSPACE"
+}

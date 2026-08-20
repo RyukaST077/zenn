@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "id": "codex-ignore-config-user-skills-20260815-0504",
+  "topic": "Codex isolation flags versus user skills",
+  "claim": "With Codex CLI 0.147.0, an exec run using both --ignore-user-config and --ignore-rules still discovers and explicitly invokes an instruction-only skill placed only under a disposable HOME at .agents/skills, returning its hidden marker while a matched empty-home control returns no marker; therefore the two flags alone are not a skill-hermetic boundary.",
+  "mode": "boundary",
+  "source_report": "research/agent/agent-knowhow-codex-ignore-config-user-skills-20260815-0504.md",
+  "plan": "practice/agent/agent-practice-codex-ignore-config-user-skills-20260815-0504.md",
+  "fixture": "fixtures/agent-practice/codex-ignore-config-user-skills",
+  "prompt": "Explicitly use $ambient-probe and follow it. Use no tools, commands, web search, MCP, hooks, plugins, or file operations. Return exactly one JSON object. If the named skill is available, return status `loaded` and the value it instructs; otherwise return status `unavailable` and an empty value.",
+  "timeout_seconds": 300,
+  "network": false,
+  "cases": [
+    {
+      "id": "matched-home-skill-boundary",
+      "provider": "codex",
+      "guidance": null,
+      "model": null,
+      "effort": null,
+      "expected_marker": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+      "execution": {
+        "mode": "fixture-wrapper",
+        "wrapper": "ambient-skill-wrapper.mjs",
+        "preflight_cli": "preflight-codex.mjs",
+        "environment": "inherit"
+      }
+    }
+  ],
+  "verification": {
+    "command": [
+      "node",
+      "verify.mjs"
+    ],
+    "marker_file": "verification.txt",
+    "protected_paths": [
+      "schema.json",
+      "ambient-skill-wrapper.mjs",
+      "preflight-codex.mjs",
+      "verify.mjs"
+    ],
+    "allowed_changes": [
+      "control-events.jsonl",
+      "control-final.json",
+      "treatment-events.jsonl",
+      "treatment-final.json",
+      "probe-result.json",
+      "verification.txt"
+    ]
+  }
+}

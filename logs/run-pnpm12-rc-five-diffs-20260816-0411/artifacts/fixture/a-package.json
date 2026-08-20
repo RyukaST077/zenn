@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/a",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@fixture/b": "workspace:*",
+    "is-positive-short": "kevva/is-positive"
+  }
+}

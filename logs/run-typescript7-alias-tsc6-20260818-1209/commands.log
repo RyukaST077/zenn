@@ -1,0 +1,1125 @@
+===== 2026-08-18 12:09:52 PHASE1: dist-tags =====
+--- npm view typescript dist-tags --json ---
+{
+  "dev": "3.9.4",
+  "tag-for-publishing-older-releases": "4.1.6",
+  "insiders": "4.6.2-insiders.20220225",
+  "beta": "6.0.0-beta",
+  "rc": "7.0.1-rc",
+  "latest": "7.0.2",
+  "next": "7.1.0-dev.20260817.1"
+}
+--- npm view @typescript/typescript6 dist-tags --json ---
+{
+  "latest": "6.0.2"
+}
+--- npm view typescript-eslint dist-tags --json ---
+{
+  "rc-v8": "8.0.0-alpha.62",
+  "latest": "8.67.0",
+  "canary": "8.67.1-alpha.4"
+}
+--- npm view eslint dist-tags --json ---
+{
+  "es6jsx": "0.11.0-alpha.0",
+  "next": "10.0.0-rc.2",
+  "maintenance": "9.39.5",
+  "latest": "10.8.1"
+}
+===== 12:10:00 PHASE1: registry metadata =====
+--- npm view typescript@7.0.2 bin exports engines --json ---
+{
+  "bin": {
+    "tsc": "bin/tsc"
+  },
+  "exports": {
+    ".": "./lib/version.cjs",
+    "./unstable/fs": "./dist/api/fs.js",
+    "./package.json": "./package.json",
+    "./unstable/ast": "./dist/ast/index.js",
+    "./unstable/sync": "./dist/api/sync/api.js",
+    "./unstable/async": "./dist/api/async/api.js",
+    "./unstable/proto": "./dist/api/proto.js",
+    "./unstable/ast/is": "./dist/ast/is.js",
+    "./unstable/ast/clone": "./dist/ast/clone.js",
+    "./unstable/ast/utils": "./dist/ast/utils.js",
+    "./unstable/ast/factory": "./dist/ast/factory.generated.js",
+    "./unstable/ast/scanner": "./dist/ast/scanner.js",
+    "./unstable/ast/visitor": "./dist/ast/visitor.js"
+  },
+  "engines": {
+    "node": ">=16.20.0"
+  }
+}
+--- npm view typescript@7.0.2 dependencies optionalDependencies --json ---
+{
+  "dependencies": {
+    "@typescript/typescript-aix-ppc64": "7.0.2",
+    "@typescript/typescript-linux-arm": "7.0.2",
+    "@typescript/typescript-linux-x64": "7.0.2",
+    "@typescript/typescript-sunos-x64": "7.0.2",
+    "@typescript/typescript-win32-x64": "7.0.2",
+    "@typescript/typescript-darwin-x64": "7.0.2",
+    "@typescript/typescript-netbsd-x64": "7.0.2",
+    "@typescript/typescript-freebsd-x64": "7.0.2",
+    "@typescript/typescript-linux-arm64": "7.0.2",
+    "@typescript/typescript-linux-ppc64": "7.0.2",
+    "@typescript/typescript-linux-s390x": "7.0.2",
+    "@typescript/typescript-openbsd-x64": "7.0.2",
+    "@typescript/typescript-win32-arm64": "7.0.2",
+    "@typescript/typescript-darwin-arm64": "7.0.2",
+    "@typescript/typescript-netbsd-arm64": "7.0.2",
+    "@typescript/typescript-freebsd-arm64": "7.0.2",
+    "@typescript/typescript-linux-loong64": "7.0.2",
+    "@typescript/typescript-linux-riscv64": "7.0.2",
+    "@typescript/typescript-openbsd-arm64": "7.0.2",
+    "@typescript/typescript-linux-mips64el": "7.0.2"
+  },
+  "optionalDependencies": {
+    "@typescript/typescript-aix-ppc64": "7.0.2",
+    "@typescript/typescript-linux-arm": "7.0.2",
+    "@typescript/typescript-linux-x64": "7.0.2",
+    "@typescript/typescript-sunos-x64": "7.0.2",
+    "@typescript/typescript-win32-x64": "7.0.2",
+    "@typescript/typescript-darwin-x64": "7.0.2",
+    "@typescript/typescript-netbsd-x64": "7.0.2",
+    "@typescript/typescript-freebsd-x64": "7.0.2",
+    "@typescript/typescript-linux-arm64": "7.0.2",
+    "@typescript/typescript-linux-ppc64": "7.0.2",
+    "@typescript/typescript-linux-s390x": "7.0.2",
+    "@typescript/typescript-openbsd-x64": "7.0.2",
+    "@typescript/typescript-win32-arm64": "7.0.2",
+    "@typescript/typescript-darwin-arm64": "7.0.2",
+    "@typescript/typescript-netbsd-arm64": "7.0.2",
+    "@typescript/typescript-freebsd-arm64": "7.0.2",
+    "@typescript/typescript-linux-loong64": "7.0.2",
+    "@typescript/typescript-linux-riscv64": "7.0.2",
+    "@typescript/typescript-openbsd-arm64": "7.0.2",
+    "@typescript/typescript-linux-mips64el": "7.0.2"
+  }
+}
+--- npm view @typescript/typescript6@6.0.2 bin main dependencies --json ---
+{
+  "bin": {
+    "tsc6": "bin/tsc6"
+  },
+  "main": "./lib/typescript.js",
+  "dependencies": {
+    "@typescript/old": "npm:typescript@^6"
+  }
+}
+--- npm view typescript-eslint@8.67.0 peerDependencies --json ---
+{
+  "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0",
+  "typescript": ">=4.8.4 <6.1.0"
+}
+--- npm view typescript@6.0.3 bin version --json ---
+{
+  "bin": {
+    "tsc": "bin/tsc",
+    "tsserver": "bin/tsserver"
+  },
+  "version": "6.0.3"
+}
+--- npm view typescript versions --json | tail (6.x range) ---
+"6.0.0-beta",
+"6.0.0-dev.20250801",
+"6.0.0-dev.20250802",
+"6.0.0-dev.20250803",
+"6.0.0-dev.20250804",
+"6.0.0-dev.20250805",
+"6.0.0-dev.20250806",
+"6.0.0-dev.20250807",
+"6.0.0-dev.20250808",
+"6.0.0-dev.20250809",
+"6.0.0-dev.20250810",
+"6.0.0-dev.20250811",
+"6.0.0-dev.20250812",
+"6.0.0-dev.20250813",
+"6.0.0-dev.20250814",
+"6.0.0-dev.20250815",
+"6.0.0-dev.20250816",
+"6.0.0-dev.20250817",
+"6.0.0-dev.20250818",
+"6.0.0-dev.20250819",
+"6.0.0-dev.20250820",
+"6.0.0-dev.20250821",
+"6.0.0-dev.20250822",
+"6.0.0-dev.20250823",
+"6.0.0-dev.20250824",
+"6.0.0-dev.20250825",
+"6.0.0-dev.20250827",
+"6.0.0-dev.20250828",
+"6.0.0-dev.20250829",
+"6.0.0-dev.20250830",
+"6.0.0-dev.20250831",
+"6.0.0-dev.20250901",
+"6.0.0-dev.20250902",
+"6.0.0-dev.20250903",
+"6.0.0-dev.20250904",
+"6.0.0-dev.20250905",
+"6.0.0-dev.20250906",
+"6.0.0-dev.20250907",
+"6.0.0-dev.20250908",
+"6.0.0-dev.20250909",
+"6.0.0-dev.20250910",
+"6.0.0-dev.20250911",
+"6.0.0-dev.20250912",
+"6.0.0-dev.20250913",
+"6.0.0-dev.20250914",
+"6.0.0-dev.20250915",
+"6.0.0-dev.20250916",
+"6.0.0-dev.20250917",
+"6.0.0-dev.20250918",
+"6.0.0-dev.20250919",
+"6.0.0-dev.20250920",
+"6.0.0-dev.20250921",
+"6.0.0-dev.20250922",
+"6.0.0-dev.20250923",
+"6.0.0-dev.20250924",
+"6.0.0-dev.20250925",
+"6.0.0-dev.20250926",
+"6.0.0-dev.20250927",
+"6.0.0-dev.20250928",
+"6.0.0-dev.20250929",
+"6.0.0-dev.20250930",
+"6.0.0-dev.20251001",
+"6.0.0-dev.20251002",
+"6.0.0-dev.20251003",
+"6.0.0-dev.20251004",
+"6.0.0-dev.20251005",
+"6.0.0-dev.20251006",
+"6.0.0-dev.20251007",
+"6.0.0-dev.20251008",
+"6.0.0-dev.20251009",
+"6.0.0-dev.20251010",
+"6.0.0-dev.20251011",
+"6.0.0-dev.20251012",
+"6.0.0-dev.20251013",
+"6.0.0-dev.20251014",
+"6.0.0-dev.20251015",
+"6.0.0-dev.20251016",
+"6.0.0-dev.20251017",
+"6.0.0-dev.20251018",
+"6.0.0-dev.20251019",
+"6.0.0-dev.20251020",
+"6.0.0-dev.20251021",
+"6.0.0-dev.20251022",
+"6.0.0-dev.20251023",
+"6.0.0-dev.20251024",
+"6.0.0-dev.20251025",
+"6.0.0-dev.20251026",
+"6.0.0-dev.20251027",
+"6.0.0-dev.20251028",
+"6.0.0-dev.20251029",
+"6.0.0-dev.20251030",
+"6.0.0-dev.20251031",
+"6.0.0-dev.20251101",
+"6.0.0-dev.20251102",
+"6.0.0-dev.20251103",
+"6.0.0-dev.20251104",
+"6.0.0-dev.20251105",
+"6.0.0-dev.20251106",
+"6.0.0-dev.20251107",
+"6.0.0-dev.20251108",
+"6.0.0-dev.20251109",
+"6.0.0-dev.20251110",
+"6.0.0-dev.20251111",
+"6.0.0-dev.20251112",
+"6.0.0-dev.20251113",
+"6.0.0-dev.20251114",
+"6.0.0-dev.20251115",
+"6.0.0-dev.20251116",
+"6.0.0-dev.20251117",
+"6.0.0-dev.20251118",
+"6.0.0-dev.20251119",
+"6.0.0-dev.20251120",
+"6.0.0-dev.20251121",
+"6.0.0-dev.20251122",
+"6.0.0-dev.20251123",
+"6.0.0-dev.20251124",
+"6.0.0-dev.20251125",
+"6.0.0-dev.20251126",
+"6.0.0-dev.20251127",
+"6.0.0-dev.20251128",
+"6.0.0-dev.20251129",
+"6.0.0-dev.20251130",
+"6.0.0-dev.20251201",
+"6.0.0-dev.20251202",
+"6.0.0-dev.20251203",
+"6.0.0-dev.20251204",
+"6.0.0-dev.20251205",
+"6.0.0-dev.20251206",
+"6.0.0-dev.20251207",
+"6.0.0-dev.20251208",
+"6.0.0-dev.20251209",
+"6.0.0-dev.20251210",
+"6.0.0-dev.20251211",
+"6.0.0-dev.20251212",
+"6.0.0-dev.20251213",
+"6.0.0-dev.20251214",
+"6.0.0-dev.20251215",
+"6.0.0-dev.20251216",
+"6.0.0-dev.20251217",
+"6.0.0-dev.20251218",
+"6.0.0-dev.20251219",
+"6.0.0-dev.20251220",
+"6.0.0-dev.20251221",
+"6.0.0-dev.20251222",
+"6.0.0-dev.20251223",
+"6.0.0-dev.20251224",
+"6.0.0-dev.20251225",
+"6.0.0-dev.20251226",
+"6.0.0-dev.20251227",
+"6.0.0-dev.20251228",
+"6.0.0-dev.20251229",
+"6.0.0-dev.20251230",
+"6.0.0-dev.20251231",
+"6.0.0-dev.20260101",
+"6.0.0-dev.20260102",
+"6.0.0-dev.20260103",
+"6.0.0-dev.20260104",
+"6.0.0-dev.20260105",
+"6.0.0-dev.20260106",
+"6.0.0-dev.20260107",
+"6.0.0-dev.20260108",
+"6.0.0-dev.20260109",
+"6.0.0-dev.20260110",
+"6.0.0-dev.20260111",
+"6.0.0-dev.20260112",
+"6.0.0-dev.20260113",
+"6.0.0-dev.20260114",
+"6.0.0-dev.20260115",
+"6.0.0-dev.20260116",
+"6.0.0-dev.20260117",
+"6.0.0-dev.20260118",
+"6.0.0-dev.20260119",
+"6.0.0-dev.20260120",
+"6.0.0-dev.20260121",
+"6.0.0-dev.20260122",
+"6.0.0-dev.20260123",
+"6.0.0-dev.20260124",
+"6.0.0-dev.20260125",
+"6.0.0-dev.20260126",
+"6.0.0-dev.20260127",
+"6.0.0-dev.20260128",
+"6.0.0-dev.20260129",
+"6.0.0-dev.20260130",
+"6.0.0-dev.20260131",
+"6.0.0-dev.20260201",
+"6.0.0-dev.20260202",
+"6.0.0-dev.20260203",
+"6.0.0-dev.20260204",
+"6.0.0-dev.20260205",
+"6.0.0-dev.20260206",
+"6.0.0-dev.20260207",
+"6.0.0-dev.20260208",
+"6.0.0-dev.20260209",
+"6.0.0-dev.20260210",
+"6.0.0-dev.20260211",
+"6.0.0-dev.20260212",
+"6.0.0-dev.20260213",
+"6.0.0-dev.20260214",
+"6.0.0-dev.20260215",
+"6.0.0-dev.20260216",
+"6.0.0-dev.20260217",
+"6.0.0-dev.20260218",
+"6.0.0-dev.20260219",
+"6.0.0-dev.20260220",
+"6.0.0-dev.20260221",
+"6.0.0-dev.20260222",
+"6.0.0-dev.20260223",
+"6.0.0-dev.20260224",
+"6.0.0-dev.20260225",
+"6.0.0-dev.20260226",
+"6.0.0-dev.20260227",
+"6.0.0-dev.20260228",
+"6.0.0-dev.20260301",
+"6.0.0-dev.20260302",
+"6.0.0-dev.20260303",
+"6.0.0-dev.20260304",
+"6.0.0-dev.20260305",
+"6.0.0-dev.20260306",
+"6.0.0-dev.20260307",
+"6.0.0-dev.20260308",
+"6.0.0-dev.20260309",
+"6.0.0-dev.20260310",
+"6.0.0-dev.20260311",
+"6.0.0-dev.20260312",
+"6.0.0-dev.20260313",
+"6.0.0-dev.20260314",
+"6.0.0-dev.20260315",
+"6.0.0-dev.20260316",
+"6.0.0-dev.20260317",
+"6.0.0-dev.20260318",
+"6.0.0-dev.20260319",
+"6.0.0-dev.20260320",
+"6.0.0-dev.20260321",
+"6.0.0-dev.20260322",
+"6.0.0-dev.20260323",
+"6.0.0-dev.20260324",
+"6.0.0-dev.20260401",
+"6.0.0-dev.20260416",
+"6.0.1-rc",
+"6.0.2",
+"6.0.3",
+===== 12:11:09 PHASE2: fixture stats =====
+--- find src -name '*.ts' | wc -l ---
+      42
+--- wc -l src/*.ts (total) ---
+    2884 total
+--- tsconfig.json ---
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}
+===== 12:11:16 PHASE2: install config A =====
+$ npm i -D --save-exact --ignore-scripts --no-audit --no-fund typescript@6.0.3 typescript-eslint@8.67.0 eslint@10.8.1
+
+added 87 packages in 3s
+npm notice
+npm notice New major version of npm available! 10.9.2 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice
+EXIT=0
+===== 12:11:31 PHASE2: npm ls --depth=0 (config A) =====
+typescript7-alias-tsc6@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6
+├── eslint@10.8.1
+├── typescript-eslint@8.67.0
+└── typescript@6.0.3
+
+--- npx tsc --version ---
+Version 6.0.3
+--- ls -l node_modules/.bin/tsc* ---
+lrwxr-xr-x@ 1 katayamaryuunosuke  staff  21 Aug 18 12:11 node_modules/.bin/tsc -> ../typescript/bin/tsc
+===== 12:11:38 PHASE2: baseline tsc (config A, TS6.0.3) =====
+--- run 1: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  2.56s user 0.11s system 174% cpu 1.525 total
+EXIT=0
+--- run 2: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  2.55s user 0.11s system 178% cpu 1.494 total
+EXIT=0
+--- run 3: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  2.53s user 0.10s system 179% cpu 1.472 total
+EXIT=0
+--- ./node_modules/.bin/tsc --noEmit --extendedDiagnostics (1回) ---
+Files:                         105
+Lines of Library:            56131
+Lines of Definitions:            0
+Lines of TypeScript:          2926
+Lines of JavaScript:             0
+Lines of JSON:                   0
+Lines of Other:                  0
+Identifiers:                 62034
+Symbols:                     94607
+Types:                      132569
+Instantiations:            1169702
+Memory used:               215219K
+Assignability cache size:   303327
+Identity cache size:             0
+Subtype cache size:             42
+Strict subtype cache size:      40
+I/O Read time:               0.01s
+Parse time:                  0.12s
+ResolveModule time:          0.00s
+Program time:                0.14s
+Bind time:                   0.06s
+Check time:                  1.21s
+printTime time:              0.00s
+Emit time:                   0.00s
+Total time:                  1.41s
+===== 12:12:05 PHASE2: fixture 拡大（40x120 -> 80x200。1.5s では差が見えにくいため） =====
+--- find src -name '*.ts' | wc -l ---
+      82
+--- wc -l src/*.ts (total) ---
+    5724 total
+===== PHASE2: baseline tsc (config A, TS6.0.3) 再計測 =====
+--- run 1: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  6.96s user 0.23s system 131% cpu 5.490 total
+--- run 2: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  6.96s user 0.29s system 130% cpu 5.564 total
+--- run 3: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  6.83s user 0.26s system 131% cpu 5.375 total
+--- extendedDiagnostics ---
+Files:                         145
+Lines of Library:            56131
+Lines of Definitions:            0
+Lines of TypeScript:          5806
+Lines of JavaScript:             0
+Lines of JSON:                   0
+Lines of Other:                  0
+Identifiers:                 75834
+Symbols:                    195607
+Types:                      398529
+Instantiations:            3608022
+Memory used:               550452K
+Assignability cache size:  1646447
+Identity cache size:             0
+Subtype cache size:             82
+Strict subtype cache size:      80
+I/O Read time:               0.01s
+Parse time:                  0.13s
+ResolveModule time:          0.00s
+Program time:                0.15s
+Bind time:                   0.07s
+Check time:                  5.11s
+printTime time:              0.00s
+Emit time:                   0.00s
+Total time:                  5.34s
+===== PHASE2: baseline eslint (config A) =====
+$ ./node_modules/.bin/eslint .
+
+<--- Last few GCs --->
+
+[14361:0xa2a400000]    56349 ms: Mark-Compact 4038.8 (4134.4) -> 4019.9 (4132.7) MB, pooled: 12 MB, 1655.04 / 0.00 ms  (average mu = 0.093, current mu = 0.033) allocation failure; scavenge might not succeed
+[14361:0xa2a400000]    59279 ms: Mark-Compact 4037.1 (4132.7) -> 4025.4 (4136.9) MB, pooled: 8 MB, 2890.67 / 0.00 ms  (average mu = 0.057, current mu = 0.014) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x102e39cac node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 2: 0x10300f998 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 3: 0x10321f0c0 v8::internal::Heap::stack() [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 4: 0x103235538 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1::operator()() const [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 5: 0x103234dcc void heap::base::Stack::SetMarkerAndCallbackImpl<v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags)::$_1>(heap::base::Stack*, void*, void const*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 6: 0x1039eef78 PushAllRegistersAndIterateStack [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 7: 0x10321d280 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 8: 0x103211a48 v8::internal::HeapAllocator::AllocateRawWithLightRetrySlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+ 9: 0x103212280 v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+10: 0x1031f55a0 v8::internal::Factory::NewFillerObject(int, v8::internal::AllocationAlignment, v8::internal::AllocationType, v8::internal::AllocationOrigin) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+11: 0x103611050 v8::internal::Runtime_AllocateInYoungGeneration(int, unsigned long*, v8::internal::Isolate*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+12: 0x103ad1af4 Builtins_CEntry_Return1_ArgvOnStack_NoBuiltinExit [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+13: 0x10ec10d3c 
+14: 0x10e838020 
+15: 0x10ebf57a4 
+16: 0x10ebd77e0 
+17: 0x10ebdd900 
+18: 0x10ebf8f44 
+19: 0x10eb36a44 
+20: 0x10ebde1e4 
+21: 0x10ebf8f44 
+22: 0x10eb36a44 
+23: 0x10ebf6618 
+24: 0x10ebd77e0 
+25: 0x10ebdd900 
+26: 0x10ebf8f44 
+27: 0x10eb36a44 
+28: 0x10ebde1e4 
+29: 0x10ebf8f44 
+30: 0x10eb36a44 
+31: 0x10ebf6618 
+32: 0x10ebd77e0 
+33: 0x10ebdd900 
+34: 0x10ebf8f44 
+35: 0x10eb36a44 
+36: 0x10ebde1e4 
+37: 0x10ebf8f44 
+38: 0x10eb36a44 
+39: 0x10ebf6618 
+40: 0x10ebd77e0 
+41: 0x10ebdd900 
+42: 0x10ebf8f44 
+43: 0x10eb36a44 
+44: 0x10ebde1e4 
+45: 0x10ebf8f44 
+46: 0x10eb36a44 
+47: 0x10ebf6618 
+48: 0x10ebd77e0 
+49: 0x10ebdd900 
+50: 0x10ebf8f44 
+51: 0x10eb36a44 
+52: 0x10ebde1e4 
+53: 0x10ebf8f44 
+54: 0x10eb36a44 
+55: 0x10ebf6618 
+56: 0x10ebd77e0 
+57: 0x10ebdd900 
+58: 0x10ebf8f44 
+59: 0x10eb36a44 
+60: 0x10ebde1e4 
+61: 0x10ebf8f44 
+62: 0x10eb36a44 
+63: 0x10ebf6618 
+64: 0x10ebd77e0 
+65: 0x10ebdd900 
+66: 0x10ebf8f44 
+67: 0x10ecb241c 
+68: 0x10eb5f948 
+69: 0x103b095d0 Builtins_ArraySome [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+70: 0x10ecda104 
+71: 0x10eca6fa8 
+72: 0x10ec28188 
+73: 0x10e72d5ec 
+74: 0x10ed106fc 
+75: 0x10e877cb8 
+76: 0x10eeb5f14 
+77: 0x10e835660 
+78: 0x10e834efc 
+79: 0x10eeb72ac 
+80: 0x10e7d43dc 
+81: 0x10e7da6a0 
+82: 0x10e7d5810 
+83: 0x103a79290 Builtins_AsyncFunctionAwaitResolveClosure [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+84: 0x103b444d8 Builtins_PromiseFulfillReactionJob [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+85: 0x103a69594 Builtins_RunMicrotasks [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+86: 0x103a3aaf4 Builtins_JSRunMicrotasksEntry [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+87: 0x103176f7c v8::internal::(anonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+88: 0x103177824 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+89: 0x10317795c v8::internal::Execution::TryRunMicrotasks(v8::internal::Isolate*, v8::internal::MicrotaskQueue*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+90: 0x1031a4b80 v8::internal::MicrotaskQueue::RunMicrotasks(v8::internal::Isolate*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+91: 0x1031a5304 v8::internal::MicrotaskQueue::PerformCheckpoint(v8::Isolate*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+92: 0x102d399a8 node::InternalCallbackScope::Close() [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+93: 0x102d39474 node::InternalCallbackScope::~InternalCallbackScope() [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+94: 0x102e3dc54 node::fs::FileHandle::CloseReq::Resolve() [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+95: 0x102e58ee4 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+96: 0x102e31c10 node::MakeLibuvRequestCallback<uv_fs_s, void (*)(uv_fs_s*)>::Wrapper(uv_fs_s*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+97: 0x103a16c44 uv__work_done [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+98: 0x103a1a974 uv__async_io [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+99: 0x103a2ed0c uv__io_poll [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+100: 0x103a1aedc uv_run [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+101: 0x102d3a4f4 node::SpinEventLoopInternal(node::Environment*) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+102: 0x102e84e74 node::NodeMainInstance::Run() [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+103: 0x102df5008 node::Start(int, char**) [/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin/node]
+104: 0x180fcbe00 start [/usr/lib/dyld]
+./node_modules/.bin/eslint .  67.98s user 80.13s system 248% cpu 59.684 total
+EXIT=134
+
+===== 12:15:44 PHASE2 [確定版 fixture] 200 modules x 90 union =====
+--- find src -name '*.ts' | wc -l ---
+     203
+--- wc -l src/*.ts (total) ---
+   13841 total
+--- eslint.config.js ---
+// @ts-check
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  { ignores: ['gen.mjs', 'eslint.config.js', 'npm-cache/**', 'node_modules/**', 'shot.mjs'] },
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+  },
+);
+
+===== 構成A ベースライン: tsc (TS 6.0.3) =====
+$ ./node_modules/.bin/tsc --version
+Version 6.0.3
+--- run 1: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  4.90s user 0.16s system 145% cpu 3.478 total
+--- run 2: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  5.08s user 0.20s system 149% cpu 3.535 total
+--- run 3: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  4.88s user 0.18s system 147% cpu 3.424 total
+--- extendedDiagnostics ---
+Lines of Library:            56131
+Lines of Definitions:            0
+Lines of TypeScript:         14044
+Lines of JavaScript:             0
+Lines of JSON:                   0
+Lines of Other:                  0
+Identifiers:                114597
+Symbols:                    274593
+Types:                      309849
+Instantiations:            1843316
+Memory used:               570562K
+Assignability cache size:   867391
+Identity cache size:             0
+Subtype cache size:            202
+Strict subtype cache size:       0
+I/O Read time:               0.01s
+Parse time:                  0.16s
+ResolveModule time:          0.01s
+Program time:                0.19s
+Bind time:                   0.11s
+Check time:                  3.19s
+printTime time:              0.00s
+Emit time:                   0.00s
+Total time:                  3.49s
+
+===== 構成A ベースライン: eslint =====
+$ ./node_modules/.bin/eslint .
+
+/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/src/lint-violations.ts
+   2:8   error  Async function 'fetchAll' has no 'await' expression                                                                                                                 @typescript-eslint/require-await
+   3:3   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+   6:26  error  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+   7:3   error  Unsafe return of a value of type `any`                                                                                                                              @typescript-eslint/no-unsafe-return
+   7:10  error  Unsafe call of an `any` typed value                                                                                                                                 @typescript-eslint/no-unsafe-call
+   7:12  error  Unsafe member access .toString on an `any` value                                                                                                                    @typescript-eslint/no-unsafe-member-access
+  11:20  error  Invalid type "unknown" of template literal expression                                                                                                               @typescript-eslint/restrict-template-expressions
+
+✖ 7 problems (7 errors, 0 warnings)
+
+./node_modules/.bin/eslint .  11.05s user 0.61s system 136% cpu 8.515 total
+ESLINT_EXIT=1
+
+===== 12:16:16 PHASE3: 構成B — typescript@7.0.2 に単純アップグレード =====
+--- 変更前 package.json ---
+{
+  "name": "typescript7-alias-tsc6",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "private": "true",
+  "type": "module",
+  "devDependencies": {
+    "eslint": "10.8.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.67.0"
+  }
+}
+
+$ npm i -D --save-exact --no-audit --no-fund typescript@7.0.2   （まず --ignore-scripts 無しで）
+npm warn ERESOLVE overriding peer dependency
+npm warn While resolving: typescript7-alias-tsc6@1.0.0
+npm warn Found: typescript@6.0.3
+npm warn node_modules/typescript
+npm warn   peer typescript@">=4.8.4 <6.1.0" from @typescript-eslint/eslint-plugin@8.67.0
+npm warn   node_modules/@typescript-eslint/eslint-plugin
+npm warn     @typescript-eslint/eslint-plugin@"8.67.0" from typescript-eslint@8.67.0
+npm warn     node_modules/typescript-eslint
+npm warn   9 more (@typescript-eslint/parser, ...)
+npm warn
+npm warn Could not resolve dependency:
+npm warn peer typescript@">=4.8.4 <6.1.0" from typescript-eslint@8.67.0
+npm warn node_modules/typescript-eslint
+npm warn   dev typescript-eslint@"8.67.0" from the root project
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+npm warn ERESOLVE overriding peer dependency
+
+added 9 packages, removed 8 packages, and changed 1 package in 1s
+EXIT=0
+install elapsed: 1s
+--- npm ls --depth=0 (構成B) ---
+typescript7-alias-tsc6@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6
+├── eslint@10.8.1
+├── typescript-eslint@8.67.0
+└── typescript@7.0.2
+
+--- ls node_modules/@typescript/ ---
+typescript-darwin-arm64
+--- du -sh node_modules/@typescript/* ---
+ 26M	node_modules/@typescript/typescript-darwin-arm64
+--- ls -l node_modules/.bin/tsc* ---
+lrwxr-xr-x@ 1 katayamaryuunosuke  staff  21 Aug 18 12:16 node_modules/.bin/tsc -> ../typescript/bin/tsc
+--- npm ls @typescript/typescript-darwin-arm64 ---
+typescript7-alias-tsc6@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6
+└─┬ typescript@7.0.2 invalid: ">=4.8.4 <6.1.0" from node_modules/typescript-eslint
+  └── @typescript/typescript-darwin-arm64@7.0.2
+
+--- du -sh node_modules ---
+ 49M	node_modules
+
+===== 12:16:33 PHASE3: 構成B の tsc 計測 =====
+$ ./node_modules/.bin/tsc --version
+Version 7.0.2
+$ npx tsc --version
+Version 7.0.2
+--- run 1: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  1.47s user 0.11s system 434% cpu 0.365 total
+--- run 2: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  1.43s user 0.09s system 425% cpu 0.357 total
+--- run 3: ./node_modules/.bin/tsc --noEmit ---
+./node_modules/.bin/tsc --noEmit  1.42s user 0.08s system 410% cpu 0.367 total
+--- ./node_modules/.bin/tsc --noEmit --help | grep -i checker（フラグ有無確認） ---
+(--help に該当フラグの記載なし)
+
+===== 12:16:42 PHASE3: 構成B で eslint . （山場） =====
+$ ./node_modules/.bin/eslint .
+typescript-eslint does not support TS 7.0.
+Please see https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0 to run typescript-eslint using the TS 6 API.
+See also https://github.com/typescript-eslint/typescript-eslint/issues/10940 for tracking typescript-eslint's support for TS >=7.1
+
+Oops! Something went wrong! :(
+
+ESLint: 10.8.1
+
+Error: typescript-eslint does not support TS 7.0.
+    at Object.<anonymous> (/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/node_modules/typescript-eslint/dist/index.js:52:11)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at cjsLoader (node:internal/modules/esm/translators:266:5)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:200:7)
+    at ModuleJob.run (node:internal/modules/esm/module_job:329:25)
+./node_modules/.bin/eslint .  0.08s user 0.03s system 69% cpu 0.167 total
+ESLINT_EXIT=
+
+===== 12:16:53 PHASE3: 失敗原因をコードで裏取り（TS7 の typescript が何を返すか） =====
+$ node -e "console.log(require.resolve('typescript'))"
+/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/node_modules/typescript/lib/version.cjs
+$ node -e "const ts=require('typescript'); console.log(Object.keys(ts))"
+[ 'version', 'versionMajorMinor' ]
+$ node -e "const ts=require('typescript'); console.log(JSON.stringify(ts))"
+{"version":"7.0.2","versionMajorMinor":"7.0"}
+$ node -e "const ts=require('typescript'); console.log(typeof ts.createProgram)"
+undefined
+$ cat node_modules/typescript/lib/version.cjs
+const { version } = require("../package.json");
+exports.version = version;
+exports.versionMajorMinor = "7.0";
+$ node -e "console.log(Object.keys(require('typescript/package.json').exports))"
+[
+  './package.json',
+  '.',
+  './unstable/sync',
+  './unstable/async',
+  './unstable/fs',
+  './unstable/proto',
+  './unstable/ast',
+  './unstable/ast/is',
+  './unstable/ast/factory',
+  './unstable/ast/utils',
+  './unstable/ast/scanner',
+  './unstable/ast/visitor',
+  './unstable/ast/clone'
+]
+--- typescript-eslint の判定コード（dist/index.js 付近） ---
+exports.globs = exports.extensions = exports.config = exports.configs = exports.plugin = exports.parser = void 0;
+const ts = __importStar(require("typescript"));
+const [versionMajor, _versionMinor] = ts.versionMajorMinor
+    .split('.')
+    .map(Number);
+if (versionMajor >= 7) {
+    // eslint-disable-next-line no-console
+    console.error([
+        'typescript-eslint does not support TS 7.0.',
+        'Please see https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0 to run typescript-eslint using the TS 6 API.',
+        "See also https://github.com/typescript-eslint/typescript-eslint/issues/10940 for tracking typescript-eslint's support for TS >=7.1",
+    ].join('\n'));
+    throw new Error('typescript-eslint does not support TS 7.0.');
+}
+const eslint_plugin_1 = __importDefault(require("@typescript-eslint/eslint-plugin"));
+const raw_plugin_1 = __importDefault(require("@typescript-eslint/eslint-plugin/use-at-your-own-risk/raw-plugin"));
+const typescript_estree_1 = require("@typescript-eslint/typescript-estree");
+const config_helper_1 = require("./config-helper");
+const getTSConfigRootDirFromStack_1 = require("./getTSConfigRootDirFromStack");
+const globs_1 = require("./globs");
+exports.parser = raw_plugin_1.default.parser;
+
+===== 12:17:04 PHASE3: 構成C — 公式 alias 併用構成へ切替 =====
+--- diff 構成B -> 構成C (package.json) ---
+--- /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-typescript7-alias-tsc6-20260818-1209/workspace/package.B.json	2026-08-18 12:17:04
++++ /Users/katayamaryuunosuke/workspace/024_zenn/logs/run-typescript7-alias-tsc6-20260818-1209/workspace/package.C.json	2026-08-18 12:17:04
+@@ -12,8 +12,9 @@
+   "private": "true",
+   "type": "module",
+   "devDependencies": {
++    "@typescript/native": "npm:typescript@^7.0.2",
++    "typescript": "npm:@typescript/typescript6@^6.0.2",
+     "eslint": "10.8.1",
+-    "typescript": "7.0.2",
+     "typescript-eslint": "8.67.0"
+   }
+ }
+--- 切替後 package.json ---
+{
+  "name": "typescript7-alias-tsc6",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "private": "true",
+  "type": "module",
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "eslint": "10.8.1",
+    "typescript-eslint": "8.67.0"
+  }
+}
+
+$ rm -rf node_modules package-lock.json && npm i --no-audit --no-fund
+
+added 90 packages in 2s
+EXIT=0
+install elapsed: 3s
+--- npm ls --depth=0 ---
+typescript7-alias-tsc6@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6
+├── @typescript/native@npm:typescript@7.0.2
+├── eslint@10.8.1
+├── typescript-eslint@8.67.0
+└── typescript@npm:@typescript/typescript6@6.0.2
+
+
+===== 12:17:19 PHASE3: ★前回の宿題 — bin の解決先を確定（構成C） =====
+$ ls -l node_modules/.bin/tsc*
+lrwxr-xr-x@ 1 katayamaryuunosuke  staff  29 Aug 18 12:17 node_modules/.bin/tsc -> ../@typescript/native/bin/tsc
+lrwxr-xr-x@ 1 katayamaryuunosuke  staff  22 Aug 18 12:17 node_modules/.bin/tsc6 -> ../typescript/bin/tsc6
+
+$ ./node_modules/.bin/tsc --version
+Version 7.0.2
+$ ./node_modules/.bin/tsc6 --version
+Version 6.0.3
+$ npx tsc --version
+Version 7.0.2
+$ node node_modules/@typescript/native/bin/tsc --version
+Version 7.0.2
+
+$ npm ls @typescript/old
+typescript7-alias-tsc6@1.0.0 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6
+└─┬ typescript@npm:@typescript/typescript6@6.0.2
+  └── @typescript/old@npm:typescript@6.0.3
+
+$ ls node_modules/@typescript/
+native
+old
+typescript-darwin-arm64
+$ node -p "require('./node_modules/@typescript/old/package.json').version"
+6.0.3
+$ node -p "require('./node_modules/typescript/package.json').name + ' ' + require('./node_modules/typescript/package.json').version"
+@typescript/typescript6 6.0.2
+$ node -p "require('./node_modules/@typescript/native/package.json').name + ' ' + require('./node_modules/@typescript/native/package.json').version"
+typescript 7.0.2
+
+--- 参考: 前回（2026-07-11）の結果 ---
+tsc  -> ../@typescript/old/bin/tsc   => Version 6.0.3
+tsc6 -> ../@typescript/typescript6/bin/tsc6 => Version 6.0.3
+
+===== 12:17:32 PHASE3: 構成C — 型チェック(TS7) / lint(TS6 API) の両立判定 =====
+### 1) 型チェック: ./node_modules/.bin/tsc （7.0.2）
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit  1.46s user 0.13s system 405% cpu 0.392 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit  1.44s user 0.09s system 423% cpu 0.362 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit  1.49s user 0.10s system 431% cpu 0.367 total
+
+### 2) 参考: tsc6（6.0.3）でも同じ fixture を型チェック
+--- tsc6 run 1 ---
+./node_modules/.bin/tsc6 --noEmit  4.83s user 0.20s system 145% cpu 3.447 total
+
+### 3) lint: ./node_modules/.bin/eslint . （期待: 構成Aと同じ 7 errors）
+
+/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/src/lint-violations.ts
+   2:8   error  Async function 'fetchAll' has no 'await' expression                                                                                                                 @typescript-eslint/require-await
+   3:3   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+   6:26  error  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+   7:3   error  Unsafe return of a value of type `any`                                                                                                                              @typescript-eslint/no-unsafe-return
+   7:10  error  Unsafe call of an `any` typed value                                                                                                                                 @typescript-eslint/no-unsafe-call
+   7:12  error  Unsafe member access .toString on an `any` value                                                                                                                    @typescript-eslint/no-unsafe-member-access
+  11:20  error  Invalid type "unknown" of template literal expression                                                                                                               @typescript-eslint/restrict-template-expressions
+
+✖ 7 problems (7 errors, 0 warnings)
+
+./node_modules/.bin/eslint .  11.70s user 0.76s system 140% cpu 8.889 total
+
+### 4) eslint が掴んだ typescript の実体
+/Users/katayamaryuunosuke/workspace/024_zenn/fixtures/typescript7-alias-tsc6/node_modules/typescript/lib/typescript.js
+version= 6.0.3  createProgram= function
+
+===== 12:17:56 PHASE4: --checkers / --singleThreaded の計測差（構成C, 10 論理コア） =====
+### tsc --noEmit （既定 = --checkers 4）
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit $opt  1.53s user 0.14s system 381% cpu 0.438 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit $opt  1.44s user 0.09s system 426% cpu 0.359 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit $opt  1.44s user 0.08s system 415% cpu 0.366 total
+### tsc --noEmit --checkers 1
+--- run 1 ---
+error TS5023: Unknown compiler option '--checkers 1'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.039 total
+--- run 2 ---
+error TS5023: Unknown compiler option '--checkers 1'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.038 total
+--- run 3 ---
+error TS5023: Unknown compiler option '--checkers 1'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 93% cpu 0.040 total
+### tsc --noEmit --checkers 2
+--- run 1 ---
+error TS5023: Unknown compiler option '--checkers 2'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.040 total
+--- run 2 ---
+error TS5023: Unknown compiler option '--checkers 2'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.041 total
+--- run 3 ---
+error TS5023: Unknown compiler option '--checkers 2'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.040 total
+### tsc --noEmit --checkers 8
+--- run 1 ---
+error TS5023: Unknown compiler option '--checkers 8'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.038 total
+--- run 2 ---
+error TS5023: Unknown compiler option '--checkers 8'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 92% cpu 0.039 total
+--- run 3 ---
+error TS5023: Unknown compiler option '--checkers 8'.
+./node_modules/.bin/tsc --noEmit $opt  0.03s user 0.01s system 91% cpu 0.039 total
+### tsc --noEmit --singleThreaded
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit $opt  1.36s user 0.06s system 118% cpu 1.200 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit $opt  1.35s user 0.06s system 118% cpu 1.187 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit $opt  1.35s user 0.06s system 116% cpu 1.210 total
+### 参考: tsc6 (TS6.0.3) は並列フラグ非対応か確認
+error TS5025: Unknown compiler option '--checkers'. Did you mean 'checkJs'?
+
+===== 12:18:10 PHASE4 [再実行] --checkers は引数を分けて渡す（前回は "--checkers 1" を1引数として渡し TS5023） =====
+### tsc --noEmit --checkers 1
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.50s user 0.09s system 135% cpu 1.177 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.48s user 0.09s system 133% cpu 1.167 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.53s user 0.09s system 138% cpu 1.172 total
+### tsc --noEmit --checkers 2
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.45s user 0.09s system 245% cpu 0.627 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.42s user 0.09s system 245% cpu 0.617 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.44s user 0.09s system 251% cpu 0.608 total
+### tsc --noEmit --checkers 4
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.55s user 0.09s system 403% cpu 0.407 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.45s user 0.09s system 414% cpu 0.372 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.53s user 0.11s system 413% cpu 0.397 total
+### tsc --noEmit --checkers 8
+--- run 1 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.72s user 0.12s system 569% cpu 0.323 total
+--- run 2 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.60s user 0.11s system 611% cpu 0.281 total
+--- run 3 ---
+./node_modules/.bin/tsc --noEmit --checkers $n  1.70s user 0.12s system 602% cpu 0.302 total
+### 参考: --builders の受理確認
+error TS5093: Compiler option '--builders' may only be used with '--build'.
+
+===== 12:18:29 PHASE4: TS7 の unstable API を覗く（構成C なので @typescript/native 側） =====
+$ node -p "Object.keys(require('@typescript/native/package.json').exports)"
+[
+ "./package.json",
+ ".",
+ "./unstable/sync",
+ "./unstable/async",
+ "./unstable/fs",
+ "./unstable/proto",
+ "./unstable/ast",
+ "./unstable/ast/is",
+ "./unstable/ast/factory",
+ "./unstable/ast/utils",
+ "./unstable/ast/scanner",
+ "./unstable/ast/visitor",
+ "./unstable/ast/clone"
+]
+--- import('@typescript/native/unstable/ast') ---
+OK  keys=409 : CharacterCodes, CommentDirectiveType, InternalSymbolName, LanguageVariant, ModifierFlags, NodeFlags, RegularExpressionFlags, ScriptKind, ScriptTarget, SyntaxKind, TokenFlags, cast
+--- import('@typescript/native/unstable/fs') ---
+OK  keys=2 : createVirtualFileSystem, fsCallbackNames
+--- import('@typescript/native/unstable/sync') ---
+OK  keys=44 : API, Checker, CompletionItemKind, DiagnosticCategory, ElementFlags, Emitter, InternalAPI, ModifierFlags, ModuleKind, NodeBuilderFlags, NodeHandle, ObjectFlags
+--- import('@typescript/native/unstable/async') ---
+OK  keys=44 : API, Checker, CompletionItemKind, DiagnosticCategory, ElementFlags, Emitter, InternalAPI, ModifierFlags, ModuleKind, NodeBuilderFlags, NodeHandle, ObjectFlags
+--- import('@typescript/native/unstable/proto') ---
+OK  keys=3 : resolveDocumentURI, resolveFileName, toUpdateSnapshotRequest
+--- import('@typescript/native/unstable/ast/factory') ---
+OK  keys=370 : NodeObject, cloneNode, createArrayBindingPattern, createArrayLiteralExpression, createArrayTypeNode, createArrowFunction, createAsExpression, createAwaitExpression, createBigIntLiteral, createBinaryExpression, createBindingElement, createBlock
+--- import('@typescript/native/unstable/ast/scanner') ---
+OK  keys=25 : characterCodeToRegularExpressionFlag, computeLineStarts, couldStartTrivia, createScanner, forEachLeadingCommentRange, forEachTrailingCommentRange, getLeadingCommentRanges, getShebang, getTrailingCommentRanges, isIdentifierPart, isIdentifierStart, isIdentifierText
+--- import('@typescript/native/unstable/ast/visitor') ---
+OK  keys=8 : forEachChildOfJSDocParameterTag, forEachChildOfJSDocPropertyTag, visitEachChild, visitEachChildOfJSDocParameterTag, visitEachChildOfJSDocPropertyTag, visitNode, visitNodes, visitNodesArray
+
+--- 実際に unstable/sync で型チェックを走らせられるか試す ---
+sync exports: API, Checker, CompletionItemKind, DiagnosticCategory, ElementFlags, Emitter, InternalAPI, ModifierFlags, ModuleKind, NodeBuilderFlags, NodeHandle, ObjectFlags, Program, Project, Signature, SignatureFlags, SignatureKind, Snapshot, Symbol, SymbolFlags, TypeFlags, TypePredicateKind, documentURIToFileName, fileNameToDocumentURI, isBigIntLiteralType, isBooleanLiteralType, isClassOrInterfaceType, isConditionalType, isErrorType, isIndexType, isIndexedAccessType, isIntersectionType, isIntrinsicType, isLiteralType, isNumberLiteralType, isObjectType, isStringLiteralType, isStringMappingType, isSubstitutionType, isTemplateLiteralType, isTupleType, isTypeParameter, isTypeReference, isUnionType
+
+===== 12:19:39 PHASE4: 他パッケージマネージャの境界 =====
+$ pnpm -v
+10.13.1
+$ yarn -v
+! Corepack is about to download https://registry.yarnpkg.com/yarn/-/yarn-1.22.22.tgz
+1.22.22
+
+===== 12:19:49 PHASE4: pnpm 10.13.1 で同じ alias 構成を追試 =====
+$ pnpm install （store は作業ディレクトリ配下に隔離）
+Progress: resolved 1, reused 0, downloaded 0, added 0
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 10.13.1 → 11.22.0.   │
+   │   Changelog: https://pnpm.io/v/11.22.0   │
+   │     To update, run: pnpm add -g pnpm     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Progress: resolved 98, reused 0, downloaded 77, added 0
+Progress: resolved 105, reused 0, downloaded 85, added 0
+Packages: +90
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 109, reused 0, downloaded 90, added 90, done
+
+dependencies:
++ typescript <- @typescript/typescript6 6.0.2
+
+devDependencies:
++ @typescript/native <- typescript 7.0.2
++ eslint 10.8.1
++ typescript-eslint 8.67.0
+
+Done in 2.9s using pnpm v10.13.1
+EXIT=0
+install elapsed: 3s
+--- ls -l node_modules/.bin/tsc* ---
+-rwxr-xr-x@ 1 katayamaryuunosuke  staff  1848 Aug 18 12:19 node_modules/.bin/tsc
+-rwxr-xr-x@ 1 katayamaryuunosuke  staff  2362 Aug 18 12:19 node_modules/.bin/tsc6
+$ ./node_modules/.bin/tsc --version
+Version 7.0.2
+$ ./node_modules/.bin/tsc6 --version
+Version 6.0.3
+$ ./node_modules/.bin/tsc --noEmit （3回）
+./node_modules/.bin/tsc --noEmit  1.43s user 0.12s system 406% cpu 0.380 total
+./node_modules/.bin/tsc --noEmit  1.41s user 0.10s system 393% cpu 0.384 total
+./node_modules/.bin/tsc --noEmit  1.50s user 0.09s system 423% cpu 0.375 total
+$ ./node_modules/.bin/eslint .
+
+/Users/katayamaryuunosuke/workspace/024_zenn/logs/run-typescript7-alias-tsc6-20260818-1209/workspace/pnpm-trial/src/lint-violations.ts
+   2:8   error  Async function 'fetchAll' has no 'await' expression                                                                                                                 @typescript-eslint/require-await
+   3:3   error  Promises must be awaited, end with a call to .catch, end with a call to .then with a rejection handler or be explicitly marked as ignored with the `void` operator  @typescript-eslint/no-floating-promises
+   6:26  error  Unexpected any. Specify a different type                                                                                                                            @typescript-eslint/no-explicit-any
+   7:3   error  Unsafe return of a value of type `any`                                                                                                                              @typescript-eslint/no-unsafe-return
+   7:10  error  Unsafe call of an `any` typed value                                                                                                                                 @typescript-eslint/no-unsafe-call
+   7:12  error  Unsafe member access .toString on an `any` value                                                                                                                    @typescript-eslint/no-unsafe-member-access
+  11:20  error  Invalid type "unknown" of template literal expression                                                                                                               @typescript-eslint/restrict-template-expressions
+
+✖ 7 problems (7 errors, 0 warnings)
+
+./node_modules/.bin/eslint .  11.34s user 0.94s system 131% cpu 9.322 total

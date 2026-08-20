@@ -1,0 +1,102 @@
+diff --git a$RUN_WORKSPACE/parent-one-turn-child-one-turn/case-result.json b$RUN_WORKSPACE/parent-one-turn-child-one-turn/case-result.json
+new file mode 100644
+index 0000000..53cd628
+--- /dev/null
++++ b$RUN_WORKSPACE/parent-one-turn-child-one-turn/case-result.json
+@@ -0,0 +1,96 @@
++{
++  "version": 1,
++  "case_id": "parent-one-turn-child-one-turn",
++  "preflight": false,
++  "cli": {
++    "expected_version": "2.1.227",
++    "resolved_binary_basename": "2.1.227",
++    "resolved_binary_sha256": "7432511ba3be818e01f23f6eef8630d214a8b618451e188c3c7d61a987eef6c7"
++  },
++  "launch": {
++    "runner_args_verified": true,
++    "top_level_max_turns": 1,
++    "child_max_turns": 1,
++    "max_budget_usd": 0.2,
++    "parent_tools": [
++      "Agent"
++    ],
++    "child_tools": [],
++    "model": "sonnet",
++    "effort": "low",
++    "setting_sources": [
++      "project"
++    ],
++    "session_persistence": false,
++    "forward_subagent_text": true,
++    "builtin_agents_disabled": true
++  },
++  "safety": {
++    "runner_environment_names": [
++      "CLAUDE_BIN",
++      "PATH",
++      "REAL_CLAUDE_BIN",
++      "TMPDIR",
++      "__CF_USER_TEXT_ENCODING"
++    ],
++    "child_environment_names": [
++      "CI",
++      "CLAUDE_AGENT_SDK_DISABLE_BUILTIN_AGENTS",
++      "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY",
++      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
++      "DISABLE_AUTOUPDATER",
++      "DISABLE_ERROR_REPORTING",
++      "DISABLE_TELEMETRY",
++      "HOME",
++      "LANG",
++      "LC_ALL",
++      "LOGNAME",
++      "NO_COLOR",
++      "PATH",
++      "SHELL",
++      "TERM",
++      "TMPDIR",
++      "USER"
++    ],
++    "credential_environment_names": [],
++    "preflight_home_is_case_child": null,
++    "preflight_uses_offline_fake_cli": false,
++    "raw_stdout_retained_in_fixture": false,
++    "raw_stderr_retained_in_fixture": false
++  },
++  "process": {
++    "exit_code": 1,
++    "signal": null,
++    "timed_out": false,
++    "duration_ms": 4050,
++    "authentication_failure_observed": false,
++    "service_failure_observed": false
++  },
++  "observations": {
++    "parsed_json_lines": 4,
++    "malformed_nonempty_lines": 0,
++    "parent_agent_call_count": 0,
++    "parent_agent_requested_agent": null,
++    "forwarded_child_event_count": 0,
++    "forwarded_child_marker_observed": false,
++    "final_result_count": 1,
++    "final_subtype": "success",
++    "final_is_error": true,
++    "final_num_turns": 1,
++    "total_cost_usd": 0,
++    "parent_usage": {
++      "input_tokens": 0,
++      "output_tokens": 0,
++      "cache_read_input_tokens": 0,
++      "cache_creation_input_tokens": 0
++    },
++    "whole_tree_usage": {
++      "model_count": 0,
++      "input_tokens": 0,
++      "output_tokens": 0,
++      "cache_read_input_tokens": 0,
++      "cache_creation_input_tokens": 0,
++      "cost_usd": 0
++    }
++  }
++}

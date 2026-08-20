@@ -1,0 +1,8 @@
+{
+  "name": "ssh-probe",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "is-positive-ssh": "git+ssh://git@github.com/kevva/is-positive.git"
+  }
+}

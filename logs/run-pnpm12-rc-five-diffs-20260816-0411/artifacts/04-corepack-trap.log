@@ -1,0 +1,10 @@
+===== 04:14:33 Phase3-2a: corepack trap check (issue #13018) =====
+0.35.0
+corepack-version-exit=0
+$ corepack use pnpm@next-12
+Installing pnpm@12.0.0-rc.6 in the project...
+
+Downloading the pnpm 12.0.0-rc.6 binary for linux-arm64...
+Already up to date
+Done in 2.5s using pnpm v12.0.0-rc.6
+exit=0

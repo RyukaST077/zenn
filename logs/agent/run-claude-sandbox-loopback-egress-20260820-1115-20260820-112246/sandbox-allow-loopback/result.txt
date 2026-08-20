@@ -1,0 +1,1 @@
+The command failed with exit code 71: `sandbox-exec: sandbox_apply: Operation not permitted`. As instructed, I'll stop here without retrying or taking further action.

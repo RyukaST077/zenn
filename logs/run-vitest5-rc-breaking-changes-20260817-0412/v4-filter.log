@@ -1,0 +1,22 @@
+############ [3-3] v4.1.10 :: npx vitest run test/c-filter.test.ts -t 'math adds' ############
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  04:16:51
+   Duration  464ms (transform 64ms, setup 0ms, import 96ms, tests 8ms, environment 0ms)
+
+--- exit=0 ---
+############ [3-3] v4.1.10 :: npx vitest run test/c-filter.test.ts -t 'math > adds' ############
+
+ RUN  v4.1.10 /Users/katayamaryuunosuke/workspace/024_zenn/fixtures/vitest5-rc-breaking-changes
+
+
+ Test Files  1 skipped (1)
+      Tests  1 skipped (1)
+   Start at  04:16:53
+   Duration  232ms (transform 20ms, setup 0ms, import 33ms, tests 0ms, environment 0ms)
+
+--- exit=0 ---

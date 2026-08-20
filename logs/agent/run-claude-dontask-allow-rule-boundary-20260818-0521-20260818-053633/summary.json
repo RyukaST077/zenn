@@ -1,0 +1,64 @@
+{
+  "manifest": "practice/agent/agent-practice-claude-dontask-allow-rule-boundary-20260818-0521.json",
+  "started_at": "2026-08-17T20:36:33.191Z",
+  "finished_at": "2026-08-17T20:36:52.080Z",
+  "versions": {
+    "claude": "2.1.227 (Claude Code)"
+  },
+  "cases": [
+    {
+      "id": "exact-rule-control",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "execution_mode": "fixture-wrapper",
+      "execution_environment": "inherit",
+      "preflight_status": "passed",
+      "guidance": null,
+      "model_override": "sonnet",
+      "effort_override": "low",
+      "network_requested": false,
+      "network_enforcement": "not-enforced-for-claude-host-process",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 4853,
+      "verifier_exit_code": 1,
+      "marker_expected": "EXACT_ALLOW_CONTROL_COMPLETED",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "case-result.json"
+      ],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-claude-dontask-allow-rule-boundary-20260818-0521-20260818-053633/exact-rule-control"
+    },
+    {
+      "id": "broad-wildcard-treatment",
+      "provider": "claude",
+      "provider_version": "2.1.227 (Claude Code)",
+      "execution_mode": "fixture-wrapper",
+      "execution_environment": "inherit",
+      "preflight_status": "passed",
+      "guidance": null,
+      "model_override": "sonnet",
+      "effort_override": "low",
+      "network_requested": false,
+      "network_enforcement": "not-enforced-for-claude-host-process",
+      "agent_exit_code": 0,
+      "timed_out": false,
+      "duration_ms": 4309,
+      "verifier_exit_code": 1,
+      "marker_expected": "BROAD_ALLOW_BOUNDARY_COMPLETED",
+      "marker_observed": null,
+      "marker_matches": false,
+      "protected_paths_changed": [],
+      "changed_files": [
+        "case-result.json"
+      ],
+      "unexpected_changes": [],
+      "passed": false,
+      "evidence": "logs/agent/run-claude-dontask-allow-rule-boundary-20260818-0521-20260818-053633/broad-wildcard-treatment"
+    }
+  ]
+}

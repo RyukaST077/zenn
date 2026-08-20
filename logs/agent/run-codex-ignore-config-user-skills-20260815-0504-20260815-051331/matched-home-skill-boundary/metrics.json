@@ -1,0 +1,31 @@
+{
+  "id": "matched-home-skill-boundary",
+  "provider": "codex",
+  "provider_version": "codex-cli 0.147.0",
+  "execution_mode": "fixture-wrapper",
+  "execution_environment": "inherit",
+  "preflight_status": "passed",
+  "guidance": null,
+  "model_override": null,
+  "effort_override": null,
+  "network_requested": false,
+  "network_enforcement": "codex-workspace-sandbox",
+  "agent_exit_code": 0,
+  "timed_out": false,
+  "duration_ms": 13548,
+  "verifier_exit_code": 0,
+  "marker_expected": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+  "marker_observed": "AMBIENT_USER_SKILL_BOUNDARY_OBSERVED",
+  "marker_matches": true,
+  "protected_paths_changed": [],
+  "changed_files": [
+    "control-events.jsonl",
+    "control-final.json",
+    "probe-result.json",
+    "treatment-events.jsonl",
+    "treatment-final.json",
+    "verification.txt"
+  ],
+  "unexpected_changes": [],
+  "passed": true
+}
