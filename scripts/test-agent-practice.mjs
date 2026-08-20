@@ -328,6 +328,7 @@ try {
   assert.match(dryRun.stdout, /orchestrator: codex/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
+  assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/2\)/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
   assert.match(dryRun.stdout, /publication queue -> commit\/push -> PR -> merge/);
   assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
@@ -347,6 +348,11 @@ try {
   ]);
   assert.equal(invalidOrchestrator.status, 2);
   assert.match(invalidOrchestrator.stderr, /must be codex or claude/);
+  const invalidResumeCount = run("bash", [
+    "scripts/auto-agent-practice.sh", "--dry-run",
+  ], { env: { AGENT_PIPELINE_USAGE_RESUME_COUNT: "invalid" } });
+  assert.equal(invalidResumeCount.status, 2);
+  assert.match(invalidResumeCount.stderr, /must be a non-negative integer/);
   const resumeDryRun = run("bash", [
     "scripts/auto-agent-practice.sh",
     "--resume-after-run", "logs/agent/run-example/execution-log.md",
@@ -354,6 +360,43 @@ try {
   ]);
   assert.equal(resumeDryRun.status, 0, resumeDryRun.stderr);
   assert.match(resumeDryRun.stdout, /resume after run: logs\/agent\/run-example\/execution-log\.md/);
+
+  const usageLimitEvent = path.join(fakeDir, "usage-limit-event.json");
+  fs.writeFileSync(usageLimitEvent, JSON.stringify({
+    type: "result",
+    is_error: true,
+    api_error_status: 429,
+    result: "You've hit your session limit · resets 2pm (Asia/Tokyo)",
+  }));
+  const fixedNow = Date.parse("2026-08-20T02:26:00Z");
+  const parsedLimit = run(process.execPath, [
+    "scripts/claude-usage-limit.mjs", usageLimitEvent, String(fixedNow),
+  ]);
+  assertRun(parsedLimit, "parse Claude usage reset");
+  assert.equal(parsedLimit.stdout, "9240\n2pm (Asia/Tokyo)\n");
+  const noLimitEvent = path.join(fakeDir, "no-limit-event.json");
+  fs.writeFileSync(noLimitEvent, JSON.stringify({ type: "result", result: "completed" }));
+  const noLimit = run(process.execPath, ["scripts/claude-usage-limit.mjs", noLimitEvent]);
+  assert.equal(noLimit.status, 1, "non-limit output was misclassified as a usage limit");
+
+  const finderRoot = path.join(fakeDir, "run-log-finder");
+  const finderMarker = path.join(finderRoot, "stage.marker");
+  const finderRun = path.join(finderRoot, "logs/agent/run-fixture/execution-log.md");
+  const finderManifest = "practice/agent/finder-fixture.json";
+  fs.mkdirSync(path.dirname(finderRun), { recursive: true });
+  fs.writeFileSync(finderMarker, "");
+  fs.writeFileSync(finderRun, `# execution\n\n- Manifest: \`${finderManifest}\`\n`);
+  fs.utimesSync(finderMarker, new Date(fixedNow - 10_000), new Date(fixedNow - 10_000));
+  fs.utimesSync(finderRun, new Date(fixedNow), new Date(fixedNow));
+  const foundRun = run(process.execPath, [
+    "scripts/find-agent-run-log.mjs", finderMarker, finderManifest, finderRoot,
+  ]);
+  assertRun(foundRun, "find saved agent run log");
+  assert.equal(foundRun.stdout, "logs/agent/run-fixture/execution-log.md");
+  const missingRun = run(process.execPath, [
+    "scripts/find-agent-run-log.mjs", finderMarker, "practice/agent/missing.json", finderRoot,
+  ]);
+  assert.equal(missingRun.status, 1, "missing run log unexpectedly matched");
   const retryDir = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-launchd-retry-"));
   const retryScript = path.join(retryDir, "retryable-pipeline.sh");
   const retryCount = path.join(retryDir, "count");

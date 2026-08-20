@@ -364,6 +364,9 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 | `AGENT_PIPELINE_MODEL` | オーケストレーターのモデル。空なら選択したCLIの既定 | 空 |
 | `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
 | `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
+| `AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT` | Claude利用上限後に保存済み実験ログから自動再起動する | `1` |
+| `AGENT_PIPELINE_MAX_USAGE_RESUMES` | 1回のパイプラインで許可する自動再起動回数 | `2` |
+| `AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS` | 表示されたリセット時刻の後に追加で待つ秒数 | `30` |
 | `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `3` |
 | `AGENT_PIPELINE_BASE_BRANCH` | 公開PRのbaseブランチ | `main` |
 | `AGENT_PIPELINE_MERGE_METHOD` | `gh pr merge`方式 | `--squash` |
@@ -387,6 +390,11 @@ AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
 ```
 
 実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
+
+Claudeオーケストレーターがusage/session limitで終了した場合、run段以降ではmanifestに一致する
+`logs/agent/run-*/execution-log.md`を検出し、表示されたリセット時刻まで待って
+`--resume-after-run`付きで自動再起動する。再起動後はsearch・plan・runを繰り返さず、分析段から続行する。
+保存済み実験ログがない段階、リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
 調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、
 `articles/`へ保存する。
 

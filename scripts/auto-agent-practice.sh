@@ -15,6 +15,11 @@ set -euo pipefail
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
+: "${AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT:=1}"
+: "${AGENT_PIPELINE_MAX_USAGE_RESUMES:=2}"
+: "${AGENT_PIPELINE_USAGE_RESUME_COUNT:=0}"
+: "${AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS:=30}"
+: "${AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE:=}"
 
 TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository"
 DRY_RUN=0
@@ -44,6 +49,23 @@ case "$AGENT_PIPELINE_ORCHESTRATOR" in
   *) echo "AGENT_PIPELINE_ORCHESTRATOR must be codex or claude" >&2; exit 2 ;;
 esac
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
+case "$AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT" in
+  0|1) ;;
+  *) echo "AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT must be 0 or 1" >&2; exit 2 ;;
+esac
+validate_non_negative_integer() {
+  case "$2" in
+    *[!0-9]*|'') echo "$1 must be a non-negative integer" >&2; exit 2 ;;
+  esac
+}
+validate_non_negative_integer AGENT_PIPELINE_MAX_USAGE_RESUMES "$AGENT_PIPELINE_MAX_USAGE_RESUMES"
+validate_non_negative_integer AGENT_PIPELINE_USAGE_RESUME_COUNT "$AGENT_PIPELINE_USAGE_RESUME_COUNT"
+validate_non_negative_integer AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS "$AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS"
+case "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" in
+  ''|*[!0-9]*)
+    [ -z "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" ] \
+      || { echo "AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE must be a non-negative integer" >&2; exit 2; } ;;
+esac
 case "$AGENT_PIPELINE_MERGE_METHOD" in
   --merge|--rebase|--squash) ;;
   *) echo "AGENT_PIPELINE_MERGE_METHOD must be --merge, --rebase, or --squash" >&2; exit 2 ;;
@@ -56,6 +78,8 @@ PIPE_DIR="logs/agent/pipeline-$TS"
 PLOG="$PIPE_DIR/pipeline.log"
 CONTRACT_TOOL="scripts/agent-stage-result-contract.mjs"
 RESULT_TOOL="scripts/validate-agent-stage-result.mjs"
+CLAUDE_LIMIT_TOOL="scripts/claude-usage-limit.mjs"
+RUN_LOG_FINDER="scripts/find-agent-run-log.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 stage_timeout() {
@@ -85,6 +109,7 @@ if [ "$DRY_RUN" = 1 ]; then
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
   resume after run: ${RESUME_RUN_LOG:-none}
+  auto resume at usage limit: $AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT (attempt $AGENT_PIPELINE_USAGE_RESUME_COUNT/$AGENT_PIPELINE_MAX_USAGE_RESUMES)
   stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
   result: a reviewed article added to the rate-limited Zenn publication queue
 EOF
@@ -105,6 +130,8 @@ command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
+[ -f "$CLAUDE_LIMIT_TOOL" ] || die "Claude usage limit parser is missing"
+[ -f "$RUN_LOG_FINDER" ] || die "agent execution log finder is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
@@ -120,6 +147,68 @@ for other_lock in "$ROOT/.auto-publish.lock" "$ROOT/.auto-publish-codex.lock"; d
 done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another AI agent practice pipeline holds $LOCK"; fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+
+restart_after_usage_limit() {
+  local stage="$1" events="$2" marker="$3"
+  local limit_info limit_rc wait_seconds reset_label resume_log next_count step remaining find_rc
+  local restart_cmd
+  set +e
+  limit_info="$(node "$CLAUDE_LIMIT_TOOL" "$events" 2>>"$PLOG")"
+  limit_rc=$?
+  set -e
+  [ "$limit_rc" = 0 ] || return 1
+
+  if [ "$AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT" != 1 ]; then
+    die "$stage hit the Claude usage limit and automatic resume is disabled; events: $events"
+  fi
+  if [ "$AGENT_PIPELINE_USAGE_RESUME_COUNT" -ge "$AGENT_PIPELINE_MAX_USAGE_RESUMES" ]; then
+    die "$stage hit the Claude usage limit after $AGENT_PIPELINE_USAGE_RESUME_COUNT automatic resumes; events: $events"
+  fi
+
+  wait_seconds="$(printf '%s\n' "$limit_info" | sed -n '1p')"
+  reset_label="$(printf '%s\n' "$limit_info" | sed -n '2p')"
+  if [ -n "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" ]; then
+    wait_seconds="$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE"
+    reset_label="test override"
+  else
+    wait_seconds=$((wait_seconds + AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS))
+  fi
+
+  resume_log="${RUN_LOG:-}"
+  if [ "$stage" = run ]; then
+    set +e
+    resume_log="$(node "$RUN_LOG_FINDER" "$marker" "$MANIFEST" "$ROOT" 2>>"$PLOG")"
+    find_rc=$?
+    set -e
+    [ "$find_rc" = 0 ] || die "run hit the Claude usage limit but no unique saved execution log matched $MANIFEST"
+  fi
+  [ -n "$resume_log" ] && [ -f "$resume_log" ] \
+    || die "$stage hit the Claude usage limit before a reusable execution log was available"
+
+  next_count=$((AGENT_PIPELINE_USAGE_RESUME_COUNT + 1))
+  log "PAUSE: $stage hit the Claude usage limit; reset=$reset_label, wait=${wait_seconds}s"
+  log "saved execution log: $resume_log"
+  remaining="$wait_seconds"
+  while [ "$remaining" -gt 0 ]; do
+    step=60
+    [ "$remaining" -ge "$step" ] || step="$remaining"
+    sleep "$step"
+    remaining=$((remaining - step))
+    if [ "$remaining" -gt 0 ] && { [ "$remaining" -lt 60 ] || [ $((remaining % 300)) -eq 0 ]; }; then
+      log "usage-limit wait remaining: ${remaining}s"
+    fi
+  done
+
+  log "RESTART: resuming from $resume_log (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+  rmdir "$LOCK" 2>/dev/null || die "could not release pipeline lock before automatic resume"
+  trap - EXIT
+  export AGENT_PIPELINE_USAGE_RESUME_COUNT="$next_count"
+  restart_cmd=(bash "$ROOT/scripts/auto-agent-practice.sh" --orchestrator "$AGENT_PIPELINE_ORCHESTRATOR")
+  restart_cmd+=(--max-rounds "$MAX_AGENT_REVIEW_ROUNDS" --resume-after-run "$resume_log")
+  [ "$SCHEDULED" = 1 ] && restart_cmd+=(--scheduled)
+  [ "$AUTO_MERGE" = 1 ] && restart_cmd+=(--auto-merge) || restart_cmd+=(--pr-only)
+  exec "${restart_cmd[@]}"
+}
 
 [ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
   || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
@@ -167,7 +256,12 @@ run_stage() {
   rc=$?
   set -e
   [ "$rc" != 124 ] || die "$stage timed out; events: $events"
-  [ "$rc" = 0 ] || die "$stage failed with exit $rc; events: $events"
+  if [ "$rc" != 0 ]; then
+    if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
+      restart_after_usage_limit "$stage" "$events" "$marker" || true
+    fi
+    die "$stage failed with exit $rc; events: $events"
+  fi
   if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
     node scripts/extract-claude-stage-result.mjs "$events" "$result" \
       || die "$stage Claude output extraction failed; output: $events"
