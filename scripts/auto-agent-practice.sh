@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # AI coding-agent article pipeline: research -> plan -> real CLI run -> analysis -> draft ->
 # review/revise -> publication queue PR -> merge.
-# The run stage starts authenticated Claude Code and Codex processes, so the outer Codex stage uses
-# danger-full-access. Run this only on the dedicated local machine used for these experiments.
+# The run stage starts authenticated Claude Code and Codex processes, so the outer orchestrator uses
+# unrestricted permissions. Run this only on the dedicated local machine used for these experiments.
 set -euo pipefail
 
 : "${CODEX_BIN:=codex}"
 : "${CLAUDE_BIN:=claude}"
+: "${AGENT_PIPELINE_ORCHESTRATOR:=codex}"
 : "${AGENT_PIPELINE_MODEL:=}"
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
@@ -23,6 +24,7 @@ RESUME_RUN_LOG=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --topic) TOPIC="${2:?--topic requires text}"; shift ;;
+    --orchestrator) AGENT_PIPELINE_ORCHESTRATOR="${2:?--orchestrator requires codex or claude}"; shift ;;
     --max-rounds) MAX_AGENT_REVIEW_ROUNDS="${2:?--max-rounds requires a number}"; shift ;;
     --resume-after-run) RESUME_RUN_LOG="${2:?--resume-after-run requires an execution log}"; shift ;;
     --scheduled) SCHEDULED=1 ;;
@@ -36,6 +38,10 @@ while [ "$#" -gt 0 ]; do
 done
 case "$MAX_AGENT_REVIEW_ROUNDS" in
   *[!0-9]*|0) echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
+esac
+case "$AGENT_PIPELINE_ORCHESTRATOR" in
+  codex|claude) ;;
+  *) echo "AGENT_PIPELINE_ORCHESTRATOR must be codex or claude" >&2; exit 2 ;;
 esac
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
 case "$AGENT_PIPELINE_MERGE_METHOD" in
@@ -70,9 +76,9 @@ if [ "$DRY_RUN" = 1 ]; then
   root: $ROOT
   topic: $TOPIC
   pipeline: $PIPE_DIR
-  orchestrator: $CODEX_BIN (model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
+  orchestrator: $AGENT_PIPELINE_ORCHESTRATOR ($([ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ] && printf '%s' "$CODEX_BIN" || printf '%s' "$CLAUDE_BIN"), model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
   experiment CLIs: $CLAUDE_BIN, $CODEX_BIN
-  policy: approval=never, outer sandbox=danger-full-access, ephemeral=true
+  policy: non-interactive, outer permissions=unrestricted, ephemeral=true
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
@@ -106,7 +112,7 @@ GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not au
 git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
 git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
-log "WARN: outer Codex stages use danger-full-access so the run stage can start both authenticated CLIs"
+log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions so the run stage can start both authenticated CLIs"
 
 LOCK="$ROOT/.agent-practice-pipeline.lock"
 for other_lock in "$ROOT/.auto-publish.lock" "$ROOT/.auto-publish-codex.lock"; do
@@ -129,27 +135,43 @@ run_stage() {
   local events="$PIPE_DIR/$idx-$stage.events.jsonl"
   local result="$PIPE_DIR/$idx-$stage.result.json"
   local schema="$PIPE_DIR/$idx-$stage.schema.json"
-  local seconds contract rc
+  local seconds contract rc stage_prompt schema_json
   seconds="$(stage_timeout "$stage")"
   node "$CONTRACT_TOOL" schema "$stage" "$schema" || die "$stage schema generation failed"
   contract="$(node "$CONTRACT_TOOL" prompt "$stage")" || die "$stage result prompt generation failed"
   touch "$marker"
 
-  local cmd=("$CODEX_BIN" "-a" "never")
-  [ "$search" = 1 ] && cmd+=("--search")
-  cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "danger-full-access")
-  cmd+=("-c" "model_reasoning_effort=\"$AGENT_PIPELINE_EFFORT\"")
-  [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
-  cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result")
-  cmd+=("Use \$$skill. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract")
+  stage_prompt="Use \$$skill. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
 
-  log "$stage start (timeout=${seconds}s, skill=$skill)"
+  local cmd
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ]; then
+    cmd=("$CODEX_BIN" "-a" "never")
+    [ "$search" = 1 ] && cmd+=("--search")
+    cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "danger-full-access")
+    cmd+=("-c" "model_reasoning_effort=\"$AGENT_PIPELINE_EFFORT\"")
+    [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
+    cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result" "$stage_prompt")
+  else
+    schema_json="$(tr -d '\n' <"$schema")"
+    stage_prompt="Read .agents/skills/$skill/SKILL.md completely, resolve its relative references from that skill directory, and follow it as the stage workflow. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
+    cmd=("$CLAUDE_BIN" "-p" "$stage_prompt" "--output-format" "json" "--json-schema" "$schema_json")
+    cmd+=("--no-session-persistence" "--safe-mode" "--permission-mode" "bypassPermissions")
+    [ "$search" = 1 ] || cmd+=("--disallowedTools" "WebSearch,WebFetch")
+    [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
+    [ -z "$AGENT_PIPELINE_EFFORT" ] || cmd+=("--effort" "$AGENT_PIPELINE_EFFORT")
+  fi
+
+  log "$stage start (timeout=${seconds}s, skill=$skill, orchestrator=$AGENT_PIPELINE_ORCHESTRATOR)"
   set +e
   "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
   rc=$?
   set -e
   [ "$rc" != 124 ] || die "$stage timed out; events: $events"
   [ "$rc" = 0 ] || die "$stage failed with exit $rc; events: $events"
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
+    node scripts/extract-claude-stage-result.mjs "$events" "$result" \
+      || die "$stage Claude output extraction failed; output: $events"
+  fi
   set +e
   STAGE_ARTIFACT="$(node "$RESULT_TOOL" "$result" "$allowed" "$marker" "$stage" 2>>"$PLOG")"
   local result_rc=$?

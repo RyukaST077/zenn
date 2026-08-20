@@ -20,7 +20,8 @@ export function contractFor(stage) {
 export function schemaFor(stage) {
   const contract = contractFor(stage);
   return {
-    $schema: "https://json-schema.org/draft/2020-12/schema",
+    // Claude Code validates only a supported JSON Schema subset and rejects
+    // some explicit dialect URIs. Codex accepts the same schema without one.
     type: "object",
     properties: {
       status: { type: "string", enum: ["ok", "abort"] },
