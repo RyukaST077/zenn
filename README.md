@@ -335,6 +335,9 @@ bash scripts/auto-agent-practice.sh --dry-run
 # 未掲載のAI coding-agentテーマを選び、実CLI検証から公開キュー追加まで実行
 bash scripts/auto-agent-practice.sh
 
+# Claude Codeをオーケストレーターにして同じパイプラインを実行
+bash scripts/auto-agent-practice.sh --orchestrator claude
+
 # 公開PRを作成し、人間が確認してマージする場合
 bash scripts/auto-agent-practice.sh --pr-only
 
@@ -343,8 +346,8 @@ bash scripts/auto-agent-practice.sh --topic "Claude Code hooksでformatを強制
 ```
 
 前提は、ログイン済みの `claude`、`codex`、`gh`、`node`、`git`、`rg`、`timeout` または `gtimeout`。
-run段から両方の認証済みCLIを起動するため、外側のCodexは `danger-full-access` で動く。専用の
-ローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上を満たした
+run段から両方の認証済みCLIを起動するため、選択した外側のオーケストレーターは制限なしの権限で動く。
+専用のローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上を満たした
 場合だけ、`queue/<slug>` ブランチで `published: false` の記事とキュー更新のPRを作成する。通常実行はPRを
 自動マージし、`--pr-only` を付けた場合は人間の確認・マージを待つ。既存の未追跡ファイルはキュー
 コミットに含めず、記事と同じslugの画像だけを明示的にstageする。公開準備からpushまでは一時Git
@@ -357,7 +360,8 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 
 | 環境変数 | 意味 | 既定 |
 |---|---|---|
-| `AGENT_PIPELINE_MODEL` | オーケストレーターCodexのモデル。空ならCLI既定 | 空 |
+| `AGENT_PIPELINE_ORCHESTRATOR` | オーケストレーター（`codex` / `claude`） | `codex` |
+| `AGENT_PIPELINE_MODEL` | オーケストレーターのモデル。空なら選択したCLIの既定 | 空 |
 | `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
 | `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
 | `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `3` |

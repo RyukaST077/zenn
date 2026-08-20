@@ -325,6 +325,7 @@ try {
   const dryRun = run("bash", ["scripts/auto-agent-practice.sh", "--scheduled", "--dry-run"]);
   assert.equal(dryRun.status, 0, dryRun.stderr);
   assert.match(dryRun.stdout, /scheduled: 1/);
+  assert.match(dryRun.stdout, /orchestrator: codex/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
@@ -336,6 +337,16 @@ try {
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
   assert.match(prOnlyDryRun.stdout, /PR -> human merge/);
+  const claudeOrchestratorDryRun = run("bash", [
+    "scripts/auto-agent-practice.sh", "--orchestrator", "claude", "--dry-run",
+  ]);
+  assert.equal(claudeOrchestratorDryRun.status, 0, claudeOrchestratorDryRun.stderr);
+  assert.match(claudeOrchestratorDryRun.stdout, /orchestrator: claude/);
+  const invalidOrchestrator = run("bash", [
+    "scripts/auto-agent-practice.sh", "--orchestrator", "invalid", "--dry-run",
+  ]);
+  assert.equal(invalidOrchestrator.status, 2);
+  assert.match(invalidOrchestrator.stderr, /must be codex or claude/);
   const resumeDryRun = run("bash", [
     "scripts/auto-agent-practice.sh",
     "--resume-after-run", "logs/agent/run-example/execution-log.md",
