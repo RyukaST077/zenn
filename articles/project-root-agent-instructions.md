@@ -3,7 +3,7 @@ title: "CLAUDE.mdとAGENTS.mdを「置いただけ」で終わらせない検証
 emoji: "🧭"
 type: tech
 topics: ["claudecode", "codex", "aiagent", "cli"]
-published: false
+published: true
 ---
 
 `CLAUDE.md` や `AGENTS.md` にプロジェクト固有の手順を書いても、ファイルが存在するだけでは、その指示が実行結果へ反映された証拠にはなりません。メインのテストが通っていても、指示ファイルにだけ書いた追加作業が抜けている可能性は残ります。
