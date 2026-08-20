@@ -5,28 +5,10 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/opentelemetry-js-collector-jaeger-first-trace.md",
-      "enqueuedAt": "2026-07-26T15:14:50.000Z",
-      "attempts": 4,
-      "lastAttemptAt": "2026-08-17T22:57:51.220Z"
-    },
-    {
-      "article": "articles/typescript6-deprecated-tsconfig-already-error.md",
-      "enqueuedAt": "2026-07-26T19:37:32.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/pnpm11-minimum-release-age-ci-only-failure.md",
-      "enqueuedAt": "2026-08-07T19:45:52.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
       "article": "articles/codex-pretooluse-dispatch-preflight.md",
       "enqueuedAt": "2026-08-13T10:34:59.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 3,
+      "lastAttemptAt": "2026-08-20T01:06:49.002Z"
     },
     {
       "article": "articles/project-root-agent-instructions.md",
@@ -49,6 +31,12 @@
     {
       "article": "articles/codex-ignore-flags-user-skill-boundary.md",
       "enqueuedAt": "2026-08-14T20:25:01.102Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/playwright162-ct-stories-galleries.md",
+      "enqueuedAt": "2026-08-20T00:23:10.462Z",
       "attempts": 0,
       "lastAttemptAt": null
     }
