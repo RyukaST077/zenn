@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/project-root-agent-instructions.md",
-      "enqueuedAt": "2026-08-13T10:34:59.000Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-08-20T09:08:47.925Z"
-    },
-    {
       "article": "articles/deno29-test-each-snapshot.md",
       "enqueuedAt": "2026-08-13T19:39:39.000Z",
       "attempts": 0,
