@@ -40,6 +40,9 @@ FAKE_WAIT_GATE="$TEST_DIR/wait-gate.sh"
 FAKE_WAIT_COUNT="$TEST_DIR/wait-count"
 cat >"$FAKE_WAIT_GATE" <<'EOF'
 #!/bin/bash
+[ -z "${EXPECTED_GATE_MIN:-}" ] \
+  || [ "${CLAUDE_USAGE_MIN_REMAINING_PERCENT:-}" = "$EXPECTED_GATE_MIN" ] \
+  || exit 9
 count=0
 [ ! -f "$FAKE_WAIT_COUNT" ] || count="$(cat "$FAKE_WAIT_COUNT")"
 count=$((count + 1))
@@ -49,6 +52,17 @@ exit 0
 EOF
 chmod +x "$FAKE_WAIT_GATE"
 
+CLAUDE_USAGE_GATE_COMMAND="$FAKE_WAIT_GATE" \
+FAKE_WAIT_COUNT="$FAKE_WAIT_COUNT" \
+CLAUDE_USAGE_WAIT_INTERVAL_SECONDS=1 \
+CLAUDE_USAGE_WAIT_MAX_SECONDS=2 \
+  bash scripts/wait-for-claude-usage.sh >/dev/null
+[ "$(cat "$FAKE_WAIT_COUNT")" = 2 ]
+
+# The waiter invokes its gate through bash, so a repository script with mode
+# 0644 must remain valid input.
+chmod -x "$FAKE_WAIT_GATE"
+rm -f "$FAKE_WAIT_COUNT"
 CLAUDE_USAGE_GATE_COMMAND="$FAKE_WAIT_GATE" \
 FAKE_WAIT_COUNT="$FAKE_WAIT_COUNT" \
 CLAUDE_USAGE_WAIT_INTERVAL_SECONDS=1 \
@@ -71,6 +85,7 @@ chmod +x "$FAKE_PIPELINE"
 rm -f "$FAKE_WAIT_COUNT"
 CLAUDE_USAGE_GATE_COMMAND="$FAKE_WAIT_GATE" \
 FAKE_WAIT_COUNT="$FAKE_WAIT_COUNT" \
+EXPECTED_GATE_MIN=20 \
 CLAUDE_USAGE_WAITER="$ROOT/scripts/wait-for-claude-usage.sh" \
 CLAUDE_USAGE_WAIT_INTERVAL_SECONDS=1 \
 CLAUDE_USAGE_WAIT_MAX_SECONDS=2 \

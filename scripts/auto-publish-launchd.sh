@@ -31,6 +31,7 @@ USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AUTO_PUBLISH_STATUS_DIR:=$REPO/logs/daily-status}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 : "${AUTO_PUBLISH_MAX_USAGE_RESUMES:=8}"
+: "${CLAUDE_LAUNCH_MIN_REMAINING_PERCENT:=20}"
 : "${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS:=60}"
 : "${ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS:=21600}"
 : "${ARTICLE_PIPELINE_LOCK_WAIT_ENABLED:=1}"
@@ -83,7 +84,8 @@ resolve_args || exit $?
   case " $ARGS " in
     *" --dry-run "*) echo "Claude usage gate: bypassed for dry-run" ;;
     *)
-      bash "$USAGE_WAITER" || {
+      CLAUDE_USAGE_MIN_REMAINING_PERCENT="$CLAUDE_LAUNCH_MIN_REMAINING_PERCENT" \
+        bash "$USAGE_WAITER" || {
         usage_rc=$?
         echo "RESULT: failed (Claude allowance wait failed, exit=$usage_rc)"
         echo "===== auto-publish (launchd) end: $(date) exit=$usage_rc ====="
@@ -104,7 +106,8 @@ resolve_args || exit $?
     fi
     usage_resumes=$((usage_resumes + 1))
     echo "PAUSE: Claude allowance exhausted; waiting for reset before resume $usage_resumes/$AUTO_PUBLISH_MAX_USAGE_RESUMES"
-    bash "$USAGE_WAITER" || { rc=$?; break; }
+    CLAUDE_USAGE_MIN_REMAINING_PERCENT="$CLAUDE_LAUNCH_MIN_REMAINING_PERCENT" \
+      bash "$USAGE_WAITER" || { rc=$?; break; }
     resolve_args || { rc=$?; break; }
     echo "RESUME: $ARGS"
   done

@@ -13,7 +13,7 @@ esac
 case "$CLAUDE_USAGE_WAIT_MAX_SECONDS" in
   ''|*[!0-9]*) echo "CLAUDE_USAGE_WAIT_MAX_SECONDS must be a non-negative integer" >&2; exit 2 ;;
 esac
-[ -x "$USAGE_GATE" ] || { echo "Claude usage gate is not executable: $USAGE_GATE" >&2; exit 2; }
+[ -f "$USAGE_GATE" ] || { echo "Claude usage gate is not a regular file: $USAGE_GATE" >&2; exit 2; }
 
 waited=0
 while :; do
