@@ -7,8 +7,8 @@
     {
       "article": "articles/codex-resume-ephemeral-rollout-gate.md",
       "enqueuedAt": "2026-08-14T03:04:36.000Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-21T22:12:57.021Z"
     },
     {
       "article": "articles/codex-ignore-flags-user-skill-boundary.md",
