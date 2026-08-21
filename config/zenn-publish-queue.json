@@ -33,6 +33,12 @@
       "enqueuedAt": "2026-08-20T11:48:05.596Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/bumblebee-supply-chain-scan-try.md",
+      "enqueuedAt": "2026-08-21T15:58:55.833Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ]
 }
