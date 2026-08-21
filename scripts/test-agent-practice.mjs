@@ -394,6 +394,8 @@ try {
   assert.match(agentPipelineSource, /outcome-specific marker/);
   assert.match(agentPipelineSource, /precise timing, simultaneous tool ordering/);
   assert.match(agentPipelineSource, /do not turn an honest negative result into a verifier failure/);
+  assert.match(agentPipelineSource, /wait_seconds - remaining/,
+    "usage-limit progress must be based on elapsed wait time so reset-time remainders still log");
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);

@@ -204,7 +204,8 @@ restart_after_usage_limit() {
     [ "$remaining" -ge "$step" ] || step="$remaining"
     sleep "$step"
     remaining=$((remaining - step))
-    if [ "$remaining" -gt 0 ] && { [ "$remaining" -lt 60 ] || [ $((remaining % 300)) -eq 0 ]; }; then
+    if [ "$remaining" -gt 0 ] \
+        && { [ "$remaining" -lt 60 ] || [ $(((wait_seconds - remaining) % 300)) -eq 0 ]; }; then
       log "usage-limit wait remaining: ${remaining}s"
     fi
   done
