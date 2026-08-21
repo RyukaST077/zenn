@@ -283,13 +283,6 @@ try {
     }
   }
 
-  if (preflightOnly) {
-    writeJson(path.join(runDir, "preflight-summary.json"), {
-      manifest: path.relative(root, manifestFile),
-      cases: Object.fromEntries(preflightResults),
-    });
-  }
-
   for (const item of preflightOnly ? [] : manifest.cases) {
     const caseTemp = path.join(tempRoot, item.id);
     const snapshot = path.join(tempRoot, `${item.id}-input`);
@@ -378,11 +371,17 @@ try {
 } finally {
   fs.rmSync(tempRoot, { recursive: true, force: true });
 }
-if (runError) die(runError.message);
-if (preflightOnly) {
+if (preflightOnly || runError) {
+  writeJson(path.join(runDir, "preflight-summary.json"), {
+    manifest: path.relative(root, manifestFile),
+    status: runError ? "failed" : "passed",
+    error: runError ? runError.message : null,
+    cases: Object.fromEntries(preflightResults),
+  });
   process.stdout.write(`${runRelative}/preflight-summary.json\n`);
-  process.exit(0);
 }
+if (runError) die(runError.message);
+if (preflightOnly) process.exit(0);
 
 const escaped = (value) => String(value ?? "-").replaceAll("|", "\\|").replaceAll("\n", " ");
 const startedAt = now.toISOString();

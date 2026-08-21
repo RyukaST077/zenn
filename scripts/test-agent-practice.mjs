@@ -381,6 +381,8 @@ try {
   assert.match(dryRun.stdout, /auto merge: 1/);
   assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/8\)/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
+  assert.match(dryRun.stdout, /preflight repairs: 2/);
+  assert.match(dryRun.stdout, /fake-CLI preflight <-> plan repair/);
   assert.match(dryRun.stdout, /publication queue -> commit\/push -> PR -> merge/);
   assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
   assert.doesNotMatch(dryRun.stdout, /reviewed unpublished/);
@@ -404,6 +406,11 @@ try {
   ], { env: { AGENT_PIPELINE_USAGE_RESUME_COUNT: "invalid" } });
   assert.equal(invalidResumeCount.status, 2);
   assert.match(invalidResumeCount.stderr, /must be a non-negative integer/);
+  const invalidPreflightRepairs = run("bash", [
+    "scripts/auto-agent-practice.sh", "--dry-run",
+  ], { env: { MAX_AGENT_PREFLIGHT_REPAIRS: "invalid" } });
+  assert.equal(invalidPreflightRepairs.status, 2);
+  assert.match(invalidPreflightRepairs.stderr, /MAX_AGENT_PREFLIGHT_REPAIRS must be a non-negative integer/);
   const resumeDryRun = run("bash", [
     "scripts/auto-agent-practice.sh",
     "--resume-after-run", "logs/agent/run-example/execution-log.md",
@@ -785,6 +792,13 @@ process.exit(9);
   ], { env: { CODEX_BIN: guardCodex, GUARD_SENTINEL: guardSentinel } });
   assert.notEqual(rejectedRun.status, 0, "invalid wrapper preflight unexpectedly succeeded");
   assert.match(rejectedRun.stderr, /preflight failed.*authenticated codex experiment was not started/);
+  const rejectedSummaryPath = path.join(root, rejectedRun.stdout.trim());
+  assert.equal(fs.existsSync(rejectedSummaryPath), true,
+    "failed preflight must still return a machine-readable summary path");
+  const rejectedSummary = JSON.parse(fs.readFileSync(rejectedSummaryPath, "utf8"));
+  assert.equal(rejectedSummary.status, "failed");
+  assert.match(rejectedSummary.error, /preflight failed/);
+  assert.equal(rejectedSummary.cases[rejectedObject.cases[0].id].status, "failed");
   assert.equal(fs.existsSync(guardSentinel), false, "authenticated experiment started after preflight failure");
   for (const entry of fs.readdirSync(path.join(root, "logs/agent"))) {
     if (entry.startsWith(`run-${rejectedId}-`)) additionalRuns.push(path.join(root, "logs/agent", entry));

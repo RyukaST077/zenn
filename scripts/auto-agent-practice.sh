@@ -15,6 +15,7 @@ set -euo pipefail
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
+: "${MAX_AGENT_PREFLIGHT_REPAIRS:=2}"
 : "${AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT:=1}"
 : "${AGENT_PIPELINE_MAX_USAGE_RESUMES:=8}"
 : "${AGENT_PIPELINE_USAGE_RESUME_COUNT:=0}"
@@ -43,6 +44,9 @@ while [ "$#" -gt 0 ]; do
 done
 case "$MAX_AGENT_REVIEW_ROUNDS" in
   *[!0-9]*|0) echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
+esac
+case "$MAX_AGENT_PREFLIGHT_REPAIRS" in
+  *[!0-9]*|'') echo "MAX_AGENT_PREFLIGHT_REPAIRS must be a non-negative integer" >&2; exit 2 ;;
 esac
 case "$AGENT_PIPELINE_ORCHESTRATOR" in
   codex|claude) ;;
@@ -106,11 +110,12 @@ if [ "$DRY_RUN" = 1 ]; then
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
+  preflight repairs: $MAX_AGENT_PREFLIGHT_REPAIRS
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
   resume after run: ${RESUME_RUN_LOG:-none}
   auto resume at usage limit: $AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT (attempt $AGENT_PIPELINE_USAGE_RESUME_COUNT/$AGENT_PIPELINE_MAX_USAGE_RESUMES)
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight <-> plan repair -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
   result: a reviewed article added to the rate-limited Zenn publication queue
 EOF
   exit 0
@@ -289,6 +294,37 @@ run_stage() {
   log "$stage complete: $STAGE_ARTIFACT"
 }
 
+validate_generated_manifest() {
+  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null \
+    || die "generated manifest failed independent validation"
+  node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
+    || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
+}
+
+run_manifest_preflight() {
+  local repair_round="$1"
+  local stdout_file="$PIPE_DIR/2-preflight-$repair_round.stdout"
+  local stderr_file="$PIPE_DIR/2-preflight-$repair_round.stderr"
+  local rc summary
+  log "preflight start (repair=$repair_round/$MAX_AGENT_PREFLIGHT_REPAIRS, manifest=$MANIFEST)"
+  set +e
+  node scripts/agent-practice/run-experiment.mjs "$MANIFEST" --preflight-only \
+    >"$stdout_file" 2>"$stderr_file"
+  rc=$?
+  set -e
+  summary="$(sed -n '1p' "$stdout_file")"
+  if [ "$rc" = 0 ]; then
+    [ -n "$summary" ] && [ -f "$summary" ] \
+      || die "preflight exited 0 without a summary artifact: $stdout_file"
+    PREFLIGHT_EVIDENCE="$summary"
+    log "preflight complete: $PREFLIGHT_EVIDENCE"
+    return 0
+  fi
+  PREFLIGHT_EVIDENCE="${summary:-$stderr_file}"
+  log "preflight failed before any authenticated experiment (exit=$rc, evidence=$PREFLIGHT_EVIDENCE)"
+  return 1
+}
+
 if [ -n "$RESUME_RUN_LOG" ]; then
   case "$RESUME_RUN_LOG" in
     logs/agent/run-*/execution-log.md) ;;
@@ -319,12 +355,26 @@ else
   run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
   REPORT="$STAGE_ARTIFACT"
 
-  PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
+  PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Inspect scripts/agent-practice/run-experiment.mjs and make the wrapper accept its exact buildAgentArgs contract; in particular, Codex cases receive --sandbox workspace-write, so a wrapper must not require read-only. If a fake CLI starts asynchronous work needed by verification, wait for its required artifacts with a bounded timeout before the fake CLI exits. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
   run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
   MANIFEST="$STAGE_ARTIFACT"
-  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null || die "generated manifest failed independent validation"
-  node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
-    || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
+  validate_generated_manifest
+
+  preflight_repair=0
+  while ! run_manifest_preflight "$preflight_repair"; do
+    if [ "$preflight_repair" -ge "$MAX_AGENT_PREFLIGHT_REPAIRS" ]; then
+      if [ "$SCHEDULED" = 1 ]; then
+        log "preflight did not pass after $MAX_AGENT_PREFLIGHT_REPAIRS repairs; another scheduled topic may be tried"
+        exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+      fi
+      die "preflight did not pass after $MAX_AGENT_PREFLIGHT_REPAIRS repairs; evidence: $PREFLIGHT_EVIDENCE"
+    fi
+    preflight_repair=$((preflight_repair + 1))
+    REPAIR_PROMPT="Research report: $REPORT. The previous manifest $MANIFEST failed the runner's offline fake-CLI preflight before any authenticated experiment. Inspect $PREFLIGHT_EVIDENCE and its sibling per-case preflight logs and preserved preflight-work directory. Repair the same selected claim by creating exactly one corrected safe plan and runner-compatible version 2 manifest. Fix the recorded failure rather than changing the claim or weakening verification. The wrapper must accept the exact arguments built by scripts/agent-practice/run-experiment.mjs, and asynchronous fake-CLI effects required by verification must be durably observable before the fake CLI exits. Preserve credential rejection, zero network and paid requests in preflight, bounded cleanup, strict protected paths, and deterministic competing outcomes. Validate the corrected manifest and return it as the primary artifact."
+    run_stage plan "2-repair-$preflight_repair" zenn-agent-plan-practice practice/agent 0 "$REPAIR_PROMPT"
+    MANIFEST="$STAGE_ARTIFACT"
+    validate_generated_manifest
+  done
 
   RUN_PROMPT="Experiment manifest: $MANIFEST. Execute it once with the deterministic repository runner. Preserve its redacted evidence and return only the generated execution-log.md as the primary artifact."
   run_stage run 3 zenn-agent-run-practice logs/agent 0 "$RUN_PROMPT"
