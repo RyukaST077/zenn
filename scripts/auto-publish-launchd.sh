@@ -32,6 +32,11 @@ USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 : "${AUTO_PUBLISH_MAX_USAGE_RESUMES:=8}"
 : "${CLAUDE_LAUNCH_MIN_REMAINING_PERCENT:=20}"
+# Keep the scheduled workflow inside a five-hour subscription window. Direct
+# auto-publish.sh runs retain their Opus default unless the caller overrides it.
+: "${AP_MODEL=claude-sonnet-5}"
+: "${AP_EFFORT=medium}"
+export AP_MODEL AP_EFFORT
 : "${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS:=60}"
 : "${ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS:=21600}"
 : "${ARTICLE_PIPELINE_LOCK_WAIT_ENABLED:=1}"
@@ -62,6 +67,7 @@ resolve_args || exit $?
   echo "===== auto-publish (launchd) start: $(date) ====="
   echo "PATH=$PATH"
   echo "args: $ARGS"
+  echo "model: ${AP_MODEL:-CLI default}; effort: ${AP_EFFORT:-CLI default}"
   echo
   if [ "$ARTICLE_PIPELINE_LOCK_WAIT_ENABLED" = 1 ]; then
     lock_waited=0
