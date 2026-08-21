@@ -3,7 +3,7 @@ title: "Codex resume --ephemeralを終了コード0だけで信じない"
 emoji: "🧪"
 type: tech
 topics: [codex, cli, aiagent, automation]
-published: false
+published: true
 ---
 
 CIやバッチ処理でCodexのセッションを再開しつつ、その再開ターンはローカルのrolloutへ残したくない場合、`--ephemeral`が受理されて終了コード0になったことだけでは不十分です。
