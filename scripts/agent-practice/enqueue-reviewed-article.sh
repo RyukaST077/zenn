@@ -74,8 +74,10 @@ GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not au
 
 ARTICLE_CHECK_TOOL="$SOURCE_ROOT/scripts/check-article.mjs"
 QUEUE_TOOL="$SOURCE_ROOT/scripts/zenn-publish-queue.mjs"
+SAFE_SYNC_TOOL="$SOURCE_ROOT/scripts/safe-sync-main.sh"
 [ -f "$ARTICLE_CHECK_TOOL" ] || die "article checker is missing"
 [ -f "$QUEUE_TOOL" ] || die "publication queue tool is missing"
+[ -x "$SAFE_SYNC_TOOL" ] || die "safe sync helper is missing or not executable"
 (cd "$ROOT" && node "$ARTICLE_CHECK_TOOL" "$ARTICLE" --expect-published false) \
   || die "draft article check failed"
 case "$REVIEW_STYLE" in
@@ -166,8 +168,8 @@ if [ "$AUTO_MERGE" = 1 ]; then
   else
     die "PR merge failed: $PR_URL"
   fi
-  GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
-    || log "WARN: could not refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
+  bash "$SAFE_SYNC_TOOL" "$AGENT_PIPELINE_BASE_BRANCH" \
+    || log "WARN: could not safely refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
 else
   MERGE_RESULT="PR created; waiting for human merge"
 fi

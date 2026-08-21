@@ -343,7 +343,7 @@ review
   └─ blocker → revise可能ならrevise、素材不足ならabort
 ```
 
-- 既定上限は3回
+- 既定上限は5回
 - `zenn-review-article`はレビューレポート先頭付近に`verdict: pass`、`verdict: fix`、`verdict: blocker`のいずれかの固定行を必ず1行だけ出力
 - verdictは結果JSONと`^verdict: (pass|fix|blocker)$`に一致する固定行だけで照合し、他の本文はパースしない
 - 不一致は契約違反として停止
@@ -426,7 +426,7 @@ Codex版ではClaude固有変数と分離する。
 | `CODEX_MODEL` | 空 | 空ならCLI既定 |
 | `CODEX_REASONING_EFFORT` | `medium` | reasoning effort |
 | `CODEX_SEARCH` | `1` | 検索段でlive searchを使う |
-| `MAX_REVIEW_ROUNDS` | `3` | review/revise上限 |
+| `MAX_REVIEW_ROUNDS` | `5` | review/revise上限 |
 | `BASE_BRANCH` | `main` | PR base |
 | `MERGE_METHOD` | `--squash` | 自動マージ方式 |
 | `TIMEOUT_<STAGE>` | 段別 | 外部timeout秒 |

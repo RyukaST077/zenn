@@ -10,7 +10,7 @@
 #   bash scripts/auto-publish.sh                     # 1サイクル実行（PR作成まで。マージは人間）
 #   bash scripts/auto-publish.sh --auto-merge        # PRの自動マージまで行う（完全自律）
 #   bash scripts/auto-publish.sh --resume <dir>      # 失敗したパイプラインを途中から再開
-#   bash scripts/auto-publish.sh --max-rounds 5      # レビューループ上限の変更（既定3）
+#   bash scripts/auto-publish.sh --max-rounds 7      # レビューループ上限の変更（既定5）
 #   bash scripts/auto-publish.sh --search-args "..." # search-topic への引数（関心領域など）
 #   bash scripts/auto-publish.sh --dry-run           # 実行計画と設定を表示して終了
 #
@@ -43,7 +43,7 @@ set -euo pipefail
 : "${AP_EFFORT=medium}"    # 全段の effort（low/medium/high/xhigh/max。空=既定）
 # ※ CLAUDE_MODEL/CLAUDE_EFFORT という名前は Claude Code 自身が環境に export する値と
 #   衝突する（claude 経由で起動すると意図しない値が漏れ込む）ため AP_ 接頭辞にしている
-: "${MAX_REVIEW_ROUNDS:=3}"
+: "${MAX_REVIEW_ROUNDS:=5}"
 : "${BASE_BRANCH:=main}"
 : "${MERGE_METHOD:=--squash}"
 : "${CLAUDE_USAGE_GATE_ENABLED:=1}"
@@ -394,6 +394,9 @@ EOF
 fi
 
 LOCK="$ROOT/.auto-publish.lock"
+for other_lock in "$ROOT/.agent-practice-pipeline.lock" "$ROOT/.auto-publish-codex.lock"; do
+  [ ! -d "$other_lock" ] || { echo "別のパイプラインが実行中（$other_lock が存在）" >&2; exit 2; }
+done
 if ! mkdir "$LOCK" 2>/dev/null; then
   echo "別のパイプラインが実行中（$LOCK が存在）。前回異常終了なら手で削除する。" >&2
   exit 2
@@ -460,11 +463,9 @@ log "=== auto-publish 開始 (pipeline: $PIPE_DIR)$( [ -n "$RESUME_DIR" ] && ech
 if ! is_done preflight; then
   current_branch="$(git rev-parse --abbrev-ref HEAD)"
   [ "$current_branch" = "$BASE_BRANCH" ] || { log "ブランチ $current_branch → $BASE_BRANCH へ切替"; git checkout "$BASE_BRANCH"; }
-  # 追跡ファイルの未コミット変更があると publish-pr のブランチ操作が汚れるため中止
-  if git status --porcelain | grep -qv '^??'; then
-    die "追跡ファイルに未コミットの変更がある。コミットか退避をしてから実行する"
-  fi
-  git remote get-url origin >/dev/null 2>&1 && { git pull --ff-only || log "WARN: git pull に失敗（オフライン?）。ローカルの $BASE_BRANCH で続行"; }
+  [ -x scripts/safe-sync-main.sh ] || die "安全同期ヘルパーが無い、または実行できない"
+  bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
+    || die "origin/$BASE_BRANCH との安全同期に失敗した"
   state_set completed.preflight true
 fi
 
@@ -596,7 +597,8 @@ if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   fi
   MERGED=1
   state_set completed.merge true
-  git pull --ff-only >/dev/null 2>&1 || true
+  bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
+    || log "WARN: マージ後の $BASE_BRANCH 同期に失敗。次回は安全同期から再開する"
 fi
 
 # ---------- サマリー ----------

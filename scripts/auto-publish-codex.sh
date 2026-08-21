@@ -9,7 +9,7 @@ set -euo pipefail
 : "${CODEX_REASONING_EFFORT:=high}"
 : "${CODEX_SEARCH:=1}"
 : "${CODEX_SANDBOX_MODE:=danger-full-access}"
-: "${MAX_REVIEW_ROUNDS:=3}"
+: "${MAX_REVIEW_ROUNDS:=5}"
 : "${BASE_BRANCH:=main}"
 : "${MERGE_METHOD:=--squash}"
 
@@ -163,6 +163,9 @@ else
 fi
 
 LOCK="$ROOT/.auto-publish-codex.lock"
+for other_lock in "$ROOT/.agent-practice-pipeline.lock" "$ROOT/.auto-publish.lock"; do
+  [ ! -d "$other_lock" ] || die "another article pipeline holds $other_lock"
+done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another Codex pipeline holds $LOCK"; fi
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
 
@@ -188,12 +191,11 @@ saved_branch="$(state_get publish.branch)"
 if [ "$current_branch" != "$BASE_BRANCH" ] && { [ -z "$saved_branch" ] || [ "$current_branch" != "$saved_branch" ]; }; then
   die "current branch is $current_branch; expected $BASE_BRANCH${saved_branch:+ or $saved_branch}"
 fi
-if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
-  die "tracked files contain uncommitted changes"
-fi
 if ! is_done preflight; then
   if [ "$current_branch" = "$BASE_BRANCH" ]; then
-    GIT_TERMINAL_PROMPT=0 git pull --ff-only || die "git pull --ff-only failed"
+    [ -x scripts/safe-sync-main.sh ] || die "safe sync helper is missing or not executable"
+    bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
+      || die "safe synchronization with origin/$BASE_BRANCH failed"
   fi
   state_set completed.preflight true
 fi
