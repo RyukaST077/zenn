@@ -527,6 +527,11 @@ echo "complete: publication queued for articles/fake-default.md"
     assert.doesNotMatch(fs.readFileSync(path.join(root, wrapper), "utf8"), /pending-count/,
       `${wrapper} must not stop article creation while the publication queue has a backlog`);
   }
+  const agentLaunchdSource = fs.readFileSync(path.join(
+    root, "scripts/auto-agent-practice-launchd.sh",
+  ), "utf8");
+  assert.match(agentLaunchdSource, /AGENT_PRACTICE_MAX_ATTEMPTS:=12/,
+    "scheduled AI articles must keep searching past a five-topic safe-rejection streak");
 
   testSafeSync();
 
