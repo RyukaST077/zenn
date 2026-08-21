@@ -17,7 +17,10 @@ LOG="$LOG_DIR/auto-agent-practice-$TS.log"
 
 ARG_TEXT="${AGENT_PRACTICE_ARGS:---scheduled --orchestrator claude}"
 read -r -a AGENT_ARGS <<< "$ARG_TEXT"
-: "${AGENT_PRACTICE_MAX_ATTEMPTS:=5}"
+# Safe research or plan rejection is expected for some current topics. Keep
+# looking across usage-window resets instead of ending the daily run after a
+# single five-topic streak, which has occurred in production.
+: "${AGENT_PRACTICE_MAX_ATTEMPTS:=12}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 # The scheduled Claude workflow must leave enough of a five-hour window for
 # planning, execution, drafting, and review. Direct CLI runs keep their own
