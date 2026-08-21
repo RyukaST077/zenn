@@ -479,6 +479,7 @@ exit 0
   const defaultArgsFile = path.join(retryDir, "default-args");
   fs.writeFileSync(defaultArgsScript, `#!/bin/bash
 printf '%s\\n' "$*" >"$FAKE_DEFAULT_ARGS"
+printf '%s|%s\\n' "$AGENT_PIPELINE_MODEL" "$AGENT_PIPELINE_EFFORT" >"$FAKE_DEFAULT_MODEL"
 echo "complete: publication queued for articles/fake-default.md"
 `, { mode: 0o755 });
   const defaultArgsRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
@@ -487,6 +488,7 @@ echo "complete: publication queued for articles/fake-default.md"
       AGENT_PRACTICE_ARGS: "",
       AGENT_PRACTICE_MAX_ATTEMPTS: "1",
       FAKE_DEFAULT_ARGS: defaultArgsFile,
+      FAKE_DEFAULT_MODEL: path.join(retryDir, "default-model"),
       AGENT_PRACTICE_LOG_DIR: retryDir,
       AGENT_PRACTICE_STATUS_DIR: path.join(retryDir, "default-status"),
     },
@@ -494,6 +496,9 @@ echo "complete: publication queued for articles/fake-default.md"
   assert.equal(defaultArgsRun.status, 0, defaultArgsRun.stderr);
   assert.equal(fs.readFileSync(defaultArgsFile, "utf8").trim(), "--scheduled --orchestrator claude",
     "launchd wrapper must default to the Claude orchestrator with usage-limit recovery");
+  assert.equal(fs.readFileSync(path.join(retryDir, "default-model"), "utf8").trim(),
+    "claude-sonnet-5|medium",
+    "scheduled Claude pipeline must use the usage-fit model and effort defaults");
   fs.rmSync(retryDir, { recursive: true, force: true });
   const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
   assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);
