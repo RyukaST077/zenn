@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/deno29-test-each-snapshot.md",
-      "enqueuedAt": "2026-08-13T19:39:39.000Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-08-20T19:11:27.331Z"
-    },
-    {
       "article": "articles/codex-resume-ephemeral-rollout-gate.md",
       "enqueuedAt": "2026-08-14T03:04:36.000Z",
       "attempts": 0,
