@@ -19,6 +19,20 @@ ARG_TEXT="${AGENT_PRACTICE_ARGS:---scheduled --orchestrator claude}"
 read -r -a AGENT_ARGS <<< "$ARG_TEXT"
 : "${AGENT_PRACTICE_MAX_ATTEMPTS:=5}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
+# The scheduled Claude workflow must leave enough of a five-hour window for
+# planning, execution, drafting, and review. Direct CLI runs keep their own
+# defaults; the launchd path uses Sonnet/medium unless explicitly overridden.
+case " $ARG_TEXT " in
+  *" --orchestrator codex "*)
+    : "${AGENT_PIPELINE_MODEL:=}"
+    : "${AGENT_PIPELINE_EFFORT:=high}"
+    ;;
+  *)
+    : "${AGENT_PIPELINE_MODEL:=claude-sonnet-5}"
+    : "${AGENT_PIPELINE_EFFORT:=medium}"
+    ;;
+esac
+export AGENT_PIPELINE_MODEL AGENT_PIPELINE_EFFORT
 : "${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS:=60}"
 : "${ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS:=21600}"
 : "${AGENT_PRACTICE_STATUS_DIR:=$REPO/logs/agent/daily-status}"
@@ -29,6 +43,7 @@ esac
 {
   echo "===== AI agent practice start: $(date) ====="
   echo "args: ${AGENT_ARGS[*]}"
+  echo "model: ${AGENT_PIPELINE_MODEL:-CLI default}; effort: $AGENT_PIPELINE_EFFORT"
   echo
 
   lock_waited=0

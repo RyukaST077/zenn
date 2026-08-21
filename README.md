@@ -383,7 +383,9 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 まだ動いている場合は、同じリポジトリを同時更新しないよう終了を待ってから5:00側を開始する。
 選んだテーマが安全に記事化できない場合は、証拠基準を下げず、別テーマを最大5回まで試す。
 試行回数は`AGENT_PRACTICE_MAX_ATTEMPTS`で変更できる。launchdの既定オーケストレーターは、
-利用上限時の待機・再開に対応したClaudeとする。
+利用上限時の待機・再開に対応したClaudeとする。5時間枠内で後続の実験・執筆・レビューまで
+進めるため、launchd経路の既定は`claude-sonnet-5` / `medium`とする。明示した
+`AGENT_PIPELINE_MODEL` / `AGENT_PIPELINE_EFFORT`は優先される。
 
 ```bash
 # launchdと同じ経路をdry-run
