@@ -33,6 +33,11 @@ USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AUTO_PUBLISH_MAX_USAGE_RESUMES:=8}"
 : "${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS:=60}"
 : "${ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS:=21600}"
+: "${ARTICLE_PIPELINE_LOCK_WAIT_ENABLED:=1}"
+case "$ARTICLE_PIPELINE_LOCK_WAIT_ENABLED" in
+  0|1) ;;
+  *) echo "ARTICLE_PIPELINE_LOCK_WAIT_ENABLED must be 0 or 1" >&2; exit 2 ;;
+esac
 
 resolve_args() {
   if [ -n "${AP_ARGS:-}" ]; then
@@ -57,22 +62,24 @@ resolve_args || exit $?
   echo "PATH=$PATH"
   echo "args: $ARGS"
   echo
-  lock_waited=0
-  while :; do
-    held_lock=""
-    for other_lock in "$REPO/.agent-practice-pipeline.lock" "$REPO/.auto-publish-codex.lock"; do
-      [ ! -d "$other_lock" ] || { held_lock="$other_lock"; break; }
+  if [ "$ARTICLE_PIPELINE_LOCK_WAIT_ENABLED" = 1 ]; then
+    lock_waited=0
+    while :; do
+      held_lock=""
+      for other_lock in "$REPO/.agent-practice-pipeline.lock" "$REPO/.auto-publish-codex.lock"; do
+        [ ! -d "$other_lock" ] || { held_lock="$other_lock"; break; }
+      done
+      [ -n "$held_lock" ] || break
+      if [ "$lock_waited" -ge "$ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS" ]; then
+        echo "RESULT: failed (timed out waiting for $held_lock)"
+        echo "===== auto-publish (launchd) end: $(date) exit=1 ====="
+        exit 1
+      fi
+      echo "WAIT: another article pipeline holds $held_lock; checking again in ${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS}s"
+      sleep "$ARTICLE_PIPELINE_LOCK_WAIT_SECONDS"
+      lock_waited=$((lock_waited + ARTICLE_PIPELINE_LOCK_WAIT_SECONDS))
     done
-    [ -n "$held_lock" ] || break
-    if [ "$lock_waited" -ge "$ARTICLE_PIPELINE_LOCK_MAX_WAIT_SECONDS" ]; then
-      echo "RESULT: failed (timed out waiting for $held_lock)"
-      echo "===== auto-publish (launchd) end: $(date) exit=1 ====="
-      exit 1
-    fi
-    echo "WAIT: another article pipeline holds $held_lock; checking again in ${ARTICLE_PIPELINE_LOCK_WAIT_SECONDS}s"
-    sleep "$ARTICLE_PIPELINE_LOCK_WAIT_SECONDS"
-    lock_waited=$((lock_waited + ARTICLE_PIPELINE_LOCK_WAIT_SECONDS))
-  done
+  fi
   case " $ARGS " in
     *" --dry-run "*) echo "Claude usage gate: bypassed for dry-run" ;;
     *)
