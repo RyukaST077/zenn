@@ -391,6 +391,9 @@ try {
   assert.match(agentPipelineSource, /existing successful claude auth status or codex login status/);
   assert.match(agentPipelineSource, /do not add --max-budget-usd/);
   assert.match(agentPipelineSource, /Exclude modes such as Claude Code --bare/);
+  assert.match(agentPipelineSource, /outcome-specific marker/);
+  assert.match(agentPipelineSource, /precise timing, simultaneous tool ordering/);
+  assert.match(agentPipelineSource, /do not turn an honest negative result into a verifier failure/);
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
