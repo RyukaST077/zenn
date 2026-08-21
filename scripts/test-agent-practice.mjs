@@ -651,6 +651,21 @@ console.log(JSON.stringify(provider === "claude"
     "scripts/validate-agent-stage-result.mjs", stageResult, "logs/agent", marker, "analyze",
   ]);
   assert.equal(contractPass.status, 0, contractPass.stderr);
+  const resumeMarker = path.join(fakeDir, "resume-stage.marker");
+  const resumeBaseline = path.join(fakeDir, "resume-run.md");
+  fs.writeFileSync(resumeMarker, "");
+  fs.writeFileSync(resumeBaseline, "# Prior run\n");
+  const analysisMtime = fs.statSync(analysis).mtimeMs;
+  fs.utimesSync(resumeBaseline, new Date(analysisMtime - 2000), new Date(analysisMtime - 2000));
+  fs.utimesSync(resumeMarker, new Date(analysisMtime + 2000), new Date(analysisMtime + 2000));
+  const staleWithoutResume = run(process.execPath, [
+    "scripts/validate-agent-stage-result.mjs", stageResult, "logs/agent", resumeMarker, "analyze",
+  ]);
+  assert.notEqual(staleWithoutResume.status, 0, "stale stage artifact unexpectedly passed without a resume baseline");
+  const reusableAfterRun = run(process.execPath, [
+    "scripts/validate-agent-stage-result.mjs", stageResult, "logs/agent", resumeMarker, "analyze", resumeBaseline,
+  ]);
+  assert.equal(reusableAfterRun.status, 0, reusableAfterRun.stderr);
   const mismatched = JSON.parse(fs.readFileSync(stageResult, "utf8"));
   mismatched.metadata.action = "rerun";
   fs.writeFileSync(stageResult, JSON.stringify(mismatched));

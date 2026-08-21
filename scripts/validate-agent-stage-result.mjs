@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { contractFor, metadataError } from "./agent-stage-result-contract.mjs";
 
-const [resultFile, allowedPrefix, markerFile, stage] = process.argv.slice(2);
+const [resultFile, allowedPrefix, markerFile, stage, reuseAfterFile] = process.argv.slice(2);
 const fail = (message, code = 2) => { console.error(message); process.exit(code); };
 try { contractFor(stage); }
 catch (error) { fail(error.message); }
@@ -43,8 +43,12 @@ const rootPrefix = `${root}${path.sep}`;
 if (!absolute.startsWith(rootPrefix) || !fs.existsSync(absolute) || !fs.statSync(absolute).isFile()) {
   fail("artifact does not exist as a regular file");
 }
-if (fs.statSync(absolute).mtimeMs < fs.statSync(markerFile).mtimeMs) {
-  fail("artifact was not created or updated by this stage");
+const artifactMtime = fs.statSync(absolute).mtimeMs;
+if (artifactMtime < fs.statSync(markerFile).mtimeMs) {
+  if (!reuseAfterFile || !fs.existsSync(reuseAfterFile) || !fs.statSync(reuseAfterFile).isFile()
+      || artifactMtime < fs.statSync(reuseAfterFile).mtimeMs) {
+    fail("artifact was not created or updated by this stage, and is not reusable after the supplied baseline");
+  }
 }
 
 const contractError = metadataError(stage, result.metadata, result.artifact);
