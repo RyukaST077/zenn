@@ -474,6 +474,26 @@ exit 0
   assert.equal(retryRun.status, 0, retryRun.stderr);
   assert.equal(fs.readFileSync(retryCount, "utf8").trim(), "2",
     "launchd wrapper must retry one evidence-safe scheduled skip");
+
+  const defaultArgsScript = path.join(retryDir, "default-args-pipeline.sh");
+  const defaultArgsFile = path.join(retryDir, "default-args");
+  fs.writeFileSync(defaultArgsScript, `#!/bin/bash
+printf '%s\\n' "$*" >"$FAKE_DEFAULT_ARGS"
+echo "complete: publication queued for articles/fake-default.md"
+`, { mode: 0o755 });
+  const defaultArgsRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: {
+      AGENT_PRACTICE_SCRIPT: defaultArgsScript,
+      AGENT_PRACTICE_ARGS: "",
+      AGENT_PRACTICE_MAX_ATTEMPTS: "1",
+      FAKE_DEFAULT_ARGS: defaultArgsFile,
+      AGENT_PRACTICE_LOG_DIR: retryDir,
+      AGENT_PRACTICE_STATUS_DIR: path.join(retryDir, "default-status"),
+    },
+  });
+  assert.equal(defaultArgsRun.status, 0, defaultArgsRun.stderr);
+  assert.equal(fs.readFileSync(defaultArgsFile, "utf8").trim(), "--scheduled --orchestrator claude",
+    "launchd wrapper must default to the Claude orchestrator with usage-limit recovery");
   fs.rmSync(retryDir, { recursive: true, force: true });
   const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
   assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);

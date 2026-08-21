@@ -79,6 +79,7 @@ FAKE_PIPELINE_COUNT="$FAKE_PIPELINE_COUNT" \
 AP_ARGS="--fixture" \
 AUTO_PUBLISH_LOG_DIR="$TEST_DIR/launchd-logs" \
 AUTO_PUBLISH_STATUS_DIR="$TEST_DIR/status" \
+ARTICLE_PIPELINE_LOCK_WAIT_ENABLED=0 \
   bash scripts/auto-publish-launchd.sh || {
     find "$TEST_DIR/launchd-logs" -type f -maxdepth 1 -name '*.log' -exec sed -n '1,240p' {} \; >&2
     exit 1
