@@ -74,6 +74,7 @@ FAKE_PIPELINE="$TEST_DIR/fake-pipeline.sh"
 FAKE_PIPELINE_COUNT="$TEST_DIR/pipeline-count"
 cat >"$FAKE_PIPELINE" <<'EOF'
 #!/bin/bash
+printf '%s|%s\n' "${AP_MODEL:-}" "${AP_EFFORT:-}" >"$FAKE_PIPELINE_MODEL"
 count=0
 [ ! -f "$FAKE_PIPELINE_COUNT" ] || count="$(cat "$FAKE_PIPELINE_COUNT")"
 count=$((count + 1))
@@ -91,6 +92,7 @@ CLAUDE_USAGE_WAIT_INTERVAL_SECONDS=1 \
 CLAUDE_USAGE_WAIT_MAX_SECONDS=2 \
 AUTO_PUBLISH_SCRIPT="$FAKE_PIPELINE" \
 FAKE_PIPELINE_COUNT="$FAKE_PIPELINE_COUNT" \
+FAKE_PIPELINE_MODEL="$TEST_DIR/pipeline-model" \
 AP_ARGS="--fixture" \
 AUTO_PUBLISH_LOG_DIR="$TEST_DIR/launchd-logs" \
 AUTO_PUBLISH_STATUS_DIR="$TEST_DIR/status" \
@@ -100,6 +102,7 @@ ARTICLE_PIPELINE_LOCK_WAIT_ENABLED=0 \
     exit 1
   }
 [ "$(cat "$FAKE_PIPELINE_COUNT")" = 2 ]
+[ "$(cat "$TEST_DIR/pipeline-model")" = "claude-sonnet-5|medium" ]
 [ -f "$TEST_DIR/status/$(date +%F)-claude.json" ]
 
 bash -n scripts/check-claude-session-usage.sh scripts/wait-for-claude-usage.sh scripts/auto-publish-launchd.sh
