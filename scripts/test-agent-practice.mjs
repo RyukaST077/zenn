@@ -42,6 +42,55 @@ const assertRun = (result, label) => {
   assert.equal(result.status, 0, `${label}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
 };
 
+const testSafeSync = () => {
+  const testRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-safe-sync-test-"));
+  const remote = path.join(testRoot, "remote.git");
+  const checkout = path.join(testRoot, "checkout");
+  const publisher = path.join(testRoot, "publisher");
+  try {
+    fs.mkdirSync(checkout, { recursive: true });
+    assertRun(runAt(checkout, "git", ["init", "-b", "main"]), "safe-sync git init");
+    assertRun(runAt(checkout, "git", ["config", "user.name", "Safe Sync Test"]), "safe-sync user.name");
+    assertRun(runAt(checkout, "git", ["config", "user.email", "safe-sync@example.com"]), "safe-sync user.email");
+    fs.writeFileSync(path.join(checkout, "README.md"), "# safe sync\n");
+    assertRun(runAt(checkout, "git", ["add", "README.md"]), "safe-sync add");
+    assertRun(runAt(checkout, "git", ["commit", "-m", "base"]), "safe-sync commit");
+    assertRun(runAt(testRoot, "git", ["init", "--bare", remote]), "safe-sync bare remote");
+    assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "safe-sync remote add");
+    assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "safe-sync push base");
+    assertRun(runAt(testRoot, "git", ["clone", "-b", "main", remote, publisher]), "safe-sync publisher clone");
+    assertRun(runAt(publisher, "git", ["config", "user.name", "Safe Sync Publisher"]), "safe-sync publisher name");
+    assertRun(runAt(publisher, "git", ["config", "user.email", "publisher@example.com"]), "safe-sync publisher email");
+
+    fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(publisher, "articles"), { recursive: true });
+    const articleText = "merged unpublished article\n";
+    fs.writeFileSync(path.join(checkout, "articles/merged.md"), articleText);
+    fs.writeFileSync(path.join(publisher, "articles/merged.md"), articleText);
+    assertRun(runAt(publisher, "git", ["add", "articles/merged.md"]), "safe-sync publisher add");
+    assertRun(runAt(publisher, "git", ["commit", "-m", "queue article"]), "safe-sync publisher commit");
+    assertRun(runAt(publisher, "git", ["push", "origin", "main"]), "safe-sync publisher push");
+
+    const identical = runAt(checkout, "bash", [path.join(root, "scripts/safe-sync-main.sh"), "main"]);
+    assertRun(identical, "safe-sync identical merged duplicate");
+    assert.match(identical.stderr, /removed byte-identical merged duplicate/);
+    assert.equal(fs.readFileSync(path.join(checkout, "articles/merged.md"), "utf8"), articleText);
+    assert.equal(runAt(checkout, "git", ["status", "--porcelain"]).stdout, "");
+
+    fs.writeFileSync(path.join(checkout, "articles/conflict.md"), "local evidence\n");
+    fs.writeFileSync(path.join(publisher, "articles/conflict.md"), "remote article\n");
+    assertRun(runAt(publisher, "git", ["add", "articles/conflict.md"]), "safe-sync conflict add");
+    assertRun(runAt(publisher, "git", ["commit", "-m", "conflicting article"]), "safe-sync conflict commit");
+    assertRun(runAt(publisher, "git", ["push", "origin", "main"]), "safe-sync conflict push");
+    const conflict = runAt(checkout, "bash", [path.join(root, "scripts/safe-sync-main.sh"), "main"]);
+    assert.notEqual(conflict.status, 0, "safe-sync overwrote differing local evidence");
+    assert.match(conflict.stderr, /untracked file differs/);
+    assert.equal(fs.readFileSync(path.join(checkout, "articles/conflict.md"), "utf8"), "local evidence\n");
+  } finally {
+    fs.rmSync(testRoot, { recursive: true, force: true });
+  }
+};
+
 const testPublicationFlow = ({ autoMerge, failPrepare = false, failPrCreate = false }) => {
   const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-publish-test-"));
   const remote = path.join(publishRoot, "remote.git");
@@ -316,6 +365,8 @@ try {
     "scripts/auto-publish.sh",
     "scripts/auto-publish-launchd.sh",
     "scripts/auto-publish-codex-launchd.sh",
+    "scripts/safe-sync-main.sh",
+    "scripts/wait-for-claude-usage.sh",
     "scripts/agent-practice/publish-reviewed-article.sh",
     "scripts/agent-practice/enqueue-reviewed-article.sh",
     "scripts/zenn-publish-queue.sh",
@@ -328,7 +379,7 @@ try {
   assert.match(dryRun.stdout, /orchestrator: codex/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
-  assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/2\)/);
+  assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/8\)/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
   assert.match(dryRun.stdout, /publication queue -> commit\/push -> PR -> merge/);
   assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
@@ -406,6 +457,7 @@ count=0
 count=$((count + 1))
 printf '%s\\n' "$count" >"$FAKE_RETRY_COUNT"
 [ "$count" -gt 1 ] || exit 20
+echo "complete: publication queued for articles/fake.md"
 exit 0
 `, { mode: 0o755 });
   const retryRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
@@ -415,6 +467,8 @@ exit 0
       AGENT_PRACTICE_MAX_ATTEMPTS: "2",
       AGENT_PIPELINE_RETRYABLE_EXIT: "20",
       FAKE_RETRY_COUNT: retryCount,
+      AGENT_PRACTICE_LOG_DIR: retryDir,
+      AGENT_PRACTICE_STATUS_DIR: path.join(retryDir, "status"),
     },
   });
   assert.equal(retryRun.status, 0, retryRun.stderr);
@@ -432,6 +486,8 @@ exit 0
     assert.doesNotMatch(fs.readFileSync(path.join(root, wrapper), "utf8"), /pending-count/,
       `${wrapper} must not stop article creation while the publication queue has a backlog`);
   }
+
+  testSafeSync();
 
   testPublicationFlow({ autoMerge: false });
   testPublicationFlow({ autoMerge: true });

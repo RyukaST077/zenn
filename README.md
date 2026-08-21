@@ -58,7 +58,7 @@ bash scripts/auto-publish.sh --dry-run
 |---|---|---|
 | `--auto-merge` | キュー追加PRを`gh pr merge`で自動マージ（branch protectionがあれば`--auto`予約） | OFF（PR作成まで） |
 | `--resume <dir>` | 失敗したパイプラインを途中から再開（`logs/pipeline-*/` を渡す） | — |
-| `--max-rounds <n>` | review ⇄ revise ループの上限回数 | 3 |
+| `--max-rounds <n>` | review ⇄ revise ループの上限回数 | 5 |
 | `--search-args "..."` | search-topic への引数（関心領域・スキルレベルなど） | — |
 | `--dry-run` | 実行計画を表示して終了 | — |
 | `-h` / `--help` | ヘルプ（スクリプト冒頭コメント）を表示 | — |
@@ -70,7 +70,7 @@ bash scripts/auto-publish.sh --dry-run
 | `AP_MODEL` | 全段のモデル（フルID推奨。`opus` / `sonnet` / `fable` の alias も可。空=CLI の既定） | `claude-opus-5` |
 | `AP_EFFORT` | 全段の effort（`low` / `medium` / `high` / `xhigh` / `max`。空=既定） | `medium` |
 | `CLAUDE_FLAGS` | claude に渡す共通フラグ（権限モード等） | `--permission-mode bypassPermissions` |
-| `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `3` |
+| `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `5` |
 | `BASE_BRANCH` | PR の base ブランチ | `main` |
 | `MERGE_METHOD` | 自動マージ方式 | `--squash` |
 | `TIMEOUT_<STAGE>` | 段別タイムアウト秒（`TIMEOUT_SEARCH` / `_PLAN` / `_RUN` / `_DRAFT` / `_REVIEW` / `_REVISE` / `_PUBLISH`） | 段ごと（run は 4時間） |
@@ -144,10 +144,11 @@ resume は `state.json` を読み、**完了済みの段をスキップして失
 ### launchd実行時のClaude利用率ゲート
 
 `scripts/auto-publish-launchd.sh` は開始前にClaude.aiの5時間枠を確認する。残り利用可能量が
-80%以下なら正常なスキップ（exit 0）として終了し、記事生成やPR作成を開始しない。開始後も
+80%以下ならリセット後に枠が回復するまで60秒間隔で待ち、記事生成を開始する。開始後も
 各AIステージの直前に再確認し、既定では残量20%以下で安全に一時停止する。途中でsession limitに
 達した場合も失敗済み成果物を捨てず、`state.json`と`logs/.auto-publish-resume`へ再開情報を保存する。
-次回のlaunchd実行は新規パイプラインを作らず、停止したパイプラインを自動再開する。
+launchdラッパーは同じ実行内で回復を待ち、完了済み段を飛ばして自動再開する。プロセスが中断されても、
+次回のlaunchd実行は新規パイプラインを作らず保存済みパイプラインを再開する。
 
 開始時のしきい値は`CLAUDE_USAGE_MIN_REMAINING_PERCENT`、段ごとのしきい値は
 `CLAUDE_STAGE_MIN_REMAINING_PERCENT`で変更できる。`--dry-run`ではゲートを通さない。
@@ -212,7 +213,7 @@ bash scripts/auto-publish-codex.sh --dry-run
 |---|---|---|
 | `--auto-merge` | PR 作成後に `gh pr merge --auto --delete-branch` で自動マージ | OFF（PR作成まで） |
 | `--resume <dir>` | 失敗したパイプラインを途中から再開（`logs/codex-pipeline-*/` を渡す） | — |
-| `--max-rounds <n>` | review ⇄ revise ループの上限回数 | 3 |
+| `--max-rounds <n>` | review ⇄ revise ループの上限回数 | 5 |
 | `--search-args "..."` | zenn-search-topic への制約（関心領域など） | — |
 | `--dry-run` | 実行計画を表示して終了 | — |
 | `-h` / `--help` | ヘルプ（スクリプト冒頭コメント）を表示 | — |
@@ -225,7 +226,7 @@ bash scripts/auto-publish-codex.sh --dry-run
 | `CODEX_MODEL` | 全段のモデル（空 = CLI の既定） | `gpt-5.6-sol` |
 | `CODEX_REASONING_EFFORT` | 全段の reasoning effort | `high` |
 | `CODEX_SEARCH` | `1` なら search 段で `--search`（Web検索）を有効化 | `1` |
-| `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `3` |
+| `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `5` |
 | `BASE_BRANCH` | PR の base ブランチ | `main` |
 | `MERGE_METHOD` | 自動マージ方式（`--merge` でマージコミット） | `--squash` |
 | `TIMEOUT_<STAGE>` | 段別タイムアウト秒（`TIMEOUT_SEARCH` / `_PLAN` / `_RUN` / `_DRAFT` / `_REVIEW` / `_REVISE` / `_PUBLISH`） | 段ごと（run は 4時間） |
@@ -364,10 +365,10 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 | `AGENT_PIPELINE_MODEL` | オーケストレーターのモデル。空なら選択したCLIの既定 | 空 |
 | `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
 | `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
-| `AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT` | Claude利用上限後に保存済み実験ログから自動再起動する | `1` |
-| `AGENT_PIPELINE_MAX_USAGE_RESUMES` | 1回のパイプラインで許可する自動再起動回数 | `2` |
+| `AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT` | Claude利用上限後に待機して自動再起動する | `1` |
+| `AGENT_PIPELINE_MAX_USAGE_RESUMES` | 1回のパイプラインで許可する自動再起動回数 | `8` |
 | `AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS` | 表示されたリセット時刻の後に追加で待つ秒数 | `30` |
-| `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `3` |
+| `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `5` |
 | `AGENT_PIPELINE_BASE_BRANCH` | 公開PRのbaseブランチ | `main` |
 | `AGENT_PIPELINE_MERGE_METHOD` | `gh pr merge`方式 | `--squash` |
 | `TIMEOUT_AGENT_<STAGE>` | 専用段ごとのtimeout秒 | 段ごと |
@@ -379,7 +380,7 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 従来記事の4:00ジョブとは別に、`scripts/auto-agent-practice-launchd.sh`を
 `com.zenn.auto-agent-practice`として毎日5:00に実行する。AI記事側はキュー残量に関係なく記事を作り、
 レビュー合格後に`published: false`のまま公開キュー追加PRを自動マージする。4:00側のパイプラインが
-まだ動いている場合だけ、同じリポジトリを同時更新しないよう5:00側を正常終了扱いでスキップする。
+まだ動いている場合は、同じリポジトリを同時更新しないよう終了を待ってから5:00側を開始する。
 選んだテーマが安全に記事化できない場合は、証拠基準を下げず、別テーマでもう1回だけ試す。
 試行回数は`AGENT_PRACTICE_MAX_ATTEMPTS`で変更でき、既定は2回。
 
@@ -391,10 +392,10 @@ AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
 
 実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
 
-Claudeオーケストレーターがusage/session limitで終了した場合、run段以降ではmanifestに一致する
-`logs/agent/run-*/execution-log.md`を検出し、表示されたリセット時刻まで待って
-`--resume-after-run`付きで自動再起動する。再起動後はsearch・plan・runを繰り返さず、分析段から続行する。
-保存済み実験ログがない段階、リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
+Claudeオーケストレーターがusage/session limitで終了した場合、表示されたリセット時刻まで待って
+自動再起動する。run段以降ではmanifestに一致する`logs/agent/run-*/execution-log.md`を検出し、
+`--resume-after-run`付きで分析段から続行する。実行ログがまだ無いsearch・plan段では、待機後に
+researchから安全に再始動する。リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
 調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、
 `articles/`へ保存する。
 

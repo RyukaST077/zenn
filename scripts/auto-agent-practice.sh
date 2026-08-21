@@ -11,12 +11,12 @@ set -euo pipefail
 : "${AGENT_PIPELINE_MODEL:=}"
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
-: "${MAX_AGENT_REVIEW_ROUNDS:=3}"
+: "${MAX_AGENT_REVIEW_ROUNDS:=5}"
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 : "${AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT:=1}"
-: "${AGENT_PIPELINE_MAX_USAGE_RESUMES:=2}"
+: "${AGENT_PIPELINE_MAX_USAGE_RESUMES:=8}"
 : "${AGENT_PIPELINE_USAGE_RESUME_COUNT:=0}"
 : "${AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS:=30}"
 : "${AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE:=}"
@@ -182,12 +182,17 @@ restart_after_usage_limit() {
     set -e
     [ "$find_rc" = 0 ] || die "run hit the Claude usage limit but no unique saved execution log matched $MANIFEST"
   fi
-  [ -n "$resume_log" ] && [ -f "$resume_log" ] \
-    || die "$stage hit the Claude usage limit before a reusable execution log was available"
+  if [ -n "$resume_log" ] && [ ! -f "$resume_log" ]; then
+    die "$stage selected a missing execution log for automatic resume: $resume_log"
+  fi
 
   next_count=$((AGENT_PIPELINE_USAGE_RESUME_COUNT + 1))
   log "PAUSE: $stage hit the Claude usage limit; reset=$reset_label, wait=${wait_seconds}s"
-  log "saved execution log: $resume_log"
+  if [ -n "$resume_log" ]; then
+    log "saved execution log: $resume_log"
+  else
+    log "no reusable execution log exists yet; the pipeline will restart from research"
+  fi
   remaining="$wait_seconds"
   while [ "$remaining" -gt 0 ]; do
     step=60
@@ -199,24 +204,29 @@ restart_after_usage_limit() {
     fi
   done
 
-  log "RESTART: resuming from $resume_log (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+  if [ -n "$resume_log" ]; then
+    log "RESTART: resuming from $resume_log (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+  else
+    log "RESTART: restarting from research (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+  fi
   rmdir "$LOCK" 2>/dev/null || die "could not release pipeline lock before automatic resume"
   trap - EXIT
   export AGENT_PIPELINE_USAGE_RESUME_COUNT="$next_count"
   restart_cmd=(bash "$ROOT/scripts/auto-agent-practice.sh" --orchestrator "$AGENT_PIPELINE_ORCHESTRATOR")
-  restart_cmd+=(--max-rounds "$MAX_AGENT_REVIEW_ROUNDS" --resume-after-run "$resume_log")
+  restart_cmd+=(--max-rounds "$MAX_AGENT_REVIEW_ROUNDS")
+  if [ -n "$resume_log" ]; then
+    restart_cmd+=(--resume-after-run "$resume_log")
+  else
+    restart_cmd+=(--topic "$TOPIC")
+  fi
   [ "$SCHEDULED" = 1 ] && restart_cmd+=(--scheduled)
   [ "$AUTO_MERGE" = 1 ] && restart_cmd+=(--auto-merge) || restart_cmd+=(--pr-only)
   exec "${restart_cmd[@]}"
 }
 
-[ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
-  || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
-if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
-  die "tracked files contain uncommitted changes"
-fi
-GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" \
-  || die "git pull --ff-only failed"
+[ -x scripts/safe-sync-main.sh ] || die "safe sync helper is missing or not executable"
+bash scripts/safe-sync-main.sh "$AGENT_PIPELINE_BASE_BRANCH" \
+  || die "safe synchronization with origin/$AGENT_PIPELINE_BASE_BRANCH failed"
 
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
