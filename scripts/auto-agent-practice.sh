@@ -236,6 +236,7 @@ bash scripts/safe-sync-main.sh "$AGENT_PIPELINE_BASE_BRANCH" \
 
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
+  local reuse_after="${7:-}"
   local marker="$PIPE_DIR/.$idx-$stage.marker"
   local events="$PIPE_DIR/$idx-$stage.events.jsonl"
   local result="$PIPE_DIR/$idx-$stage.result.json"
@@ -283,7 +284,9 @@ run_stage() {
       || die "$stage Claude output extraction failed; output: $events"
   fi
   set +e
-  STAGE_ARTIFACT="$(node "$RESULT_TOOL" "$result" "$allowed" "$marker" "$stage" 2>>"$PLOG")"
+  local validation_args=("$result" "$allowed" "$marker" "$stage")
+  [ -z "$reuse_after" ] || validation_args+=("$reuse_after")
+  STAGE_ARTIFACT="$(node "$RESULT_TOOL" "${validation_args[@]}" 2>>"$PLOG")"
   local result_rc=$?
   set -e
   if [ "$result_rc" = 4 ] && [ "$SCHEDULED" = 1 ]; then
@@ -386,7 +389,7 @@ else
 fi
 
 ANALYZE_PROMPT="Execution log: $RUN_LOG. Inspect the manifest and every case's raw metrics, verifier output, and diff. Create exactly one analysis report with one verdict, one next action, and the required editorial brief. A negative or conditional finding may still recommend drafting when it is reproducible and gives the named reader a useful decision."
-run_stage analyze 4 zenn-agent-analyze-results logs/agent 0 "$ANALYZE_PROMPT"
+run_stage analyze 4 zenn-agent-analyze-results logs/agent 0 "$ANALYZE_PROMPT" "$RESUME_RUN_LOG"
 ANALYSIS="$STAGE_ARTIFACT"
 ACTION="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.action)' "$STAGE_RESULT")"
 if [ "$ACTION" != draft ]; then
