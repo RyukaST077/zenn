@@ -387,6 +387,10 @@ try {
   assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
   assert.doesNotMatch(dryRun.stdout, /reviewed unpublished/);
   assert.doesNotMatch(dryRun.stdout, /first end-to-end proof/);
+  const agentPipelineSource = fs.readFileSync(path.join(root, "scripts/auto-agent-practice.sh"), "utf8");
+  assert.match(agentPipelineSource, /existing successful claude auth status or codex login status/);
+  assert.match(agentPipelineSource, /do not add --max-budget-usd/);
+  assert.match(agentPipelineSource, /Exclude modes such as Claude Code --bare/);
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
   assert.equal(prOnlyDryRun.status, 0, prOnlyDryRun.stderr);
   assert.match(prOnlyDryRun.stdout, /auto merge: 0/);
