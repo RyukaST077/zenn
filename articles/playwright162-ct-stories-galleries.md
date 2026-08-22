@@ -3,7 +3,7 @@ title: "Playwright 1.62 の stories & galleries でコンポーネントテス�
 emoji: "🎭"
 type: "tech"
 topics: ["playwright", "react", "vite", "typescript", "testing"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-playwright-ct-stories-galleries-20260820-0213/execution-log.md / 記事タイプ 検証ログ・試してみた / slug playwright162-ct-stories-galleries / published: false -->

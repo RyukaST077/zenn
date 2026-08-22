@@ -7,8 +7,8 @@
     {
       "article": "articles/playwright162-ct-stories-galleries.md",
       "enqueuedAt": "2026-08-20T00:23:10.462Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-22T14:15:45.563Z"
     },
     {
       "article": "articles/claude-sandbox-loopback-eperm-check.md",
