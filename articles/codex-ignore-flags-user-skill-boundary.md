@@ -3,7 +3,7 @@ title: "Codexのignore flagsだけではユーザースキルを隔離できな�
 emoji: "🧱"
 type: tech
 topics: [codex, cli, aiagent, automation]
-published: false
+published: true
 ---
 
 CIや評価用の`codex exec`で`--ignore-user-config --ignore-rules`を指定していると、実行時の指示は明示したプロンプトとリポジトリ内のファイルだけだと思いたくなります。しかし、開発者の`HOME`を引き継ぐself-hosted runnerや再利用コンテナでは、個人用スキルまで消えているでしょうか。
