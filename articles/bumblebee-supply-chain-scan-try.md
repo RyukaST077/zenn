@@ -3,7 +3,7 @@ title: "Bumblebeeで自分のリポジトリのサプライチェーンを初め
 emoji: "🐝"
 type: "tech"
 topics: ["security", "supplychain", "npm", "go", "cli"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-bumblebee-20260822-0047/execution-log.md / 記事タイプ 試してみた・検証ログ / slug bumblebee-supply-chain-scan-try / published: false -->
