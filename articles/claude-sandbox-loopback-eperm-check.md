@@ -3,7 +3,7 @@ title: "Claude Code sandboxで127.0.0.1がEPERM、allowlistでは変わらなか
 emoji: "🔌"
 type: tech
 topics: ["claudecode", "aiagent", "sandbox", "macos"]
-published: false
+published: true
 ---
 
 `sandbox.enabled` を有効にして `npm test` や `pytest` のたびに出る確認を止めたあと、`127.0.0.1` の dev server やモック API を叩く統合テストだけが落ちるようになった、という状況を考えます。dev server の access log にはリクエストが1件も届いていません。ここで取れる選択肢は、`sandbox.network.allowedDomains` に `127.0.0.1` を足す、sandbox の設定が壊れていると疑う、sandbox を切り戻す、のどれかです。

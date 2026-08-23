@@ -7,8 +7,8 @@
     {
       "article": "articles/claude-sandbox-loopback-eperm-check.md",
       "enqueuedAt": "2026-08-20T11:48:05.596Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-23T04:18:00.771Z"
     },
     {
       "article": "articles/bumblebee-supply-chain-scan-try.md",
