@@ -63,10 +63,12 @@ die() { log "ERROR: $*"; exit 1; }
 
 [ -f "$ROOT/$ARTICLE" ] || die "article does not exist: $ARTICLE"
 [ -f "$ROOT/$REVIEW" ] || die "review does not exist: $REVIEW"
-[ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
-  || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
-if git status --porcelain --untracked-files=no | grep -q .; then
-  die "tracked files contain uncommitted changes"
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  [ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
+    || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
+  if git status --porcelain --untracked-files=no | grep -q .; then
+    die "tracked files contain uncommitted changes"
+  fi
 fi
 command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v node >/dev/null 2>&1 || die "node is required"
@@ -123,7 +125,12 @@ cleanup_worktree() {
 }
 trap cleanup_worktree EXIT
 
-git worktree add -b "$BRANCH" "$WORKTREE" "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null \
+GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$AGENT_PIPELINE_BASE_BRANCH" \
+  || die "failed to fetch origin/$AGENT_PIPELINE_BASE_BRANCH"
+PUBLICATION_BASE="$AGENT_PIPELINE_BASE_BRANCH"
+[ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ] \
+  || PUBLICATION_BASE="origin/$AGENT_PIPELINE_BASE_BRANCH"
+git worktree add -b "$BRANCH" "$WORKTREE" "$PUBLICATION_BASE" >/dev/null \
   || die "failed to create isolated queue worktree"
 WORKTREE_ACTIVE=1
 mkdir -p "$WORKTREE/$(dirname "$ARTICLE")"

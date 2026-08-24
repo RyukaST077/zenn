@@ -51,10 +51,12 @@ die() { log "ERROR: $*"; exit 1; }
 
 [ -f "$ROOT/$ARTICLE" ] || die "article does not exist: $ARTICLE"
 [ -f "$ROOT/$REVIEW" ] || die "review does not exist: $REVIEW"
-[ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
-  || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
-if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
-  die "tracked files contain uncommitted changes"
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  [ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
+    || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
+  if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
+    die "tracked files contain uncommitted changes"
+  fi
 fi
 command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"
 command -v gh >/dev/null 2>&1 || die "gh is required"
@@ -105,7 +107,12 @@ cleanup_worktree() {
 }
 trap cleanup_worktree EXIT
 
-git worktree add -b "$BRANCH" "$PUBLISH_WORKTREE" "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null \
+GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$AGENT_PIPELINE_BASE_BRANCH" \
+  || die "failed to fetch origin/$AGENT_PIPELINE_BASE_BRANCH"
+PUBLICATION_BASE="$AGENT_PIPELINE_BASE_BRANCH"
+[ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ] \
+  || PUBLICATION_BASE="origin/$AGENT_PIPELINE_BASE_BRANCH"
+git worktree add -b "$BRANCH" "$PUBLISH_WORKTREE" "$PUBLICATION_BASE" >/dev/null \
   || die "failed to create isolated publication worktree"
 WORKTREE_ACTIVE=1
 mkdir -p "$PUBLISH_WORKTREE/$(dirname "$ARTICLE")" "$PUBLISH_WORKTREE/$(dirname "$REVIEW")" "$PUBLISH_WORKTREE/$PIPE_DIR"
@@ -188,8 +195,13 @@ if [ "$AUTO_MERGE" = 1 ]; then
   else
     die "PR merge failed: $PR_URL"
   fi
-  GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
-    || log "WARN: could not refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
+  if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" = 1 ]; then
+    GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$AGENT_PIPELINE_BASE_BRANCH" \
+      || log "WARN: could not refresh origin/$AGENT_PIPELINE_BASE_BRANCH after merge request"
+  else
+    GIT_TERMINAL_PROMPT=0 git pull --ff-only origin "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
+      || log "WARN: could not refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
+  fi
 else
   MERGE_RESULT="PR created; waiting for human merge"
 fi

@@ -10,17 +10,23 @@ die() { log "ERROR: $*"; exit 1; }
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a Git worktree"
 cd "$ROOT"
 
-[ "$(git branch --show-current)" = "$BASE_BRANCH" ] \
-  || die "current branch must be $BASE_BRANCH"
-if git status --porcelain --untracked-files=no | grep -q .; then
-  die "tracked files contain uncommitted changes"
-fi
 git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
 git check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $BASE_BRANCH"
 
 GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$BASE_BRANCH" \
   || die "failed to fetch origin/$BASE_BRANCH"
+
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" = 1 ]; then
+  log "isolated worktree remains pinned at $(git rev-parse --short HEAD); shared checkout was not updated"
+  exit 0
+fi
+
+[ "$(git branch --show-current)" = "$BASE_BRANCH" ] \
+  || die "current branch must be $BASE_BRANCH"
+if git status --porcelain --untracked-files=no | grep -q .; then
+  die "tracked files contain uncommitted changes"
+fi
 
 TMP_BASE="${TMPDIR:-/tmp}"
 SYNC_TMP="$(mktemp -d "$TMP_BASE/zenn-safe-sync.XXXXXX")"

@@ -26,7 +26,8 @@ LOG="$LOG_DIR/auto-publish-$TS.log"
 
 # 既定は本番運用（--auto-merge）。上限などで一時停止したstateがあれば先に再開する。
 PENDING_RESUME_FILE="$REPO/logs/.auto-publish-resume"
-PIPELINE_SCRIPT="${AUTO_PUBLISH_SCRIPT:-$REPO/scripts/auto-publish.sh}"
+PIPELINE_SCRIPT="${AUTO_PUBLISH_SCRIPT:-}"
+WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AUTO_PUBLISH_STATUS_DIR:=$REPO/logs/daily-status}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
@@ -101,8 +102,13 @@ resolve_args || exit $?
   esac
   usage_resumes=0
   while :; do
-    # shellcheck disable=SC2086
-    bash "$PIPELINE_SCRIPT" $ARGS
+    if [ -n "$PIPELINE_SCRIPT" ]; then
+      # shellcheck disable=SC2086
+      bash "$PIPELINE_SCRIPT" $ARGS
+    else
+      # shellcheck disable=SC2086
+      bash "$WORKTREE_RUNNER" --shared-root "$REPO" -- scripts/auto-publish.sh $ARGS
+    fi
     rc=$?
     [ "$rc" = "$AGENT_PIPELINE_RETRYABLE_EXIT" ] || break
     if [ "$usage_resumes" -ge "$AUTO_PUBLISH_MAX_USAGE_RESUMES" ]; then

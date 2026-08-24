@@ -162,8 +162,9 @@ else
   log "WARN: danger-full-access is enabled; generated commands can access the host without sandbox restrictions"
 fi
 
-LOCK="$ROOT/.auto-publish-codex.lock"
-for other_lock in "$ROOT/.agent-practice-pipeline.lock" "$ROOT/.auto-publish.lock"; do
+LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
+LOCK="$LOCK_ROOT/.auto-publish-codex.lock"
+for other_lock in "$LOCK_ROOT/.agent-practice-pipeline.lock" "$LOCK_ROOT/.auto-publish.lock"; do
   [ ! -d "$other_lock" ] || die "another article pipeline holds $other_lock"
 done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another Codex pipeline holds $LOCK"; fi
@@ -188,11 +189,13 @@ if [ "$(state_get review.next_stage)" = "revise" ] && ! require_artifact review;
 
 current_branch="$(git branch --show-current)"
 saved_branch="$(state_get publish.branch)"
-if [ "$current_branch" != "$BASE_BRANCH" ] && { [ -z "$saved_branch" ] || [ "$current_branch" != "$saved_branch" ]; }; then
-  die "current branch is $current_branch; expected $BASE_BRANCH${saved_branch:+ or $saved_branch}"
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  if [ "$current_branch" != "$BASE_BRANCH" ] && { [ -z "$saved_branch" ] || [ "$current_branch" != "$saved_branch" ]; }; then
+    die "current branch is $current_branch; expected $BASE_BRANCH${saved_branch:+ or $saved_branch}"
+  fi
 fi
 if ! is_done preflight; then
-  if [ "$current_branch" = "$BASE_BRANCH" ]; then
+  if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" = 1 ] || [ "$current_branch" = "$BASE_BRANCH" ]; then
     [ -x scripts/safe-sync-main.sh ] || die "safe sync helper is missing or not executable"
     bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
       || die "safe synchronization with origin/$BASE_BRANCH failed"
@@ -337,6 +340,8 @@ if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   state_set completed.merge true
 fi
 
-git switch "$BASE_BRANCH" >/dev/null || die "failed to return to $BASE_BRANCH"
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  git switch "$BASE_BRANCH" >/dev/null || die "failed to return to $BASE_BRANCH"
+fi
 log "complete: article=$ARTICLE PR=$PR_URL"
 printf 'Article: %s\nPR: %s\nPipeline: %s\n' "$ARTICLE" "$PR_URL" "$PIPE_DIR"

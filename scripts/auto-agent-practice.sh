@@ -146,8 +146,9 @@ git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
 log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions so the run stage can start both authenticated CLIs"
 
-LOCK="$ROOT/.agent-practice-pipeline.lock"
-for other_lock in "$ROOT/.auto-publish.lock" "$ROOT/.auto-publish-codex.lock"; do
+LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
+LOCK="$LOCK_ROOT/.agent-practice-pipeline.lock"
+for other_lock in "$LOCK_ROOT/.auto-publish.lock" "$LOCK_ROOT/.auto-publish-codex.lock"; do
   [ ! -d "$other_lock" ] || die "another article pipeline holds $other_lock"
 done
 if ! mkdir "$LOCK" 2>/dev/null; then die "another AI agent practice pipeline holds $LOCK"; fi

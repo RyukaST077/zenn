@@ -393,8 +393,9 @@ EOF
   exit 2
 fi
 
-LOCK="$ROOT/.auto-publish.lock"
-for other_lock in "$ROOT/.agent-practice-pipeline.lock" "$ROOT/.auto-publish-codex.lock"; do
+LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
+LOCK="$LOCK_ROOT/.auto-publish.lock"
+for other_lock in "$LOCK_ROOT/.agent-practice-pipeline.lock" "$LOCK_ROOT/.auto-publish-codex.lock"; do
   [ ! -d "$other_lock" ] || { echo "別のパイプラインが実行中（$other_lock が存在）" >&2; exit 2; }
 done
 if ! mkdir "$LOCK" 2>/dev/null; then
@@ -461,8 +462,10 @@ log "=== auto-publish 開始 (pipeline: $PIPE_DIR)$( [ -n "$RESUME_DIR" ] && ech
 
 # ---------- Git 状態のリセット ----------
 if ! is_done preflight; then
-  current_branch="$(git rev-parse --abbrev-ref HEAD)"
-  [ "$current_branch" = "$BASE_BRANCH" ] || { log "ブランチ $current_branch → $BASE_BRANCH へ切替"; git checkout "$BASE_BRANCH"; }
+  if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+    current_branch="$(git rev-parse --abbrev-ref HEAD)"
+    [ "$current_branch" = "$BASE_BRANCH" ] || { log "ブランチ $current_branch → $BASE_BRANCH へ切替"; git checkout "$BASE_BRANCH"; }
+  fi
   [ -x scripts/safe-sync-main.sh ] || die "安全同期ヘルパーが無い、または実行できない"
   bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
     || die "origin/$BASE_BRANCH との安全同期に失敗した"
@@ -580,8 +583,10 @@ if [ "$AUTO_MERGE" = 1 ]; then
   log "   archive: 公開キューPRには記事・画像・キューだけを含める"
 fi
 
-# キュー追加ヘルパーは呼び出し元をmainのまま保つ。
-git checkout "$BASE_BRANCH" >/dev/null 2>&1 || true
+# 共有 checkout では呼び出し元を main のまま保つ。隔離 worktree は detached のままにする。
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  git checkout "$BASE_BRANCH" >/dev/null 2>&1 || true
+fi
 
 # ---------- 7. auto-merge（--auto-merge 指定時のみ） ----------
 MERGED=0
