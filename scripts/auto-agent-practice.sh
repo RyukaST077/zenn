@@ -8,6 +8,7 @@ set -euo pipefail
 : "${CODEX_BIN:=codex}"
 : "${CLAUDE_BIN:=claude}"
 : "${AGENT_PIPELINE_ORCHESTRATOR:=codex}"
+: "${AGENT_PIPELINE_PROVIDER_SCOPE:=both}"
 : "${AGENT_PIPELINE_MODEL:=}"
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
@@ -52,6 +53,17 @@ case "$AGENT_PIPELINE_ORCHESTRATOR" in
   codex|claude) ;;
   *) echo "AGENT_PIPELINE_ORCHESTRATOR must be codex or claude" >&2; exit 2 ;;
 esac
+case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+  both|codex|claude) ;;
+  *) echo "AGENT_PIPELINE_PROVIDER_SCOPE must be both, codex, or claude" >&2; exit 2 ;;
+esac
+case "$AGENT_PIPELINE_PROVIDER_SCOPE:$AGENT_PIPELINE_ORCHESTRATOR" in
+  codex:claude|claude:codex)
+    echo "AGENT_PIPELINE_PROVIDER_SCOPE must include the selected orchestrator" >&2
+    exit 2
+    ;;
+esac
+export AGENT_PIPELINE_PROVIDER_SCOPE
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
 case "$AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT" in
   0|1) ;;
@@ -105,7 +117,7 @@ if [ "$DRY_RUN" = 1 ]; then
   topic: $TOPIC
   pipeline: $PIPE_DIR
   orchestrator: $AGENT_PIPELINE_ORCHESTRATOR ($([ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ] && printf '%s' "$CODEX_BIN" || printf '%s' "$CLAUDE_BIN"), model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
-  experiment CLIs: $CLAUDE_BIN, $CODEX_BIN
+  experiment provider scope: $AGENT_PIPELINE_PROVIDER_SCOPE
   policy: non-interactive, outer permissions=unrestricted, ephemeral=true
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
@@ -127,8 +139,12 @@ log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
 die() { log "ERROR: $*"; log "pipeline evidence: $PIPE_DIR"; exit 1; }
 
 [ -n "$TIMEOUT_BIN" ] || die "timeout or gtimeout is required (macOS: brew install coreutils)"
-command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"
-command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN"
+case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+  both|codex) command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN" ;;
+esac
+case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+  both|claude) command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN" ;;
+esac
 command -v node >/dev/null 2>&1 || die "node is required"
 command -v git >/dev/null 2>&1 || die "git is required"
 command -v gh >/dev/null 2>&1 || die "gh is required"
@@ -138,13 +154,17 @@ command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CLAUDE_LIMIT_TOOL" ] || die "Claude usage limit parser is missing"
 [ -f "$RUN_LOG_FINDER" ] || die "agent execution log finder is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
-"$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
-"$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
+case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+  both|codex) "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated" ;;
+esac
+case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+  both|claude) "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated" ;;
+esac
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
 git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
 git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
-log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions so the run stage can start both authenticated CLIs"
+log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions so the run stage can start authenticated $AGENT_PIPELINE_PROVIDER_SCOPE provider experiments"
 
 LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
 LOCK="$LOCK_ROOT/.agent-practice-pipeline.lock"
@@ -304,6 +324,13 @@ validate_generated_manifest() {
     || die "generated manifest failed independent validation"
   node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
     || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
+  node - "$MANIFEST" "$AGENT_PIPELINE_PROVIDER_SCOPE" <<'NODE' \
+    || die "generated manifest contains a provider outside AGENT_PIPELINE_PROVIDER_SCOPE=$AGENT_PIPELINE_PROVIDER_SCOPE"
+const fs = require("node:fs");
+const [manifestPath, scope] = process.argv.slice(2);
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+process.exit(scope === "both" || manifest.cases.every((item) => item.provider === scope) ? 0 : 1);
+NODE
 }
 
 run_manifest_preflight() {
@@ -345,8 +372,7 @@ if [ -n "$RESUME_RUN_LOG" ]; then
     process.stdout.write(match[1]);
   ' "$RUN_LOG")" || die "resume execution log does not declare a manifest"
   case "$MANIFEST" in practice/agent/*.json) ;; *) die "resume manifest path is invalid: $MANIFEST" ;; esac
-  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null \
-    || die "resume manifest failed independent validation"
+  validate_generated_manifest
   REPORT="$(node -e '
     const fs = require("node:fs");
     const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
@@ -356,13 +382,24 @@ if [ -n "$RESUME_RUN_LOG" ]; then
   [ -f "$REPORT" ] || die "resume research report does not exist: $REPORT"
   log "resuming after verified run: $RUN_LOG"
 else
+  case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
+    codex)
+      PROVIDER_CONSTRAINT="For this run, use OpenAI Codex only: the selected claim, plan, and every manifest case must use provider codex; do not select Claude Code or a cross-provider comparison."
+      ;;
+    claude)
+      PROVIDER_CONSTRAINT="For this run, use Claude Code only: the selected claim, plan, and every manifest case must use provider claude; do not select OpenAI Codex or a cross-provider comparison."
+      ;;
+    both)
+      PROVIDER_CONSTRAINT="The manifest may use Claude Code, OpenAI Codex, or both, but use the fewest providers needed to resolve the reader decision."
+      ;;
+  esac
   SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-worthy, falsifiable practice claim for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision. Exclude topics already covered by articles or prior agent reports. Prefer a boundary, failure mode, configuration, new feature, or reproducible workflow that adds value beyond official documentation and can be verified locally with a bounded offline fixture. Every authenticated live case must be runnable with the machine's existing successful claude auth status or codex login status and subscription authentication, without an API key, new secret, separate paid API billing, or interactive login. Exclude modes such as Claude Code --bare when official behavior says they discard subscription credentials and require ANTHROPIC_API_KEY. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
-  SEARCH_PROMPT="$SEARCH_PROMPT Prefer a claim whose expected and competing outcomes can be distinguished from deterministic CLI output, filesystem state, or configuration behavior without depending on a model to reproduce precise timing, simultaneous tool ordering, or probabilistic narration."
+  SEARCH_PROMPT="$SEARCH_PROMPT $PROVIDER_CONSTRAINT Prefer a claim whose expected and competing outcomes can be distinguished from deterministic CLI output, filesystem state, or configuration behavior without depending on a model to reproduce precise timing, simultaneous tool ordering, or probabilistic narration."
   run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
   REPORT="$STAGE_ARTIFACT"
 
   PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every authenticated live case must complete with the machine's existing successful claude auth status or codex login status and subscription authentication; do not require an API key, new secret, separate paid API billing, or interactive login, and reject the report as infeasible if its tested mode discards those existing credentials. Bound live probes with the manifest timeout and turn limits; do not add --max-budget-usd because a low currency cap can terminate a valid subscription-backed probe before verification. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Inspect scripts/agent-practice/run-experiment.mjs and make the wrapper accept its exact buildAgentArgs contract; in particular, Codex cases receive --sandbox workspace-write, so a wrapper must not require read-only. If a fake CLI starts asynchronous work needed by verification, wait for its required artifacts with a bounded timeout before the fake CLI exits. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
-  PLAN_PROMPT="$PLAN_PROMPT The verifier must treat every pre-registered conclusive expected or competing outcome as a successful evidence capture, emit an outcome-specific marker for each, and leave the verdict to analysis; it must fail only for inconclusive harness, safety, service, or evidence-integrity conditions. Do not require an exact count of provider result events unless the wrapper first filters nested child events from the single top-level result."
+  PLAN_PROMPT="$PLAN_PROMPT $PROVIDER_CONSTRAINT The verifier must treat every pre-registered conclusive expected or competing outcome as a successful evidence capture, emit an outcome-specific marker for each, and leave the verdict to analysis; it must fail only for inconclusive harness, safety, service, or evidence-integrity conditions. Do not require an exact count of provider result events unless the wrapper first filters nested child events from the single top-level result."
   run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
   MANIFEST="$STAGE_ARTIFACT"
   validate_generated_manifest
@@ -378,7 +415,7 @@ else
     fi
     preflight_repair=$((preflight_repair + 1))
     REPAIR_PROMPT="Research report: $REPORT. The previous manifest $MANIFEST failed the runner's offline fake-CLI preflight before any authenticated experiment. Inspect $PREFLIGHT_EVIDENCE and its sibling per-case preflight logs and preserved preflight-work directory. Repair the same selected claim by creating exactly one corrected safe plan and runner-compatible version 2 manifest. Fix the recorded failure rather than changing the claim or weakening verification. Every authenticated live case must remain runnable with existing subscription authentication only, without an API key, new secret, separate paid API billing, interactive login, or --max-budget-usd. The wrapper must accept the exact arguments built by scripts/agent-practice/run-experiment.mjs, and asynchronous fake-CLI effects required by verification must be durably observable before the fake CLI exits. Preserve credential rejection, zero network and paid requests in preflight, bounded cleanup, strict protected paths, and deterministic competing outcomes. Validate the corrected manifest and return it as the primary artifact."
-    REPAIR_PROMPT="$REPAIR_PROMPT Preserve outcome-specific success markers for all pre-registered conclusive expected and competing observations; do not turn an honest negative result into a verifier failure."
+    REPAIR_PROMPT="$REPAIR_PROMPT $PROVIDER_CONSTRAINT Preserve outcome-specific success markers for all pre-registered conclusive expected and competing observations; do not turn an honest negative result into a verifier failure."
     run_stage plan "2-repair-$preflight_repair" zenn-agent-plan-practice practice/agent 0 "$REPAIR_PROMPT"
     MANIFEST="$STAGE_ARTIFACT"
     validate_generated_manifest

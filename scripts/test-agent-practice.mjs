@@ -377,6 +377,7 @@ try {
   assert.equal(dryRun.status, 0, dryRun.stderr);
   assert.match(dryRun.stdout, /scheduled: 1/);
   assert.match(dryRun.stdout, /orchestrator: codex/);
+  assert.match(dryRun.stdout, /experiment provider scope: both/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
   assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/8\)/);
@@ -394,6 +395,7 @@ try {
   assert.match(agentPipelineSource, /outcome-specific marker/);
   assert.match(agentPipelineSource, /precise timing, simultaneous tool ordering/);
   assert.match(agentPipelineSource, /do not turn an honest negative result into a verifier failure/);
+  assert.match(agentPipelineSource, /generated manifest contains a provider outside AGENT_PIPELINE_PROVIDER_SCOPE/);
   assert.match(agentPipelineSource, /wait_seconds - remaining/,
     "usage-limit progress must be based on elapsed wait time so reset-time remainders still log");
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
@@ -405,6 +407,21 @@ try {
   ]);
   assert.equal(claudeOrchestratorDryRun.status, 0, claudeOrchestratorDryRun.stderr);
   assert.match(claudeOrchestratorDryRun.stdout, /orchestrator: claude/);
+  const codexOnlyDryRun = run("bash", [
+    "scripts/auto-agent-practice.sh", "--orchestrator", "codex", "--dry-run",
+  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "codex" } });
+  assert.equal(codexOnlyDryRun.status, 0, codexOnlyDryRun.stderr);
+  assert.match(codexOnlyDryRun.stdout, /experiment provider scope: codex/);
+  const providerOrchestratorMismatch = run("bash", [
+    "scripts/auto-agent-practice.sh", "--orchestrator", "claude", "--dry-run",
+  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "codex" } });
+  assert.equal(providerOrchestratorMismatch.status, 2);
+  assert.match(providerOrchestratorMismatch.stderr, /must include the selected orchestrator/);
+  const invalidProviderScope = run("bash", [
+    "scripts/auto-agent-practice.sh", "--dry-run",
+  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "invalid" } });
+  assert.equal(invalidProviderScope.status, 2);
+  assert.match(invalidProviderScope.stderr, /must be both, codex, or claude/);
   const invalidOrchestrator = run("bash", [
     "scripts/auto-agent-practice.sh", "--orchestrator", "invalid", "--dry-run",
   ]);
