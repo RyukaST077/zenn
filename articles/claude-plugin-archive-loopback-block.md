@@ -3,7 +3,7 @@ title: "archiveソースのプラグインが127.0.0.1で弾かれる時、CLI�
 emoji: "🔌"
 type: tech
 topics: ["claudecode", "cli", "security", "plugin", "troubleshooting"]
-published: false
+published: true
 ---
 
 ## 結論から: `source: Invalid input` はドキュメントの loopback ブロックの証拠にならない
