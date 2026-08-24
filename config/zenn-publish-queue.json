@@ -9,6 +9,12 @@
       "enqueuedAt": "2026-08-21T20:38:28.652Z",
       "attempts": 1,
       "lastAttemptAt": "2026-08-24T08:22:32.629Z"
+    },
+    {
+      "article": "articles/bun-markdown-marked-sanitize-boundary.md",
+      "enqueuedAt": "2026-08-24T11:01:32.273Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ]
 }
