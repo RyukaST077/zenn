@@ -5,12 +5,6 @@
   "retryAfterHours": 6,
   "entries": [
     {
-      "article": "articles/bumblebee-supply-chain-scan-try.md",
-      "enqueuedAt": "2026-08-21T15:58:55.833Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-08-24T06:21:56.673Z"
-    },
-    {
       "article": "articles/claude-plugin-archive-loopback-block.md",
       "enqueuedAt": "2026-08-21T20:38:28.652Z",
       "attempts": 0,
