@@ -6,7 +6,8 @@ export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebre
 
 REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
-PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-$REPO/scripts/auto-agent-practice.sh}"
+PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-}"
+WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 
 LOG_DIR="$REPO/logs/agent/launchd"
 : "${AGENT_PRACTICE_LOG_DIR:=$LOG_DIR}"
@@ -69,8 +70,14 @@ esac
   attempt=1
   while :; do
     echo "attempt: $attempt/$AGENT_PRACTICE_MAX_ATTEMPTS"
-    AGENT_PIPELINE_RETRYABLE_EXIT="$AGENT_PIPELINE_RETRYABLE_EXIT" \
-      bash "$PIPELINE_SCRIPT" "${AGENT_ARGS[@]}"
+    if [ -n "$PIPELINE_SCRIPT" ]; then
+      AGENT_PIPELINE_RETRYABLE_EXIT="$AGENT_PIPELINE_RETRYABLE_EXIT" \
+        bash "$PIPELINE_SCRIPT" "${AGENT_ARGS[@]}"
+    else
+      AGENT_PIPELINE_RETRYABLE_EXIT="$AGENT_PIPELINE_RETRYABLE_EXIT" \
+        bash "$WORKTREE_RUNNER" --shared-root "$REPO" -- \
+          scripts/auto-agent-practice.sh "${AGENT_ARGS[@]}"
+    fi
     rc=$?
     if [ "$rc" = "$AGENT_PIPELINE_RETRYABLE_EXIT" ] \
         && [ "$attempt" -lt "$AGENT_PRACTICE_MAX_ATTEMPTS" ]; then
