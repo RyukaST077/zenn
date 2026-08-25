@@ -21,6 +21,12 @@
       "enqueuedAt": "2026-08-24T14:12:05.947Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/chrome151-soft-navigation-localhost-gate.md",
+      "enqueuedAt": "2026-08-25T00:50:35.645Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ]
 }
