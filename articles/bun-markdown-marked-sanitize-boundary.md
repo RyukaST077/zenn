@@ -3,7 +3,7 @@ title: "Bun 1.4のBun.markdownとmarkedを危険入力で比較した"
 emoji: "🧪"
 type: "tech"
 topics: ["bun", "markdown", "javascript", "security", "playwright"]
-published: false
+published: true
 ---
 
 <!-- 出典ログ: logs/run-bun-markdown-marked-20260824-1934/execution-log.md -->
