@@ -3,7 +3,7 @@ title: "Codexのnested AGENTS.mdを共有バイト上限から守る検証gate"
 emoji: "📏"
 type: tech
 topics: [codex, aiagent, cli, automation]
-published: false
+published: true
 ---
 
 モノレポのルート`AGENTS.md`が大きくなっても、サービス配下の`AGENTS.md`へ移した重要なテスト・migration・生成手順はCodexに届くでしょうか。後の階層に置けば優先されるとしても、そもそもmodel-visibleな入力へ入らなければ、その優先順位は働きません。
