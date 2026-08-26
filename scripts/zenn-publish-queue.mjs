@@ -4,6 +4,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const DEFAULT_QUEUE = "config/zenn-publish-queue.json";
+// Zenn can accept a deployment yet keep the article unreachable (HTTP 403).
+// Such an entry never becomes visible in the public API, so the queue head has
+// to give up after a bounded number of attempts instead of blocking forever.
+const DEFAULT_MAX_ATTEMPTS = 3;
 
 const fail = (message) => {
   console.error(`ERROR: ${message}`);
@@ -55,6 +59,13 @@ const readQueue = () => {
   if (!Number.isInteger(queue.retryAfterHours) || queue.retryAfterHours < 1) {
     fail("retryAfterHours must be a positive integer");
   }
+  if (queue.maxAttempts !== undefined
+      && (!Number.isInteger(queue.maxAttempts) || queue.maxAttempts < 1)) {
+    fail("maxAttempts must be a positive integer");
+  }
+  if (queue.blocked !== undefined && !Array.isArray(queue.blocked)) {
+    fail("blocked must be an array");
+  }
   if (!Array.isArray(queue.entries)) fail("entries must be an array");
 
   const seen = new Set();
@@ -80,6 +91,19 @@ const readQueue = () => {
       fail(`${prefix}.article does not exist: ${entry.article}`);
     }
     readPublished(entry.article);
+  }
+
+  for (const [index, entry] of (queue.blocked || []).entries()) {
+    const prefix = `blocked[${index}]`;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      fail(`${prefix} must be an object`);
+    }
+    if (!/^articles\/[a-z0-9-]+\.md$/.test(entry.article || "")) {
+      fail(`${prefix}.article is invalid: ${entry.article}`);
+    }
+    if (seen.has(entry.article)) fail(`article is both queued and blocked: ${entry.article}`);
+    seen.add(entry.article);
+    parseDate(entry.blockedAt, `${prefix}.blockedAt`);
   }
   return queue;
 };
@@ -137,16 +161,29 @@ const decision = (queue, articles, now) => {
 
   const entry = queue.entries[0];
   const slug = slugOf(entry.article);
-  const details = { article: entry.article, slug, attempts: entry.attempts, ...common };
+  const maxAttempts = queue.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const details = {
+    article: entry.article, slug, attempts: entry.attempts, maxAttempts, ...common,
+  };
   if (articles.some((article) => article?.slug === slug)) {
     return { action: "reconcile", reason: "article is visible in the public Zenn API", ...details };
+  }
+
+  const published = readPublished(entry.article);
+  // Give up before any wait: a head that Zenn refuses to serve must not hold the
+  // rest of the queue hostage for another backoff window.
+  if (published && entry.attempts >= maxAttempts) {
+    return {
+      action: "block",
+      reason: "article never became public within the attempt limit",
+      ...details,
+    };
   }
 
   if (recent.length >= queue.maxPublicationsPer24Hours) {
     return { action: "wait_rate_limit", reason: "conservative 24-hour publication limit is full", ...details };
   }
 
-  const published = readPublished(entry.article);
   if (!published) {
     return { action: "publish", reason: "capacity is available for the queue head", ...details };
   }
@@ -193,6 +230,9 @@ switch (command) {
     }
     if (readPublished(article)) fail(`queued article must have published: false: ${article}`);
     const queue = readQueue();
+    if ((queue.blocked || []).some((entry) => entry.article === article)) {
+      fail(`article is blocked; remove it from blocked before re-queueing: ${article}`);
+    }
     if (!queue.entries.some((entry) => entry.article === article)) {
       const now = parseDate(options.now || new Date().toISOString(), "--now");
       queue.entries.push({
@@ -209,8 +249,10 @@ switch (command) {
   case "apply": {
     const action = options.action;
     const slug = options.slug;
-    const allowed = new Set(["publish", "retry", "reconcile"]);
-    if (!allowed.has(action)) fail("apply requires --action publish, retry, or reconcile");
+    const allowed = new Set(["publish", "retry", "reconcile", "block"]);
+    if (!allowed.has(action)) {
+      fail("apply requires --action publish, retry, reconcile, or block");
+    }
     const queue = readQueue();
     if (queue.entries.length === 0) fail("cannot apply an action to an empty queue");
     const entry = queue.entries[0];
@@ -226,6 +268,18 @@ switch (command) {
       if (!published) fail(`retry action requires published: true: ${entry.article}`);
       entry.attempts += 1;
       entry.lastAttemptAt = now.toISOString();
+    } else if (action === "block") {
+      if (!published) fail(`block action requires published: true: ${entry.article}`);
+      queue.blocked = queue.blocked || [];
+      queue.blocked.push({
+        article: entry.article,
+        enqueuedAt: entry.enqueuedAt,
+        attempts: entry.attempts,
+        lastAttemptAt: entry.lastAttemptAt,
+        blockedAt: now.toISOString(),
+        reason: "article never became public within the attempt limit",
+      });
+      queue.entries.shift();
     } else {
       if (!published) writePublished(entry.article, true);
       queue.entries.shift();

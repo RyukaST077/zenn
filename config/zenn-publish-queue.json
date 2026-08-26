@@ -3,6 +3,7 @@
   "zennUsername": "clopy",
   "maxPublicationsPer24Hours": 4,
   "retryAfterHours": 6,
+  "maxAttempts": 3,
   "entries": [
     {
       "article": "articles/bun-markdown-marked-sanitize-boundary.md",

@@ -161,6 +161,103 @@ exit 2
   }
 };
 
+const testBlockFlow = () => {
+  // A head Zenn refuses to serve (HTTP 403) never reaches the public API, so the
+  // queue must give up on it instead of retrying it forever.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-publish-block-test-"));
+  const stuck = "articles/stuck-queue-fixture.md";
+  const waiting = "articles/waiting-queue-fixture.md";
+  const blockRun = (args) => spawnSync("node", [script, ...args, "--root", root, "--queue", queueRelative], {
+    encoding: "utf8",
+  });
+  const blockMustRun = (args) => {
+    const result = blockRun(args);
+    assert.equal(result.status, 0, `command failed: ${args.join(" ")}\n${result.stderr}`);
+    return result.stdout.trim();
+  };
+  const body = (title, published) => `---
+title: "${title}"
+emoji: "🧪"
+type: tech
+topics: ["test"]
+published: ${published}
+---
+
+Test body.
+`;
+  const writeBlockQueue = (extra) => fs.writeFileSync(path.join(root, queueRelative), `${JSON.stringify({
+    version: 1,
+    zennUsername: "clopy",
+    maxPublicationsPer24Hours: 2,
+    retryAfterHours: 6,
+    ...extra,
+    entries: [
+      { article: stuck, enqueuedAt: "2026-08-13T00:00:00.000Z", attempts: 3, lastAttemptAt: "2026-08-14T02:30:00.000Z" },
+      { article: waiting, enqueuedAt: "2026-08-13T01:00:00.000Z", attempts: 0, lastAttemptAt: null },
+    ],
+  }, null, 2)}\n`);
+  try {
+    fs.mkdirSync(path.join(root, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(root, "config"), { recursive: true });
+    fs.writeFileSync(path.join(root, stuck), body("Stuck fixture", "true"));
+    fs.writeFileSync(path.join(root, waiting), body("Waiting fixture", "false"));
+    const emptyApi = path.join(root, "empty.json");
+    fs.writeFileSync(emptyApi, '{"articles":[]}\n');
+    const fullApi = path.join(root, "full.json");
+    fs.writeFileSync(fullApi, `${JSON.stringify({ articles: [
+      { slug: "recent-one", published_at: "2026-08-14T02:00:00.000Z" },
+      { slug: "recent-two", published_at: "2026-08-14T01:00:00.000Z" },
+    ] })}\n`);
+
+    // Inside the retry backoff window the attempt limit still wins: waiting six
+    // more hours would only hold the rest of the queue back.
+    writeBlockQueue({});
+    const blocked = JSON.parse(blockMustRun(["decide", "--api-json", emptyApi, "--now", now]));
+    assert.equal(blocked.action, "block");
+    assert.equal(blocked.maxAttempts, 3);
+
+    // A full 24-hour window must not turn the give-up into another wait either.
+    const blockedWhileFull = JSON.parse(blockMustRun(["decide", "--api-json", fullApi, "--now", now]));
+    assert.equal(blockedWhileFull.action, "block");
+
+    // An explicit higher limit keeps the old retry behaviour.
+    writeBlockQueue({ maxAttempts: 5 });
+    const stillRetrying = JSON.parse(blockMustRun([
+      "decide", "--api-json", emptyApi, "--now", "2026-08-14T10:00:00.000Z",
+    ]));
+    assert.equal(stillRetrying.action, "retry");
+
+    writeBlockQueue({});
+    blockMustRun(["apply", "--action", "block", "--slug", "stuck-queue-fixture", "--now", now]);
+    const afterBlock = JSON.parse(fs.readFileSync(path.join(root, queueRelative), "utf8"));
+    assert.equal(afterBlock.entries.length, 1);
+    assert.equal(afterBlock.entries[0].article, waiting, "block must release the next article");
+    assert.equal(afterBlock.blocked.length, 1);
+    assert.equal(afterBlock.blocked[0].article, stuck);
+    assert.equal(afterBlock.blocked[0].attempts, 3);
+    assert.equal(afterBlock.blocked[0].blockedAt, now);
+    assert.match(fs.readFileSync(path.join(root, stuck), "utf8"), /^published: true$/m,
+      "block must not rewrite the article");
+    assert.match(blockMustRun(["validate"]), /1 pending article/);
+
+    // The released head publishes on the next decision.
+    const released = JSON.parse(blockMustRun(["decide", "--api-json", emptyApi, "--now", now]));
+    assert.equal(released.action, "publish");
+    assert.equal(released.article, waiting);
+
+    // Re-queueing a given-up article must fail loudly instead of looping again.
+    const requeue = blockRun(["enqueue", "--article", stuck, "--now", now]);
+    assert.notEqual(requeue.status, 0, "blocked article must not be silently re-queued");
+    assert.match(requeue.stderr, /published: false/);
+    fs.writeFileSync(path.join(root, stuck), body("Stuck fixture", "false"));
+    const requeueUnpublished = blockRun(["enqueue", "--article", stuck, "--now", now]);
+    assert.notEqual(requeueUnpublished.status, 0, "blocked article must not be silently re-queued");
+    assert.match(requeueUnpublished.stderr, /blocked/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+};
+
 try {
   fs.mkdirSync(path.join(fixture, "articles"), { recursive: true });
   fs.mkdirSync(path.join(fixture, "config"), { recursive: true });
@@ -245,6 +342,7 @@ Test body.
   assert.equal(readQueue().entries.length, 1, "enqueue must be idempotent");
   assert.equal(readQueue().entries[0].article, secondArticle);
 
+  testBlockFlow();
   testWorkerFlow();
   console.log("zenn publication queue tests: ok");
 } finally {
