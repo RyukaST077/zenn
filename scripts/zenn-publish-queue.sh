@@ -89,7 +89,7 @@ printf '%s\n' "$PLAN"
 ACTION="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.action)' "$PLAN")"
 case "$ACTION" in
   empty|wait_rate_limit|wait_retry_backoff) exit 0 ;;
-  publish|retry|reconcile) ;;
+  publish|retry|reconcile|block) ;;
   *) echo "unsupported queue decision: $ACTION" >&2; exit 2 ;;
 esac
 [ "$DRY_RUN" = 0 ] || exit 0
@@ -119,6 +119,7 @@ case "$ACTION" in
   publish) COMMIT_MESSAGE="publish: $SLUG from queue"; PR_TITLE="$COMMIT_MESSAGE" ;;
   retry) COMMIT_MESSAGE="chore: retry Zenn publish for $SLUG"; PR_TITLE="$COMMIT_MESSAGE" ;;
   reconcile) COMMIT_MESSAGE="chore: confirm Zenn publish for $SLUG"; PR_TITLE="$COMMIT_MESSAGE" ;;
+  block) COMMIT_MESSAGE="chore: stop retrying Zenn publish for $SLUG"; PR_TITLE="$COMMIT_MESSAGE" ;;
 esac
 git -C "$WORKTREE" commit -m "$COMMIT_MESSAGE" >/dev/null
 GIT_TERMINAL_PROMPT=0 git -C "$WORKTREE" push --set-upstream origin "$BRANCH" >/dev/null

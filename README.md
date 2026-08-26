@@ -266,6 +266,8 @@ resume は `state.json` を読み、完了済みの段をスキップして失�
 > **Zenn の投稿数レートリミット**: Zenn の正確な上限判定は非公開。そのためこのリポジトリは
 > `config/zenn-publish-queue.json` で直近24時間を最大4件として扱い、先頭の記事だけを
 > 公開する。公開できなかった記事は6時間空けて再試行し、公開APIで確認できるまで次へ進まない。
+> ただし再試行は `maxAttempts`（既定3回）で打ち切る。Zennがデプロイを受け付けたまま記事を
+> HTTP 403で配信しない場合、その記事は公開APIに永久に現れず、打ち切りが無いと後続が止まる。
 
 ## Zenn公開キュー
 
@@ -286,10 +288,15 @@ bash scripts/zenn-publish-queue.sh
 ワーカーは次の順で動く。
 
 1. `https://zenn.dev/api/articles?username=clopy&order=latest` から直近24時間の公開数を数える
-2. 2件以上なら何もせず待つ
+2. `maxPublicationsPer24Hours` に達していれば何もせず待つ
 3. 枠があれば先頭記事だけを `published: true` にしてPRをマージする
 4. 次回実行で公開APIに記事があればキューから削除する
 5. 見つからなければ6時間の間隔を空け、キュー状態の更新pushでZennデプロイを再試行する
+6. `maxAttempts` 回試しても公開APIに現れない記事は `blocked` へ退避し、先頭を次の記事へ進める
+
+`blocked` に入った記事は `articles/<slug>.md` も `published: true` のまま残るので、Zenn側の
+状態を人が確認してから対応する。原因を直して再投稿する場合は、`blocked` から該当エントリを
+削除し、`published: false` に戻してから `enqueue` し直す（blockedのままでは `enqueue` は失敗する）。
 
 `config/launchd/com.zenn.publish-queue.plist` はこのワーカーを1時間ごとに実行する設定で、ログは
 `logs/launchd/zenn-publish-queue-*.log` に残る。記事作成側はキュー残量に関係なく毎朝動き、
