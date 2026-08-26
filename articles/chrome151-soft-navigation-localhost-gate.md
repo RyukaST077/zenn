@@ -3,7 +3,7 @@ title: "Chrome 151 Soft Navigation検証がlocalhost gateで止まった記録"
 emoji: "🧭"
 type: tech
 topics: [chrome, javascript, playwright, performance]
-published: false
+published: true
 ---
 
 ## 対象読者
