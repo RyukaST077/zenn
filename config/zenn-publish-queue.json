@@ -27,6 +27,12 @@
       "enqueuedAt": "2026-08-26T00:14:36.448Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-automode-defaults-splice-check.md",
+      "enqueuedAt": "2026-08-26T05:58:36.161Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ]
 }
