@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/codex-agents-shared-byte-budget.md",
-      "enqueuedAt": "2026-08-24T14:12:05.947Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-08-26T19:30:59.226Z"
-    },
-    {
       "article": "articles/chrome151-soft-navigation-localhost-gate.md",
       "enqueuedAt": "2026-08-25T00:50:35.645Z",
       "attempts": 0,
@@ -37,6 +31,14 @@
       "attempts": 4,
       "lastAttemptAt": "2026-08-26T04:28:33.173Z",
       "blockedAt": "2026-08-26T07:07:05.707Z",
+      "reason": "article never became public within the attempt limit"
+    },
+    {
+      "article": "articles/codex-agents-shared-byte-budget.md",
+      "enqueuedAt": "2026-08-24T14:12:05.947Z",
+      "attempts": 3,
+      "lastAttemptAt": "2026-08-26T19:30:59.226Z",
+      "blockedAt": "2026-08-26T20:31:18.313Z",
       "reason": "article never became public within the attempt limit"
     }
   ]
