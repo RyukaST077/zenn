@@ -8,8 +8,8 @@
     {
       "article": "articles/chrome151-soft-navigation-localhost-gate.md",
       "enqueuedAt": "2026-08-25T00:50:35.645Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-26T21:31:38.286Z"
     },
     {
       "article": "articles/css-tree-counting-sandbox-gate.md",
