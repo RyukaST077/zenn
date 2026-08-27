@@ -40,6 +40,12 @@
       "enqueuedAt": "2026-08-27T17:41:40.739Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-write-deny-rule-skip-read-verify.md",
+      "enqueuedAt": "2026-08-27T18:03:55.588Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
