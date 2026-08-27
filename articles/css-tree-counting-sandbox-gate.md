@@ -3,7 +3,7 @@ title: "CSS tree counting検証は3エンジンの起動ゲートで止まった
 emoji: "🚧"
 type: tech
 topics: [css, playwright, browser, codex]
-published: false
+published: true
 ---
 
 ## 対象読者
