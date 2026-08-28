@@ -3,7 +3,7 @@ title: "Claude Code auto modeの$defaults抜け、配布前にJSON diffで検出
 emoji: "🛡️"
 type: tech
 topics: ["claudecode", "cli", "security", "automode", "configuration"]
-published: false
+published: true
 ---
 
 ## 結論から: `$defaults`抜けはセクション単位で静的に検出できる
