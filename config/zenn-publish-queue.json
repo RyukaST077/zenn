@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/css-tree-counting-sandbox-gate.md",
-      "enqueuedAt": "2026-08-26T00:14:36.448Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-08-28T07:35:25.258Z"
-    },
-    {
       "article": "articles/claude-automode-defaults-splice-check.md",
       "enqueuedAt": "2026-08-26T05:58:36.161Z",
       "attempts": 0,
@@ -63,6 +57,14 @@
       "attempts": 3,
       "lastAttemptAt": "2026-08-26T19:30:59.226Z",
       "blockedAt": "2026-08-26T20:31:18.313Z",
+      "reason": "article never became public within the attempt limit"
+    },
+    {
+      "article": "articles/css-tree-counting-sandbox-gate.md",
+      "enqueuedAt": "2026-08-26T00:14:36.448Z",
+      "attempts": 3,
+      "lastAttemptAt": "2026-08-28T07:35:25.258Z",
+      "blockedAt": "2026-08-28T08:35:44.901Z",
       "reason": "article never became public within the attempt limit"
     }
   ]
