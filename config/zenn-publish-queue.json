@@ -52,6 +52,12 @@
       "enqueuedAt": "2026-08-29T12:26:57.800Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-model-flag-overrides-settings-json.md",
+      "enqueuedAt": "2026-08-29T20:46:14.010Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
