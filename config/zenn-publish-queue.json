@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/claude-automode-defaults-splice-check.md",
-      "enqueuedAt": "2026-08-26T05:58:36.161Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-08-28T09:36:03.810Z"
-    },
-    {
       "article": "articles/claude-bash-wildcard-probe-refusal-gap.md",
       "enqueuedAt": "2026-08-27T10:45:23.753Z",
       "attempts": 0,
