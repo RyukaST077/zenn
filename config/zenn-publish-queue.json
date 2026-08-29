@@ -52,6 +52,12 @@
       "enqueuedAt": "2026-08-29T02:31:34.899Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-grep-glob-symlink-deny-still-blocks.md",
+      "enqueuedAt": "2026-08-29T12:26:57.800Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
