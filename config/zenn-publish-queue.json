@@ -46,6 +46,12 @@
       "enqueuedAt": "2026-08-28T14:09:34.903Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-debug-api-cache-control-gap.md",
+      "enqueuedAt": "2026-08-29T02:31:34.899Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
