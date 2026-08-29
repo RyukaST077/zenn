@@ -3,7 +3,7 @@ title: "permissions.allow検証をClaudeに頼んだら、許可判定の前で�
 emoji: "🧯"
 type: tech
 topics: ["claudecode", "aiagent", "security", "cli"]
-published: false
+published: true
 ---
 
 `.claude/settings.json` の `permissions.allow` に `Bash(git * main)` のような「コマンド名の直後に `*`、末尾にブランチ名」というルールを書こうとしている場面を考えます。公式の permissions ドキュメントは、この形のルールが `git -c core.fsmonitor=./fsmonitor-hook.sh diff main` のようなオプション注入コマンドにもマッチし、Claude Code 2.1.246 以降は起動時に "wildcard before the rest of the command" という診断を出す、と書いています。ドキュメントの記述を鵜呑みにせず、「Claude に実際にそのコマンドを実行させて、警告が出るか・許可されるかを見る」というローカルチェックを組みたくなるのは自然です。
