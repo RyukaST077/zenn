@@ -3,7 +3,7 @@ title: "Claude Codeのsandbox credential mask、extractが不一致だと平文�
 emoji: "🔓"
 type: tech
 topics: ["claudecode", "aiagent", "sandbox", "security"]
-published: false
+published: true
 ---
 
 `sandbox.enabled: true` のBash sandboxを有効にし、`sandbox.credentials.envVars`に`mode: "mask"`と`extract`正規表現を設定して、構造化されたsecret（例えば`DATABASE_URL`）をClaudeのcontextやtranscriptに渡さないようにしている場合を考えます。公式ドキュメントには、`extract`パターンが値にマッチしなかった場合のfallbackとして`onExtractNoMatch`が既定で`"warn"`になり、「変数をunmaskedのまま通す("passes the variable through unmasked")」と1行だけ書かれています。しかしこれがsandboxed commandの視点から実際どう見えるかの実例はなく、保護対象のツール自体は`extract`が壊れていても壊れていなくても正常に動き続けるため、通常のテストでは検知できません。
