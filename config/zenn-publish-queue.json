@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/claude-bash-wildcard-probe-refusal-gap.md",
-      "enqueuedAt": "2026-08-27T10:45:23.753Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-08-30T00:38:26.015Z"
-    },
-    {
       "article": "articles/claude-sandbox-credential-mask-extract-fallback.md",
       "enqueuedAt": "2026-08-27T17:21:26.561Z",
       "attempts": 0,
