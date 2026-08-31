@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-tool-memory-limit-macos-gate.md",
       "enqueuedAt": "2026-08-27T17:41:40.739Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-08-31T02:41:09.007Z"
     },
     {
       "article": "articles/claude-write-deny-rule-skip-read-verify.md",
