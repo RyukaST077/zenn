@@ -3,7 +3,7 @@ title: "Claude Code 2.1.228後もRead denyルールはWriteの上書きを防ぐ
 emoji: "🔒"
 type: tech
 topics: ["claudecode", "ai", "cli", "security"]
-published: false
+published: true
 ---
 
 ## 結論から: `Read(./path)` denyルールは新モデルのWriteも引き続き防いでいた
