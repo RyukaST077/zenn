@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/claude-sandbox-credential-mask-extract-fallback.md",
-      "enqueuedAt": "2026-08-27T17:21:26.561Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-08-31T00:40:23.054Z"
-    },
-    {
       "article": "articles/claude-tool-memory-limit-macos-gate.md",
       "enqueuedAt": "2026-08-27T17:41:40.739Z",
       "attempts": 0,
