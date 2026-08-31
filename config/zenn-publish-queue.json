@@ -52,6 +52,12 @@
       "enqueuedAt": "2026-08-30T20:19:23.864Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-configdir-override-memory-path-gate.md",
+      "enqueuedAt": "2026-08-31T20:44:59.932Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
