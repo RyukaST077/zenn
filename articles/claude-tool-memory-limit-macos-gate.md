@@ -3,7 +3,7 @@ title: "CLAUDE_CODE_TOOL_MEMORY_LIMIT はmacOSでは効かず、--debugも無言
 emoji: "🧯"
 type: "tech"
 topics: ["claudecode", "macos", "anthropic", "cgroup", "devops"]
-published: false
+published: true
 ---
 
 ## この記事で分かること
