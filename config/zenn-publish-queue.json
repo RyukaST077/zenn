@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-write-deny-rule-skip-read-verify.md",
       "enqueuedAt": "2026-08-27T18:03:55.588Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-08-31T22:44:25.887Z"
+      "attempts": 3,
+      "lastAttemptAt": "2026-09-01T04:45:17.561Z"
     },
     {
       "article": "articles/claude-restricted-mode-drops-project-hooks.md",
