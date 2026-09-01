@@ -3,7 +3,7 @@ title: "Claude Codeの--restrictedはPreToolUseフックも無効化する"
 emoji: "🔒"
 type: "tech"
 topics: ["claudecode", "security", "cli", "hooks", "ai"]
-published: false
+published: true
 ---
 
 `.claude/settings.json` に `PreToolUse` フック（例: `secret.txt` への書き込みを拒否するガード）を設定して既存のリポジトリを保護しているチームが、外部PRの説明やスクレイピングしたチケット、信頼できないサブエージェントのプロンプトなど「信頼できない入力」をClaude Codeに渡す前の追加ロックダウンとして `--restricted` フラグ（Claude Code 2.1.248で導入）を検討している状況を想定する。
