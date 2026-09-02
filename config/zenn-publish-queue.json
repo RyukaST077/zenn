@@ -8,8 +8,8 @@
     {
       "article": "articles/codex-doctor-term-dumb-network-gate.md",
       "enqueuedAt": "2026-08-28T14:09:34.903Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-02T07:48:47.258Z"
     },
     {
       "article": "articles/claude-debug-api-cache-control-gap.md",

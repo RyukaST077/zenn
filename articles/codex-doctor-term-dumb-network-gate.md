@@ -3,7 +3,7 @@ title: "codex doctorのTERM=dumb直しではCIゲートの赤は消えない場�
 emoji: "🩺"
 type: "tech"
 topics: ["codex", "cli", "ci", "sandbox", "ai"]
-published: false
+published: true
 ---
 
 `codex doctor` をCIのヘルスチェックゲートやエージェントハーネスの事前チェックに組み込み、ネットワーク遮断（no-egress）のコンテナ内で実行している状況を想定する。人間可読な出力には `TERM=dumb` に起因する `terminal` カテゴリの赤い警告が目立って表示されるため、「他のCLIツールでもよくある非tty出力のノイズ」と判断し、`TERM=xterm-256color` を設定すれば `codex doctor` の終了コードが0になる（ゲートが通る）と期待しがちである。この記事は、その期待が少なくとも1つのネットワーク遮断済みワークスペースでは成立しなかったという再現可能な反例を示す。
