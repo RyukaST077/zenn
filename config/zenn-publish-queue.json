@@ -46,6 +46,12 @@
       "enqueuedAt": "2026-08-31T20:44:59.932Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-subagent-model-force-precedence-gap.md",
+      "enqueuedAt": "2026-09-02T07:03:55.569Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": [
