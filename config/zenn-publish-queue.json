@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-debug-api-cache-control-gap.md",
       "enqueuedAt": "2026-08-29T02:31:34.899Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-02T21:51:13.130Z"
     },
     {
       "article": "articles/claude-grep-glob-symlink-deny-still-blocks.md",
