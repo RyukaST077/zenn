@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/codex-doctor-term-dumb-network-gate.md",
-      "enqueuedAt": "2026-08-28T14:09:34.903Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-02T19:50:35.640Z"
-    },
-    {
       "article": "articles/claude-debug-api-cache-control-gap.md",
       "enqueuedAt": "2026-08-29T02:31:34.899Z",
       "attempts": 0,
