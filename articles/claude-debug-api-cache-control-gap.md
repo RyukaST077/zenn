@@ -3,7 +3,7 @@ title: "claude --debug apiでcache_controlが見えなかった話"
 emoji: "🔍"
 type: tech
 topics: ["claudecode", "debug", "subagent", "caching", "cli"]
-published: false
+published: true
 ---
 
 ## 症状: `--debug api --debug-file`で`cache_control`を探したが1件も出てこない
