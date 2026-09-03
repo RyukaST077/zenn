@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/claude-debug-api-cache-control-gap.md",
-      "enqueuedAt": "2026-08-29T02:31:34.899Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-03T09:53:11.293Z"
-    },
-    {
       "article": "articles/claude-grep-glob-symlink-deny-still-blocks.md",
       "enqueuedAt": "2026-08-29T12:26:57.800Z",
       "attempts": 0,
