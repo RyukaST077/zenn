@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-grep-glob-symlink-deny-still-blocks.md",
       "enqueuedAt": "2026-08-29T12:26:57.800Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-03T11:53:53.841Z"
     },
     {
       "article": "articles/claude-model-flag-overrides-settings-json.md",
