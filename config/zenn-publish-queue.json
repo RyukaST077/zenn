@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-model-flag-overrides-settings-json.md",
       "enqueuedAt": "2026-08-29T20:46:14.010Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-03T21:55:29.252Z"
     },
     {
       "article": "articles/claude-settings-doctor-bash-wildcard-rule-check.md",

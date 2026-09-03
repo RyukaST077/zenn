@@ -3,7 +3,7 @@ title: "claude --model はチーム共有のsettings.jsonに勝つか？ v2.1.24
 emoji: "🎛️"
 type: "tech"
 topics: ["claudecode", "cli", "config", "llm", "ai"]
-published: false
+published: true
 ---
 
 チームの `.claude/settings.json` に `"model": "sonnet"` を固定コミットしているリポジトリで、一時的に別モデルを試したいとき `claude --model opus` を付けるだけで本当に切り替わるのか——それとも設定ファイルの値が静かに優先されて、気づかないままsonnetのセッションを回し続けることになるのか。
