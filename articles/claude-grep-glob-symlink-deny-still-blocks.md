@@ -3,7 +3,7 @@ title: "Claude Code 2.1.251前でもsymlink探索起点へのRead denyは効く�
 emoji: "🔗"
 type: tech
 topics: ["claudecode", "ai", "cli", "security"]
-published: false
+published: true
 ---
 
 ## 結論から: 探索起点そのものがsymlinkでも、`permissions.deny`はブロックしていた
