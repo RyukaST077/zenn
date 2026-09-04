@@ -3,7 +3,7 @@ title: "Claude Code 2.1.248: doctorは壊れたBash(...)権限ルールを検知
 emoji: "🩺"
 type: tech
 topics: ["claudecode", "ai", "cli", "settings"]
-published: false
+published: true
 ---
 
 ## 結論から: この壊れ方は`claude doctor`が名指しで教えてくれる
