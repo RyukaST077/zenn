@@ -3,7 +3,7 @@ title: "ToolSearchは「無効化されたツール」を救わない: Claude Co
 emoji: "🧭"
 type: tech
 topics: ["claudecode", "agent", "cli", "automation", "llm"]
-published: false
+published: true
 ---
 
 ## 結論から: `ToolSearch(select:TodoWrite)` を先に呼んでも直らない失敗がある
