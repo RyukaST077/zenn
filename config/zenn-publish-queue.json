@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-toolsearch-disabled-tool-boundary.md",
       "enqueuedAt": "2026-08-30T20:19:23.864Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-05T13:59:31.462Z"
     },
     {
       "article": "articles/claude-configdir-override-memory-path-gate.md",
