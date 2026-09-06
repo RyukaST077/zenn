@@ -6,12 +6,6 @@
   "maxAttempts": 3,
   "entries": [
     {
-      "article": "articles/claude-configdir-override-memory-path-gate.md",
-      "enqueuedAt": "2026-08-31T20:44:59.932Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-06T16:02:21.463Z"
-    },
-    {
       "article": "articles/claude-subagent-model-force-precedence-gap.md",
       "enqueuedAt": "2026-09-02T07:03:55.569Z",
       "attempts": 0,
