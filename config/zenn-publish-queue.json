@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-configdir-override-memory-path-gate.md",
       "enqueuedAt": "2026-08-31T20:44:59.932Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-06T04:01:07.655Z"
     },
     {
       "article": "articles/claude-subagent-model-force-precedence-gap.md",
