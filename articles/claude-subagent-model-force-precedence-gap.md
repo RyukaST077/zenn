@@ -3,7 +3,7 @@ title: "CLAUDE_CODE_SUBAGENT_MODELだけではpin済みsubagentのモデルを�
 emoji: "🧭"
 type: "tech"
 topics: ["claudecode", "anthropic", "ai", "llm", "devops"]
-published: false
+published: true
 ---
 
 ## 結論から: 環境変数だけでは足りない

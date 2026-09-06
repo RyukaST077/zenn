@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-subagent-model-force-precedence-gap.md",
       "enqueuedAt": "2026-09-02T07:03:55.569Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-06T18:02:48.358Z"
     },
     {
       "article": "articles/claude-read-deny-redirect-boundary.md",
