@@ -255,7 +255,7 @@ exit 2
   }
 };
 
-const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent" }) => {
+const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent", withContract = false }) => {
   const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-queue-test-"));
   const remote = path.join(publishRoot, "remote.git");
   const checkout = path.join(publishRoot, "checkout");
@@ -304,6 +304,22 @@ Queue fixture body.
 
     const localKnowledge = "# shared knowledge\n\n- local-only finding\n";
     fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), localKnowledge);
+
+    // The arm allocator counts registrations from analytics/contracts/, and a
+    // pipeline run leaves its contract there as an untracked file after the
+    // artifact sync. It only reaches the next run's worktree if the queue commit
+    // carries it, so the queue flow has to stage it alongside the article.
+    const contract = `analytics/contracts/${slug}.json`;
+    const contractBody = `${JSON.stringify({
+      slug,
+      topics: ["codex", "test"],
+      primaryTopic: "codex",
+      classification: { source: "contract", arm: "B-payload", experimentId: "EXP-001" },
+    }, null, 2)}\n`;
+    if (withContract) {
+      fs.mkdirSync(path.join(checkout, path.dirname(contract)), { recursive: true });
+      fs.writeFileSync(path.join(checkout, contract), contractBody);
+    }
 
     fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
     const reviewText = reviewStyle === "claude" ? `# 公開前レビュー
@@ -378,6 +394,18 @@ exit 2
     const queue = JSON.parse(remoteQueue.stdout);
     assert.equal(queue.entries.length, 1);
     assert.equal(queue.entries[0].article, article);
+    const remoteContract = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:${contract}`,
+    ]);
+    if (withContract) {
+      assertRun(remoteContract, "the queue commit must carry the article's contract");
+      assert.equal(remoteContract.stdout, contractBody,
+        "the contract on the queue branch must match the registration");
+    } else {
+      assert.notEqual(remoteContract.status, 0,
+        "no contract exists, so the queue branch must not invent one");
+    }
+
     const remoteKnowledge = runAt(checkout, "git", [
       `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:knowledge/INDEX.md`,
     ]);
@@ -658,6 +686,7 @@ echo "complete: publication queued for articles/fake-default.md"
   testPublicationFlow({ autoMerge: false, failPrCreate: true });
   testQueueFlow({ autoMerge: false });
   testQueueFlow({ autoMerge: true });
+  testQueueFlow({ autoMerge: true, withContract: true });
   testQueueFlow({ autoMerge: false, failPrCreate: true });
   testQueueFlow({ autoMerge: false, reviewStyle: "codex" });
   testQueueFlow({ autoMerge: false, reviewStyle: "claude" });
