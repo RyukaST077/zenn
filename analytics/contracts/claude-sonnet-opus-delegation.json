@@ -1,0 +1,40 @@
+{
+  "slug": "claude-sonnet-opus-delegation",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "subagent",
+    "sonnet5",
+    "opus5"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "mental-model",
+    "titleFeatures": {
+      "length": 48,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-04T17:38:09.246Z",
+    "contract": {
+      "targetReader": "Claude CodeでSonnet 5とOpus 5を切り替え、Sonnet側だけsubagentやforkが増えるように見えて原因と抑制方法を知りたい開発者",
+      "readerDecision": "Agent treeの増加を4層で診断し、モデル変更・nested停止・fork停止・同時数制限のどれを使うか決められる",
+      "takeaway": "Sonnet 5 / Opus 5の委譲差を切り分ける4層診断表と、depth・fork・concurrencyを制御する設定レシピ",
+      "verificationItems": [
+        "Claude Code 2.1.258〜2.1.260における旧抑制文と更新抑制文の有無",
+        "2.1.260のOpus 5とSonnet 5におけるopus_5_prompt_bundle capabilityの差",
+        "opus5_reduced_delegation sectionとdefault-on gateの静的構造",
+        "spawn depth・concurrency・forkを制御する3変数のバイナリ内存在",
+        "live model比較がfive-hour limitで未測定となった境界"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.mdではclaudecodeのd30-45市場コホートが193本あり昇格根拠まで測定可能。Sonnet 5のnested subagent報告は284票、AgentTool抑制Issueは版比較と14件の再現を含み、委譲差の診断需要が観測できる。"
+    }
+  }
+}

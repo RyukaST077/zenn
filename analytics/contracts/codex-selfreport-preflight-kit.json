@@ -1,0 +1,41 @@
+{
+  "slug": "codex-selfreport-preflight-kit",
+  "topics": [
+    "codex",
+    "cli",
+    "ci",
+    "aiagent",
+    "featureflag"
+  ],
+  "primaryTopic": "codex",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 54,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:18:40.709Z",
+    "contract": {
+      "targetReader": "codex features list や codex doctor の出力を CI のゲートや導入前監査の根拠にしようとしている運用者",
+      "readerDecision": "CLI の自己申告をそのまま根拠にしてよいか、間に検証を挟む必要があるかを決められる",
+      "takeaway": "依存なし1ファイルの出荷前チェック（使い捨て CODEX_HOME で stage/effective のクロス集計・設定の受理判定・doctor のカテゴリ名指しゲートを行い、無料の経路と1ターン消費する経路を分けて実行、失敗時 exit 1）と、0.152.1 実測の3つのギャップ表",
+      "verificationItems": [
+        "features list の stage 列が effective を予測するか（removed×true と stable×false の両方向）",
+        "features disable / enable が effective 列を実際に動かすか",
+        "features list が名前を出す rollout_budget の設定が -c と config.toml 直書きの両方で受理されるか",
+        "未知の機能名が features list を素通りし codex exec --strict-config でのみ弾かれるか",
+        "codex doctor --json の checks を再帰的にフラット化すると実在しないチェックを拾うか（schemaVersion 1）",
+        "0.147.0 で観測された TERM=dumb による terminal.env の失敗が 0.152.1 で再現するか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "codex features list の --help は 'List known features with their stage and effective state' のみで、stage の値が実行時の挙動について何を保証するかを述べた一次情報が見つからない。実測すると 0.152.1 の133機能中、stable でも4件が無効、removed でも9件が有効で、stage 列を監査根拠にすると両方向に誤る。さらに rollout_budget はエラーが要求するキーを足すと別のエラーで拒否され、その状態では features list 自体が起動しない。analytics/topic-feedback.md では claudecode / codex 系の市場コホートで asset 型が平均91.5いいね・最大664と最上位にあり、CI にそのまま置ける出荷前チェックの需要が測定できている。"
+    }
+  }
+}

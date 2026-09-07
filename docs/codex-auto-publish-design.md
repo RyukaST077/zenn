@@ -261,15 +261,24 @@ codex \
 オーケストレーターは次をすべて確認する。
 
 1. `codex exec`の終了コードが0
-2. 結果JSONがSchemaに適合
-3. `status`が`ok`
-4. `artifact`が許可されたディレクトリ配下の相対パス
-5. 成果物が存在し、段開始時のマーカーより新しい
-6. 段固有の機械検査を通過
+2. JSONLに`turn.completed`が正確に1件あり、`turn.failed`がない
+3. `-o`で保存した不変の`<stage>.final.json`が最後のcompleted `agent_message`と一致する
+4. 結果JSONがSchemaに適合
+5. `status`が`ok`
+6. `artifact`が許可されたディレクトリ配下の相対パス
+7. 成果物が存在し、段開始時のマーカーより新しい
+8. 段固有の機械検査を通過
 
-5は当該段の主成果物だけに適用し、resume時に再利用する前段成果物の更新時刻は判定対象にしない。
+7は当該段の主成果物だけに適用し、resume時に再利用する前段成果物の更新時刻は判定対象にしない。
 
-Codexの文章出力をgrepして成功判定する方式は採用しない。
+Codexの文章出力をgrepして成功判定する方式や、Schemaに適合した途中の`agent_message`から
+stage resultを復元する方式は採用しない。プロセス失敗、`turn.completed`欠落、または`-o`欠落時は
+証跡を保持して停止する。
+
+`-o`の`<stage>.final.json`は書き換えない。段契約上禁止されたmetadataを`null`へ正規化する必要が
+ある場合は、finalを`<stage>.result.json`へコピーし、result側だけを変更して検証する。resume時も
+eventsとfinalのcompletion gateを先に通してからresultを再生成する。旧pipelineにfinalがなく、
+未変更のresultがcompletion gateを通る場合だけ、そのresultをfinalへ移行する。
 
 ## 9. パイプライン制御
 
@@ -396,6 +405,9 @@ push前に次を必須とする。
 - Git操作: このリポジトリのGit状態を変更する操作は禁止。実践用ディレクトリ内で検証対象に必要な`git init`、`git clone`は許可
 - 外部ネットワーク: 必要な段だけ許可
 - `danger-full-access`: 使用しない
+- run段のCodex子プロセスへ`ASTRO_TELEMETRY_DISABLED=1`を強制的に渡す。計画と実行では、
+  Astro以外についても製品固有のdocumented opt-outを最初の対象コマンドより前に設定する
+- `HOME`、`CODEX_HOME`などの広域なhome変数を実験用ディレクトリへ差し替えない
 - 既存`.codex/config.toml`の`default_permissions = ":danger-full-access"`は削除してCLIの`workspace-write`指定へ統一するか、`:workspace`へ修正する。`--ignore-user-config`は`$CODEX_HOME/config.toml`だけを無視し、プロジェクト設定レイヤを無視しない
 - preflightでcwdからリポジトリルートまでの`.codex/config.toml`を検査し、Codex CLIの設定診断と`codex sandbox`サブコマンド（または同等手段）により、リポジトリ外パスへの書き込みが拒否され、リポジトリ内への書き込みが許可されること、およびapprovalが`never`であることを確認する。不一致なら停止する。確認できないCLIバージョンでは、`--dry-run`出力に実効設定を表示したうえで、`.codex/config.toml`の静的検査のみで判定する
 
@@ -426,6 +438,7 @@ Codex版ではClaude固有変数と分離する。
 | `CODEX_MODEL` | 空 | 空ならCLI既定 |
 | `CODEX_REASONING_EFFORT` | `medium` | reasoning effort |
 | `CODEX_SEARCH` | `1` | 検索段でlive searchを使う |
+| `CODEX_SANDBOX_MODE` | `workspace-write`固定 | リポジトリ外書き込みを拒否。その他の値は停止 |
 | `MAX_REVIEW_ROUNDS` | `5` | review/revise上限 |
 | `BASE_BRANCH` | `main` | PR base |
 | `MERGE_METHOD` | `--squash` | 自動マージ方式 |

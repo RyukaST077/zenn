@@ -1,0 +1,7 @@
+{
+  "keyFile": "~/.config/zenn-ga4/service-account.json",
+  "measurementId": "G-XXXXXXXXXX",
+  "pathPrefix": "/clopy/articles/",
+  "trackingStartDate": "2026-07-01",
+  "completeLagDays": 2
+}

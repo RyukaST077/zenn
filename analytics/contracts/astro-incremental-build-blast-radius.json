@@ -1,0 +1,41 @@
+{
+  "slug": "astro-incremental-build-blast-radius",
+  "topics": [
+    "astro",
+    "ssg",
+    "performance",
+    "cache",
+    "build"
+  ],
+  "primaryTopic": "astro",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "quantified",
+    "titleFeatures": {
+      "length": 47,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:44:36.207Z",
+    "contract": {
+      "targetReader": "Astro の静的サイトで記事数が増えてビルド時間が気になり、experimental.incrementalBuild を有効にするか迷っている開発者",
+      "readerDecision": "自分のサイトで experimental.incrementalBuild を有効にすべきかを決められる",
+      "takeaway": "変更の種類ごとの失効範囲を実測した表（記事データ1件=1HTML / component=300HTML / layout・CSS=303HTML）と、cacheKey にクロスページ依存を含めないと stale HTML が出る再現",
+      "verificationItems": [
+        "記事データ1件の変更で再生成されるHTML枚数（manifest 比較。ログの restored 行に頼らない）",
+        "共有 layout / 記事用 component / 共有 CSS の変更でそれぞれ何枚が再生成されるか",
+        "ルート削除で古いHTMLが残らないか（削除後の入力と全HTMLの照合）",
+        "build.concurrency > 1 で増分キャッシュが無効になるか（7.2.9 と 7.3.1 の比較）",
+        "cacheKey にクロスページ依存を含めない場合に stale HTML が出るか、含めれば解消するか",
+        "増分ON(warm) / 増分ON(cold) / 増分OFF のビルド時間中央値の差"
+      ],
+      "quantifiedMetric": "300記事・303HTMLのfixtureにおける変更1回あたりの再生成HTML枚数（dist 全ファイルの SHA-256 manifest 比較）と、増分ON/OFF のビルド時間中央値の差",
+      "demandEvidence": "Astro の Experimental incremental static builds のドキュメントは cacheKey と module graph の両方が不変なら再利用すると述べるが、どの変更がどれだけの範囲を失効させるかの実測値を示していない。実測すると共有CSSを1行変えるだけで303枚全部が再生成され、増分ビルドの効果が消える。さらに build.concurrency>1 の扱いが 7.2.9 と 7.3.1 で変わっており（警告と cache 無効化が消えた）、旧バージョンの情報で判断すると選択を誤る。cacheKey にクロスページ依存を含めない設計では stale HTML が本番に出るため、有効化判断には失効範囲の実測が要る。"
+    }
+  }
+}

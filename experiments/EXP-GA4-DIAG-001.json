@@ -1,0 +1,104 @@
+{
+  "id": "EXP-GA4-DIAG-001",
+  "version": 1,
+  "status": "pre-registered",
+  "createdAt": "2026-09-05",
+  "kind": "diagnostic",
+  "registeredBeforeSeeingData": true,
+  "why": "EXP-001 は『テーマの粒度と価値型が主因』という診断のうえに組まれている。boundary-verification を deprecated にし、asset/migration/quantified へ束ね直す方針も同じ診断に依存している。GA4を繋いだ時点でこの診断は初めて反証可能になるので、データを見る前に『どの結果が出たら何を撤回するか』を確定させておく。事後に物語を作らないための事前登録。",
+
+  "claimUnderTest": {
+    "statement": "いいね0の主因は上流（到達）にある。単一の境界条件だけを検証する記事は対象読者が極小で、そもそも読者に到達していない。",
+    "ifTrue": "打ち手は到達側（テーマの粒度・価値型・タイトル・トピック）。現方針を維持する。",
+    "ifFalse": "読者は来ているのに刺さっていない。打ち手は本文側（構成・期待充足・持ち帰り）で、テーマ選定の方針変更は的を外していた。"
+  },
+
+  "whyTwoStages": "Codexは同トピック・近接公開時期での対照ペア設計を提案したが、いま実行できない。理由は2つ。(1) 比較群が存在しない。既存57本はほぼ全部が boundary-verification で、対照になる価値型の記事がまだ公開されていない。(2) 過去分のD30いいね率が原理的に作れない。過去記事の d30.likes は basis: current-upper-bound、つまり『今日までの累積いいね』であり、D30到達で割ると率が跳ね上がる（collect-ga4-metrics.mjs はこれを検出して率を出さない）。よって段階1は比較群を必要としない絶対値の片側検定、段階2が比較設計。",
+
+  "stage1": {
+    "name": "到達の絶対水準（比較群不要・いま実行できる）",
+    "rationale": "誰も到達していない記事はいいねを付けられない。これは比較群なしで成立する一方向の推論なので、既存の記事だけで診断できる。逆向きの推論には分子が必要だが、そこには下の『片側で救える』論法を使う。",
+    "inputs": {
+      "population": "analytics/private/ga4-ledger.jsonl のうち windows.d30.basis === \"measured\" の記事",
+      "minimumN": 20,
+      "R": "それらの windows.d30.views の中央値",
+      "impliedRate": "Σ(observations.d30.numerator.likes) / Σ(windows.d30.views)"
+    },
+    "oneSidedTrick": "impliedRate の分子は current-upper-bound、すなわち公開から今日までの累積いいねである。D30時点のいいねは必ずそれ以下なので、impliedRate は真のD30いいね率の**過大評価**。したがって『impliedRate が低い』は結論として使える（真値はさらに低い）。『impliedRate が高い』は使えない。分子がずれているという制約を、片側だけ有効な形で回収する。",
+    "decisionRules": [
+      {
+        "condition": "R < 100",
+        "verdict": "support",
+        "action": "診断を支持。現方針を維持する。",
+        "caveat": "『到達が主因』までしか言えない。到達が低い理由には価値型だけでなくタイトル・トピック・Zenn内での表示・公開時刻が含まれる。『価値型が原因』が確認できたことにはしない。"
+      },
+      {
+        "condition": "R >= 300 かつ impliedRate < 0.005",
+        "verdict": "retract",
+        "action": "『対象読者が極小だから到達していない』という診断を撤回する。本文・期待充足の改善をP0に上げ、EXP-001 の判定は継続しつつ、価値型の束ね直しを主要な打ち手から降格させる。",
+        "caveat": "撤回するのは『到達が主因』という診断であって、asset/migration へ束ねる方針そのものではない。高到達・低反応は『単一検証記事がクリック後の期待を満たしていない』とも整合するため、方針は残しうる。boundary-verification を deprecated から candidate に戻すのは、段階2で同じ傾向が2バッチ・24本相当で再現したときのみ。"
+      },
+      {
+        "condition": "R >= 300 かつ impliedRate >= 0.005",
+        "verdict": "mixed",
+        "action": "到達は足りているが反応も壊滅的ではない。上位テールに入れない理由は到達量の不足（5いいねに必要な到達に届いていない）と読む。必要到達量を明示して到達側の打ち手を続けるが、撤回はしない。"
+      },
+      {
+        "condition": "100 <= R < 300",
+        "verdict": "insufficient",
+        "action": "何も変更しない。判定線の間にいるので結論を出さない。"
+      },
+      {
+        "condition": "n < 20 または上記のどれにも該当しない",
+        "verdict": "insufficient",
+        "action": "何も変更しない。"
+      }
+    ]
+  },
+
+  "stage2": {
+    "name": "価値型間の比較（B-payload のD30が measured-on-time で揃ってから）",
+    "blockedUntil": "EXP-001 の treatment 群に basis: measured-on-time のD30観測が12本以上そろい、かつ同一 primaryTopic・公開時期が近い対照ペアが12組以上作れること。2トピック以上にまたがること。",
+    "inputs": {
+      "reach": "windows.d30.views",
+      "response": "observations.d30.likeRate（分子が measured-on-time のときのみ。それ以外は欠測として扱い、0で埋めない）",
+      "engagement": "windows.d30.engagementSecondsPerView"
+    },
+    "decisionRules": [
+      {
+        "condition": "deprecated型のD30到達が新型より33%以上低く、いいね率に大差なし",
+        "verdict": "support",
+        "action": "『上流が主因』を支持。現方針を維持。"
+      },
+      {
+        "condition": "到達差が20%以内で、deprecated型のいいね率が新型の半分以下、かつ秒/PVも25%以上低い",
+        "verdict": "retract",
+        "action": "『テーマが主因』を撤回。本文・期待充足をP0へ。"
+      },
+      {
+        "condition": "到達もいいね率も低い",
+        "verdict": "mixed",
+        "action": "複合原因。deprecated は維持したうえで本文改善も並行する。"
+      },
+      {
+        "condition": "到達もいいね率も同等以上",
+        "verdict": "refuted",
+        "action": "現診断は不成立。deprecated の根拠を人間がPRで再審査する。"
+      }
+    ]
+  },
+
+  "guards": [
+    "GA4を見る前に価値型分類を凍結する。分類は contract（analytics/contracts/<slug>.json）に固定されており、GA4接続後に付け替えない。",
+    "windows.*.basis が measured 以外の記事は母集団に入れない。outside-tracking-coverage / window-not-closed / report-data-loss はいずれも欠測であり、0ではない。",
+    "report-data-loss（GA4が行を (other) に丸めた、または閾値で伏せた）が立った日のレポートでは判定しない。",
+    "判定線（R=100 / R=300 / impliedRate=0.005）はデータを見る前にこのファイルに固定した。事後に動かさない。動かす場合は人間がPRでこのファイルを書き換え、その事実を strategy/decision-log.md に残す。",
+    "evaluate-policy.mjs はGA4を一切読まない。この診断は自動では判定されず、人間がPRで判断する。自動化するときも、判定線はこのファイルから読む。"
+  ],
+
+  "notWhatThisTests": [
+    "GA4のPVは『ページ到達』であって、Zennのフィードや検索結果での露出（インプレッション）ではない。到達が低いことは露出が低いことを含意するが、逆は言えない。",
+    "この診断はテーマ選定方針の有効性を測るものではない。それは EXP-001 の役目。ここで判定するのは『どこがボトルネックか』だけ。",
+    "本数が十数本では統計的有意差は出ない。段階1が出せるのは『到達が桁で足りない/足りている』という粗い判定だけで、これはそれで十分な粒度の問いだからこそ成立している。"
+  ]
+}

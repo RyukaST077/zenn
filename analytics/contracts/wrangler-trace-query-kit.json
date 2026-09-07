@@ -1,0 +1,42 @@
+{
+  "slug": "wrangler-trace-query-kit",
+  "topics": [
+    "cloudflare",
+    "cloudflareworkers",
+    "wrangler",
+    "sqlite",
+    "observability"
+  ],
+  "primaryTopic": "cloudflare",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 47,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T08:17:21.271Z",
+    "contract": {
+      "targetReader": "Cloudflare Workers をローカル開発していて、wrangler dev の Local Tracing でデバッグできるか、console.log を足す往復を減らせるかを判断したい開発者",
+      "readerDecision": "ログインなしのローカルデバッグに Local Tracing を使ってよいか、使うなら何を書けば「エラー0件」の嘘を踏まないかを決められる",
+      "takeaway": "wrangler dev の観測APIに正しいクエリを投げ、失敗リクエストとその配下のバインディング呼び出し・属性を出す依存ゼロのスクリプト。spans のスキーマを決め打ちせず introspect し、spans が空の実行を合格にせず exit 2 にする。",
+      "verificationItems": [
+        "wrangler login なしで wrangler dev が起動し、KV と D1 のバインディングが local モードで動くか（AI エージェント検出時に観測APIの案内が出るか含む）",
+        "観測APIのパスが /cdn-cgi/local/explorer/api/local/observability/query であり、local を1回だけ書いたパスでは届かないか",
+        "spans の時刻列が start_ms であり、start_time_ms を使うと SQLITE_ERROR で落ちるか（spans / logs の実カラム一覧）",
+        "500 を返したリクエストの root span の outcome が ok のままで、WHERE outcome != 'ok' が0件を返すか（HTTPステータスは attributes 内のみ）",
+        "属性キーがドットを含むため json_extract の素直なパスが全行 NULL をエラー無しで返し、キー全体を引用すると値が取れるか",
+        "キットが KV / D1 の失敗リクエストについて、原因の入力（cloudflare.kv.query.keys / db.query.text）を出力するか、および exit 0 / 1 / 2 を正しく返すか",
+        "observability.enabled を false にしてもローカルのトレース収集が止まらないか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "wrangler dev の Local Tracing は2026年8月に出たばかりで、公開されている解説と実機の挙動が3か所ずれている。API パスは local が2回必要、時刻列は start_time_ms ではなく start_ms、さらに 500 を返したリクエストの span の outcome は ok のままで HTTP ステータスは attributes の中にしかない。加えて属性キーがドットを含むため json_extract の素直なパスはエラーを出さず全行 NULL を返す。結果として『素直に書いた検索クエリが、500 が起きているのにエラー0件を返す』状態が既定で起きる。この罠を踏まずにトレースを読む手順が要る。"
+    }
+  }
+}

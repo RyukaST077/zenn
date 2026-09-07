@@ -1,0 +1,40 @@
+{
+  "slug": "claude-ci-permission-preflight-kit",
+  "topics": [
+    "claudecode",
+    "ci",
+    "security",
+    "cli",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 50,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:27:06.239Z",
+    "contract": {
+      "targetReader": "claude -p をCIや無人ランナーに組み込み、権限を .claude/settings.json にコミットして運用しているチーム",
+      "readerDecision": "権限をコミット済みの設定ファイルで与えるか、--settings のインラインJSONで与えるかを決められる",
+      "takeaway": "依存なし1ファイルの出荷前チェック（init イベントの permissionMode を実測し、未信頼ワークスペースによる allow 破棄・doctor の exit 0・--restricted とフックの併用を検出して exit 1）と、CI に置く最小構成のコマンド",
+      "verificationItems": [
+        "プロジェクトの .claude/settings.json に書いた defaultMode: bypassPermissions が init.permissionMode に反映されるか（ファイル / --permission-mode フラグ / --settings インラインの3経路）",
+        "信頼されていないワークスペースで permissions.allow が無視され、警告が stderr にのみ出ること",
+        "claude doctor が壊れた権限ルール・JSON構文エラー・スキーマ不正を検出したときの終了コード",
+        "--restricted 有無で PreToolUse フックが発火するか（ツール自体は成功したまま）",
+        "allow に無い末尾 && / || のコマンドが拒否され、逆に allow に無い ls / pwd が拒否されないこと"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2.1.257 の CHANGELOG は .claude/settings.json の bypassPermissions を無視すると告知するが、settings リファレンスは permissions.defaultMode のスコープを今も 'Any file' とだけ記載しており、変更後に何が起きるか（エラーか、黙ってフォールバックか）を書いていない。--restricted の --help はコマンド実行ツールと WebFetch を外すとしか述べず、PreToolUse フックが発火しなくなることに触れていない。実測すると 2.1.261 で doctor は壊れたルールを名指しするのに全パターンで exit 0 を返し、CI が終了コードでゲートしていると1件も届かない。analytics/topic-feedback.md では claudecode の市場コホートで asset 型が平均91.5いいね・最大664と最上位にある。"
+    }
+  }
+}

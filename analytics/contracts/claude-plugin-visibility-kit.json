@@ -1,0 +1,40 @@
+{
+  "slug": "claude-plugin-visibility-kit",
+  "topics": [
+    "claudecode",
+    "mcp",
+    "aiagent",
+    "plugin",
+    "cli"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 47,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:40:26.510Z",
+    "contract": {
+      "targetReader": "自作プラグイン・スキル・MCPサーバ・ツールが Claude Code に現れず、エラーメッセージも出ないまま詰まっている開発者",
+      "readerDecision": "その症状の原因を、配置（読まれていない）とランタイム（読まれたが動かない）のどちらとして追うかを決められる",
+      "takeaway": "依存なし1ファイルの切り分けスクリプト（init イベントの plugins / skills / tools / mcp_servers を読み、期待値と突き合わせて原因候補まで名指しする）と、症状から見る場所への対応表",
+      "verificationItems": [
+        "agent-plugins 仕様レイアウト（ルートの plugin.json）と .claude-plugin/plugin.json で読み込み結果と version の有無がどう違うか",
+        "プラグインの MCP 定義が mcp.json / .claude-plugin/.mcp.json / .mcp.json / manifest 内 mcpServers のどこから読まれるか",
+        "--plugin-url が接続拒否・404・不正URLで失敗したときの exit code / stderr / init.plugins",
+        "claude plugin marketplace add が同じ失敗で何を出すか（ECONNREFUSED と書式エラーを区別するか）",
+        "--tools に未知のツール名を渡したとき init.tools がどうなるか、ToolSearch で復活するか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Claude Code のプラグイン読み込みは失敗経路がほぼ無言で、公式ドキュメントも読み込み失敗時に何が観測できるかを記載していない。実測すると 2.1.261 で --plugin-url は接続拒否・404・不正URLのいずれでも exit 0 / stderr 空 / init.plugins が [] になり、3者を区別できない。MCP は mcp.json と .mcp.json の1文字差で黙殺され、--tools の未知名は警告なく除去される。2.1.227 時点の観測（name が捨てられる・validate が落ちる）は 2.1.261 では成立しなくなっており、バージョンを跨いだ結論の持ち越しが実害になる。analytics/topic-feedback.md では claudecode の市場コホートで asset 型が平均91.5いいね・最大664と最上位にある。"
+    }
+  }
+}

@@ -16,3 +16,10 @@ logs/agent/launchd/
 pnpm-lock.yaml
 # 個人用のトラブルシューティング知識はリポジトリへ含めない
 /knowledge/
+# 改善ループの生スナップショット（ローカル再解析用。台帳と市場インデックスが正）
+analytics/raw/
+# GA4-derived per-article traffic. This repository is public; PV is not.
+analytics/private/
+# GA4 のサービスアカウント鍵（秘密情報。絶対にコミットしない）
+config/ga4-service-account.json
+config/ga4.json
