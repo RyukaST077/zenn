@@ -255,6 +255,171 @@ exit 2
   }
 };
 
+// The one path nobody had ever exercised end to end: allocate an arm, register
+// a contract from the research report, ship article + contract + queue in one
+// commit, merge it, then read the arm allocator out of a FRESH worktree built
+// from the merged branch. Every stage of this reported success for three days
+// while the treatment arm stayed at 0/12, because each stage was only tested in
+// isolation. The assertion that matters is the last one: B goes from 0 to 1.
+const testArmRoundTrip = () => {
+  const armRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-arm-roundtrip-"));
+  const remote = path.join(armRoot, "remote.git");
+  const checkout = path.join(armRoot, "checkout");
+  const bin = path.join(armRoot, "bin");
+  const ghLog = path.join(armRoot, "gh.log");
+  const slug = "arm-roundtrip-fixture";
+  const article = `articles/${slug}.md`;
+  const review = `logs/agent/review-${slug}.md`;
+  const pipeline = `logs/agent/pipeline-${slug}`;
+  const report = "research/agent/agent-knowhow-arm-roundtrip.md";
+  const nextArmIn = (cwd) => {
+    const result = runAt(cwd, "node", [path.join(cwd, "scripts/analytics/next-arm.mjs"), "--json"]);
+    assertRun(result, `next-arm in ${cwd}`);
+    return JSON.parse(result.stdout);
+  };
+  try {
+    fs.mkdirSync(checkout, { recursive: true });
+    fs.mkdirSync(bin, { recursive: true });
+    assertRun(runAt(checkout, "git", ["init", "-b", "main"]), "arm git init");
+    assertRun(runAt(checkout, "git", ["config", "user.name", "Arm Round Trip"]), "arm git user.name");
+    assertRun(runAt(checkout, "git", ["config", "user.email", "arm@example.com"]), "arm git user.email");
+
+    // The loop's real inputs, so the allocator answers the question it answers
+    // in production rather than one shaped by the fixture.
+    for (const relative of [
+      "strategy/topic-selection-policy.json",
+      "experiments/EXP-001.json",
+      "scripts/analytics/next-arm.mjs",
+      "scripts/analytics/register-article.mjs",
+      "scripts/analytics/zenn-metrics-lib.mjs",
+      "scripts/zenn-publish-queue.mjs",
+    ]) {
+      fs.mkdirSync(path.join(checkout, path.dirname(relative)), { recursive: true });
+      fs.copyFileSync(path.join(root, relative), path.join(checkout, relative));
+    }
+    fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(checkout, "config"), { recursive: true });
+    fs.mkdirSync(path.join(checkout, "analytics/contracts"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, "config/zenn-publish-queue.json"), `${JSON.stringify({
+      version: 1,
+      zennUsername: "clopy",
+      maxPublicationsPer24Hours: 2,
+      retryAfterHours: 12,
+      maxAttempts: 15,
+      entries: [],
+    }, null, 2)}\n`);
+    assertRun(runAt(checkout, "git", ["add", "-A"]), "arm git add fixture");
+    assertRun(runAt(checkout, "git", ["commit", "-m", "loop fixture"]), "arm git commit fixture");
+    assertRun(runAt(armRoot, "git", ["init", "--bare", remote]), "arm git init bare");
+    assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "arm git remote add");
+    assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "arm git push main");
+
+    // 1. Allocate. The treatment arm is empty, so the next article belongs to it.
+    const allocated = nextArmIn(checkout);
+    assert.equal(allocated.arm, "B-payload", "an empty treatment arm must be filled first");
+    assert.equal(allocated.state.treatmentFilled, 0);
+
+    // 2. Register from the research report, under the arm that was allocated.
+    fs.mkdirSync(path.join(checkout, path.dirname(report)), { recursive: true });
+    fs.writeFileSync(path.join(checkout, report), [
+      "# report", "", "## 記事契約", "", "```json",
+      JSON.stringify({
+        slug,
+        policyVersion: "2026-09-05.1",
+        experimentId: allocated.experimentId,
+        arm: allocated.arm,
+        valueArchetype: allocated.valueArchetypes[0],
+        targetReader: "権限設定でつまずいている運用者",
+        readerDecision: "この設定をそのまま置いてよいか決められる",
+        takeaway: "依存なし1ファイルのチェックキット",
+        verificationItems: ["redirect", "symlink", "write"],
+        titleDraft: "denyはどこまで信用できるか、3経路で確かめる設定",
+        primaryTopic: "claudecode",
+        topics: ["claudecode", "security"],
+        demandEvidence: "同トピック市場の asset 型が平均91.5いいね",
+      }, null, 2),
+      "```", "",
+    ].join("\n"));
+    assertRun(
+      runAt(checkout, "node", [
+        path.join(checkout, "scripts/analytics/register-article.mjs"), "--from-research", report,
+      ]),
+      "register the allocated arm from the research report",
+    );
+    const contract = `analytics/contracts/${slug}.json`;
+    assert.ok(fs.existsSync(path.join(checkout, contract)), "registration must write the contract file");
+
+    // 3. The article and its review, as the later stages leave them.
+    fs.writeFileSync(path.join(checkout, article), `---
+title: "Arm round trip fixture"
+emoji: "\u{1F9EA}"
+type: tech
+topics: ["claudecode", "security"]
+published: false
+---
+
+Round trip fixture body.
+`);
+    fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
+    fs.writeFileSync(path.join(checkout, review), "# Integration review\n\nverdict: pass\nblockers: 0\nwarnings: 0\neditorial_score: 90/100\n");
+    fs.writeFileSync(path.join(bin, "gh"), `#!/bin/sh
+printf '%s\\n' "$*" >> "$FAKE_GH_LOG"
+if [ "$1" = auth ] && [ "$2" = status ]; then exit 0; fi
+if [ "$1" = pr ] && [ "$2" = create ]; then echo "https://example.invalid/pull/9"; exit 0; fi
+if [ "$1" = pr ] && [ "$2" = merge ]; then exit 0; fi
+exit 2
+`, { mode: 0o755 });
+
+    // 4. Ship it. The gate has to accept the arm it was handed.
+    assertRun(
+      runAt(checkout, "bash", [
+        path.join(root, "scripts/agent-practice/enqueue-reviewed-article.sh"),
+        "--article", article,
+        "--review", review,
+        "--pipeline", pipeline,
+        "--review-style", "agent",
+        "--expect-arm", allocated.arm,
+        "--auto-merge",
+      ], {
+        env: {
+          PATH: `${bin}:${process.env.PATH}`,
+          FAKE_GH_LOG: ghLog,
+          PUBLISH_QUEUE_NOW: "2026-08-14T03:00:00.000Z",
+        },
+      }),
+      "enqueue the allocated article",
+    );
+
+    // 5. The fake gh reports a merge without performing one, so land the branch
+    //    on main the way the merged PR would.
+    assertRun(
+      runAt(checkout, "git", [`--git-dir=${remote}`, "update-ref", "refs/heads/main", `refs/heads/queue/${slug}`]),
+      "land the queue branch on main",
+    );
+
+    // 6. Read the allocator out of a fresh clone of the merged branch -- the
+    //    same thing the next run's worktree does. This is the assertion the
+    //    three-day stall would have failed.
+    const fresh = path.join(armRoot, "fresh");
+    assertRun(runAt(armRoot, "git", ["clone", "-q", remote, fresh]), "clone the merged branch");
+    assert.ok(fs.existsSync(path.join(fresh, contract)),
+      "the contract must reach main in the same commit as its article");
+    assert.equal(
+      fs.readFileSync(path.join(fresh, contract), "utf8"),
+      fs.readFileSync(path.join(checkout, contract), "utf8"),
+      "the contract on main must match the registration byte for byte",
+    );
+    const after = nextArmIn(fresh);
+    assert.equal(after.state.treatmentFilled, 1,
+      `the treatment arm must advance to 1 after one merged article, got ${after.state.treatmentFilled}`);
+    const queue = JSON.parse(fs.readFileSync(path.join(fresh, "config/zenn-publish-queue.json"), "utf8"));
+    assert.equal(queue.entries.length, 1, "the merged commit must also carry the queue entry");
+    assert.equal(queue.entries[0].article, article);
+  } finally {
+    fs.rmSync(armRoot, { recursive: true, force: true });
+  }
+};
+
 const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent", withContract = false, armGate = null }) => {
   const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-queue-test-"));
   const remote = path.join(publishRoot, "remote.git");
@@ -712,6 +877,7 @@ echo "complete: publication queued for articles/fake-default.md"
   testQueueFlow({ autoMerge: true, withContract: true, armGate: "match" });
   testQueueFlow({ autoMerge: true, withContract: true, armGate: "mismatch" });
   testQueueFlow({ autoMerge: true, withContract: false, armGate: "missing" });
+  testArmRoundTrip();
   testQueueFlow({ autoMerge: false, failPrCreate: true });
   testQueueFlow({ autoMerge: false, reviewStyle: "codex" });
   testQueueFlow({ autoMerge: false, reviewStyle: "claude" });
