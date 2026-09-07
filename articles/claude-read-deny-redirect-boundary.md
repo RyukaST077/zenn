@@ -3,7 +3,7 @@ title: "Read()のdenyは許可リスト外コマンドへのリダイレクト�
 emoji: "🔒"
 type: tech
 topics: ["claudecode", "security", "bash", "permissions", "検証"]
-published: false
+published: true
 ---
 
 `permissions.deny: ["Read(./secrets/**)"]` でシークレットファイルを守っている場合、`sort < ./secrets/token.txt` のように **ドキュメントに載っていないコマンド** へリダイレクトされたらどうなるか。Claude Code の changelog は `2.1.257`（2026-09-01）で「Bashのリダイレクトを使った回避策を塞いだ」と説明しているが、それが `cat` `head` `tail` `sed` `tac` `egrep` という "recognized reader" 許可リストに載っているコマンドだけの話なのか、リダイレクトを受け取る任意のコマンドに及ぶのかは明記されていない。
