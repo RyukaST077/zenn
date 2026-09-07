@@ -1,7 +1,7 @@
 ---
 title: "Read()のdenyは許可リスト外コマンドへのリダイレクトも塞ぐか検証した"
 emoji: "🔒"
-type: tech
+type: "tech"
 topics: ["claudecode", "security", "bash", "permissions", "検証"]
 published: true
 ---

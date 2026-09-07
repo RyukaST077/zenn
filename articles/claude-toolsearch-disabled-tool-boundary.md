@@ -1,7 +1,7 @@
 ---
 title: "ToolSearchは「無効化されたツール」を救わない: Claude CodeのTodoWrite境界"
 emoji: "🧭"
-type: tech
+type: "tech"
 topics: ["claudecode", "agent", "cli", "automation", "llm"]
 published: true
 ---
