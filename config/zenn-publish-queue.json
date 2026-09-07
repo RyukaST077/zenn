@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-read-deny-redirect-boundary.md",
       "enqueuedAt": "2026-09-02T20:25:53.005Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-09-07T08:04:20.456Z"
+      "attempts": 2,
+      "lastAttemptAt": "2026-09-07T14:04:49.272Z"
     },
     {
       "article": "articles/claude-permission-prompts-deny-boundary.md",
