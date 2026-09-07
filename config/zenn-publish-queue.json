@@ -3,7 +3,7 @@
   "zennUsername": "clopy",
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
-  "maxAttempts": 14,
+  "maxAttempts": 15,
   "entries": [
     {
       "article": "articles/css-tree-counting-sandbox-gate.md",

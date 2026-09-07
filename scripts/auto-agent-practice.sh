@@ -495,6 +495,14 @@ else
   # is how EXP-001 ended up with 0 of its 12 treatment articles while both
   # registered contracts went to exploration.
   ARM_PROMPT="$(node "$ARM_TOOL" --prompt)" || die "experiment arm allocation failed"
+  ALLOCATED_ARM="$(node "$ARM_TOOL" --json | node -e '
+    const chunks = [];
+    process.stdin.on("data", (chunk) => chunks.push(chunk));
+    process.stdin.on("end", () => {
+      process.stdout.write(String(JSON.parse(chunks.join("")).arm ?? ""));
+    });
+  ')" || die "experiment arm allocation failed"
+  [ -n "$ALLOCATED_ARM" ] || die "experiment arm allocation returned no arm"
   log "arm assignment: $(node "$ARM_TOOL" | sed -n '1p;4p' | tr '\n' ' ')"
 
   SEARCH_PROMPT="Research this scope: $TOPIC. Select one current, article-worthy reader decision for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision, and three or more falsifiable claims that together answer it. Exclude topics already covered by articles or prior agent reports. A boundary, failure mode, configuration, new feature, or reproducible workflow is evidence inside the article, not the article itself: a single boundary check is the deprecated archetype that produced 57 articles with no result above four likes. Every claim must add value beyond official documentation and be verifiable locally with a bounded offline fixture. $ARM_PROMPT Every authenticated live case must be runnable with the machine's existing successful claude auth status or codex login status and subscription authentication, without an API key, new secret, separate paid API billing, or interactive login. Exclude modes such as Claude Code --bare when official behavior says they discard subscription credentials and require ANTHROPIC_API_KEY. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
@@ -617,6 +625,15 @@ if [ -n "${ARTICLE_PIPELINE_SHARED_ROOT:-}" ] && [ -n "${ARTICLE_PIPELINE_ARTIFA
 fi
 
 PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
+# A run that allocated an arm must not reach main without the matching contract:
+# the article would be published and the experiment would still read 0/12. On a
+# resumed run the arm was allocated by the earlier attempt, so only require that
+# some contract accompanies the article.
+if [ -n "${ALLOCATED_ARM:-}" ]; then
+  PUBLISH_ARGS+=(--expect-arm "$ALLOCATED_ARM")
+else
+  PUBLISH_ARGS+=(--require-contract)
+fi
 [ "$AUTO_MERGE" = 1 ] && PUBLISH_ARGS+=(--auto-merge) || PUBLISH_ARGS+=(--pr-only)
 PUBLISH_SUMMARY="$(bash scripts/agent-practice/enqueue-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
   || die "publication queue helper failed"

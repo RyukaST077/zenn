@@ -258,6 +258,82 @@ Test body.
   }
 };
 
+// The shipped calibration is a claim about elapsed time, not about a count of
+// attempts, so assert it by driving the state machine across simulated hours.
+// Multiplying retryAfterHours by maxAttempts hid a full window: `publish`
+// already sets attempts to 1, and the block check runs ahead of the backoff.
+const testGiveUpTimeline = () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-publish-timeline-test-"));
+  const shipped = JSON.parse(fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", queueRelative), "utf8",
+  ));
+  const timelineArticle = "articles/timeline-queue-fixture.md";
+  const timelineBody = (published) => `---
+title: "Timeline fixture"
+emoji: "\u{1F9EA}"
+type: tech
+topics: ["test"]
+published: ${published}
+---
+
+Test body.
+`;
+  const timelineRun = (args) => spawnSync(
+    "node", [script, ...args, "--root", root, "--queue", queueRelative], { encoding: "utf8" },
+  );
+  const timelineMustRun = (args) => {
+    const result = timelineRun(args);
+    assert.equal(result.status, 0, `command failed: ${args.join(" ")}\n${result.stderr}`);
+    return result.stdout.trim();
+  };
+  try {
+    fs.mkdirSync(path.join(root, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(root, "config"), { recursive: true });
+    fs.writeFileSync(path.join(root, timelineArticle), timelineBody("false"));
+    fs.writeFileSync(path.join(root, queueRelative), `${JSON.stringify({
+      version: 1,
+      zennUsername: shipped.zennUsername,
+      maxPublicationsPer24Hours: shipped.maxPublicationsPer24Hours,
+      retryAfterHours: shipped.retryAfterHours,
+      maxAttempts: shipped.maxAttempts,
+      entries: [
+        { article: timelineArticle, enqueuedAt: "2026-08-14T03:00:00.000Z", attempts: 0, lastAttemptAt: null },
+      ],
+    }, null, 2)}\n`);
+    const emptyApi = path.join(root, "empty.json");
+    fs.writeFileSync(emptyApi, '{"articles":[]}\n');
+
+    const start = Date.parse("2026-08-14T03:00:00.000Z");
+    const at = (hours) => new Date(start + hours * 60 * 60 * 1000).toISOString();
+    let blockedAtHours = null;
+    // Step one hour at a time so the assertion is about the clock the worker
+    // reads, not about how many times it happened to be invoked.
+    for (let hours = 0; hours <= 400 && blockedAtHours === null; hours += 1) {
+      const decision = JSON.parse(timelineMustRun(["decide", "--api-json", emptyApi, "--now", at(hours)]));
+      if (decision.action === "wait_retry_backoff") continue;
+      assert.notEqual(decision.action, "reconcile", "the fixture is never public");
+      if (decision.action === "block") {
+        blockedAtHours = hours;
+        break;
+      }
+      assert.ok(
+        decision.action === "publish" || decision.action === "retry",
+        `unexpected action at +${hours}h: ${decision.action}`,
+      );
+      timelineMustRun(["apply", "--action", decision.action, "--slug", "timeline-queue-fixture", "--now", at(hours)]);
+    }
+    assert.notEqual(blockedAtHours, null, "the queue must eventually give up");
+    // Zenn's measured deploy lag reached 168h at the 90th percentile, so giving
+    // up any earlier discards articles that were still on their way.
+    assert.ok(
+      blockedAtHours >= 168,
+      `the queue gave up ${blockedAtHours}h after the first publish, inside Zenn's observed p90 of 168h`,
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+};
+
 try {
   fs.mkdirSync(path.join(fixture, "articles"), { recursive: true });
   fs.mkdirSync(path.join(fixture, "config"), { recursive: true });
@@ -343,6 +419,7 @@ Test body.
   assert.equal(readQueue().entries[0].article, secondArticle);
 
   testBlockFlow();
+  testGiveUpTimeline();
   testWorkerFlow();
   // The shipped queue must stay patient enough for Zenn's real latency. Measured
   // on 2026-09-07 from `source_repo_updated_at` on 37 published articles: the lag
@@ -356,7 +433,12 @@ Test body.
   const shipped = JSON.parse(fs.readFileSync(
     path.join(path.dirname(fileURLToPath(import.meta.url)), "..", queueRelative), "utf8",
   ));
-  const giveUpHours = shipped.retryAfterHours * (shipped.maxAttempts ?? Infinity);
+  // The block check runs before the retry backoff, and the first `publish`
+  // already sets attempts to 1, so attempts reaches N after (N-1) backoff
+  // windows -- not N. Multiplying the two numbers overstates the real wait by a
+  // full window, which is how a 14 x 12h setting that looks like 168h actually
+  // gave up at 156h, inside the observed p90.
+  const giveUpHours = shipped.retryAfterHours * ((shipped.maxAttempts ?? Infinity) - 1);
   assert.ok(
     giveUpHours >= 168,
     `the queue gives up after ${giveUpHours}h, inside Zenn's observed p90 of 168h`,

@@ -255,7 +255,7 @@ exit 2
   }
 };
 
-const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent", withContract = false }) => {
+const testQueueFlow = ({ autoMerge, failPrCreate = false, reviewStyle = "agent", withContract = false, armGate = null }) => {
   const publishRoot = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-agent-queue-test-"));
   const remote = path.join(publishRoot, "remote.git");
   const checkout = path.join(publishRoot, "checkout");
@@ -356,6 +356,9 @@ exit 2
       "--review", review,
       "--pipeline", pipeline,
       "--review-style", reviewStyle,
+      ...(armGate === "missing" ? ["--require-contract"] : []),
+      ...(armGate === "match" ? ["--expect-arm", "B-payload"] : []),
+      ...(armGate === "mismatch" ? ["--expect-arm", "A-baseline"] : []),
       autoMerge ? "--auto-merge" : "--pr-only",
     ], {
       env: {
@@ -377,6 +380,25 @@ exit 2
     if (failPrCreate) {
       assert.notEqual(result.status, 0, "queue PR creation failure unexpectedly succeeded");
       assert.match(result.stderr, /PR creation failed/);
+      return;
+    }
+
+    // A run that allocated an arm and then loses its contract -- or writes one
+    // for a different arm -- must stop here. Publishing anyway is the failure
+    // that kept EXP-001 at 0/12 while every stage reported success, so the
+    // check has to land before the push rather than in a later reconciliation.
+    if (armGate === "missing" || armGate === "mismatch") {
+      assert.notEqual(result.status, 0, `${armGate} contract unexpectedly reached the push`);
+      assert.match(
+        result.stdout + result.stderr,
+        armGate === "missing" ? /no registered contract/ : /contract arm mismatch/,
+      );
+      const rejected = runAt(checkout, "git", [
+        `--git-dir=${remote}`, "rev-parse", "--verify", `refs/heads/queue/${slug}`,
+      ]);
+      assert.notEqual(rejected.status, 0, "a rejected run must not leave a branch on the remote");
+      assert.doesNotMatch(fs.readFileSync(ghLog, "utf8"), /pr create/,
+        "a rejected run must not open a PR");
       return;
     }
 
@@ -687,6 +709,9 @@ echo "complete: publication queued for articles/fake-default.md"
   testQueueFlow({ autoMerge: false });
   testQueueFlow({ autoMerge: true });
   testQueueFlow({ autoMerge: true, withContract: true });
+  testQueueFlow({ autoMerge: true, withContract: true, armGate: "match" });
+  testQueueFlow({ autoMerge: true, withContract: true, armGate: "mismatch" });
+  testQueueFlow({ autoMerge: true, withContract: false, armGate: "missing" });
   testQueueFlow({ autoMerge: false, failPrCreate: true });
   testQueueFlow({ autoMerge: false, reviewStyle: "codex" });
   testQueueFlow({ autoMerge: false, reviewStyle: "claude" });

@@ -11,12 +11,16 @@ REVIEW=""
 PIPE_DIR=""
 AUTO_MERGE=1
 REVIEW_STYLE="agent"
+REQUIRE_CONTRACT=0
+EXPECT_ARM=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --article) ARTICLE="${2:?--article requires a path}"; shift ;;
     --review) REVIEW="${2:?--review requires a path}"; shift ;;
     --pipeline) PIPE_DIR="${2:?--pipeline requires a path}"; shift ;;
     --review-style) REVIEW_STYLE="${2:?--review-style requires agent, codex, or claude}"; shift ;;
+    --require-contract) REQUIRE_CONTRACT=1 ;;
+    --expect-arm) EXPECT_ARM="${2:?--expect-arm requires an arm name}"; REQUIRE_CONTRACT=1; shift ;;
     --auto-merge) AUTO_MERGE=1 ;;
     --pr-only) AUTO_MERGE=0 ;;
     -h|--help) sed -n '1,90p' "$0"; exit 0 ;;
@@ -160,6 +164,25 @@ fi
 # never committed leaves the experiment stuck at 0 of 12 forever and sends every
 # article to the treatment arm, so it ships in the same commit as its article.
 CONTRACT="analytics/contracts/$SLUG.json"
+# Copying the contract only when it happens to exist lets the whole pipeline
+# exit 0 -- article written, PR merged, reader served -- while the experiment
+# counter never moves, which is the same class of silent stall that kept EXP-001
+# at 0/12. Callers that allocated an arm before the research stage therefore
+# pass --expect-arm and turn a missing or mismatched contract into a failure
+# here, before the push. auto-publish.sh and auto-publish-codex.sh never
+# register a contract, so the requirement stays opt-in rather than global.
+if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ROOT/$CONTRACT" ]; then
+  die "no registered contract for the final article: $CONTRACT (the arm allocated for this run would go uncounted)"
+fi
+if [ -n "$EXPECT_ARM" ]; then
+  CONTRACT_ARM="$(node -e '
+    const fs = require("node:fs");
+    const contract = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    process.stdout.write(String(contract?.classification?.arm ?? ""));
+  ' "$ROOT/$CONTRACT")" || die "could not read the arm out of $CONTRACT"
+  [ "$CONTRACT_ARM" = "$EXPECT_ARM" ] \
+    || die "contract arm mismatch for $SLUG: allocated $EXPECT_ARM but the contract records ${CONTRACT_ARM:-<empty>}"
+fi
 if [ -f "$ROOT/$CONTRACT" ]; then
   mkdir -p "$WORKTREE/$(dirname "$CONTRACT")"
   cp "$ROOT/$CONTRACT" "$WORKTREE/$CONTRACT"
