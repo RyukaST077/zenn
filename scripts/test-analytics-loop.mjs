@@ -28,6 +28,7 @@ const scripts = {
   feedback: path.join(here, "analytics/build-topic-feedback.mjs"),
   evaluate: path.join(here, "analytics/evaluate-policy.mjs"),
   nextArm: path.join(here, "analytics/next-arm.mjs"),
+  loopStatus: path.join(here, "analytics/loop-status.mjs"),
 };
 
 const NOW = "2026-09-05T00:00:00.000Z";
@@ -935,6 +936,89 @@ test("a registration the ledger lost still counts, because the contract file car
   assert.equal(assignment.state.registered, 1);
   assert.equal(assignment.arm, "B-payload", "11 of 12 still to fill");
   assert.match(assignment.why, /11 more/);
+});
+
+const loopStatus = (dir, extra = []) => {
+  const result = run(scripts.loopStatus, ["--json", ...extra], dir);
+  return { status: result.status, report: JSON.parse(result.stdout), stderr: result.stderr };
+};
+
+test("the funnel separates registration from publication, because only one of them ends the experiment", (dir) => {
+  // A registered contract with an article that was never published is progress
+  // for the allocator and no progress at all for EXP-001. Reporting a single
+  // "12 registered" is what hid a loop whose two halves never overlapped.
+  registerContract(dir, "b-one", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "b-two", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  fs.writeFileSync(
+    path.join(dir, "articles/b-one.md"),
+    '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
+  );
+  fs.writeFileSync(
+    path.join(dir, "articles/b-two.md"),
+    '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: false\n---\n\nbody\n',
+  );
+  writeJson(dir, "config/zenn-publish-queue.json", {
+    version: 1,
+    zennUsername: "clopy",
+    maxPublicationsPer24Hours: 2,
+    retryAfterHours: 12,
+    maxAttempts: 15,
+    entries: [
+      { article: "articles/b-two.md", enqueuedAt: NOW, attempts: 0, lastAttemptAt: null },
+      { article: "articles/no-contract.md", enqueuedAt: NOW, attempts: 0, lastAttemptAt: null },
+    ],
+  });
+
+  const { report } = loopStatus(dir);
+  assert.equal(report.treatment.registered, 2);
+  assert.equal(report.treatment.articleWritten, 2);
+  assert.equal(report.treatment.queued, 1, "only b-two is queued");
+  assert.equal(report.treatment.published, 1, "only b-one is published");
+  assert.equal(report.treatment.d30Measured, 0, "nothing has been measured at D30 yet");
+  // A queued article with no contract advances no arm. Six of these is how the
+  // real queue and the real experiment ended up describing different articles.
+  assert.equal(report.queue.pending, 2);
+  assert.equal(report.queue.pendingWithoutContract, 1);
+});
+
+test("a contract that never reached main is reported as a burned arm slot", (dir) => {
+  // run-article-pipeline-worktree.sh syncs artifacts back to the shared
+  // checkout whatever the pipeline's exit code was, and import-analytics hands
+  // those contracts to the next run. A run that registers an arm and then fails
+  // therefore leaves a contract that fills a treatment slot forever without an
+  // article. That is only detectable against the base branch's tree.
+  const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+  git("init", "-q");
+  git("config", "user.email", "test@example.invalid");
+  git("config", "user.name", "test");
+  registerContract(dir, "reached", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  fs.writeFileSync(
+    path.join(dir, "articles/reached.md"),
+    '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
+  );
+  git("add", "analytics/contracts/reached.json");
+  const committed = git("commit", "-q", "-m", "contract reached main");
+  assert.equal(committed.status, 0, `commit failed: ${committed.stderr}`);
+
+  const clean = loopStatus(dir, ["--strict", "--base-ref", "HEAD"]);
+  assert.equal(clean.status, 0, `a committed contract must not be a stall:\n${clean.stderr}`);
+  assert.deepEqual(clean.report.orphanContracts, []);
+
+  // Now leave behind exactly what a failed run leaves behind: the contract on
+  // disk, nothing on the branch.
+  registerContract(dir, "orphan", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  fs.writeFileSync(
+    path.join(dir, "articles/orphan.md"),
+    '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
+  );
+  const stalled = loopStatus(dir, ["--strict", "--base-ref", "HEAD"]);
+  assert.equal(stalled.status, 1, "an uncommitted contract must fail --strict");
+  assert.deepEqual(
+    stalled.report.orphanContracts.map((row) => row.slug), ["orphan"],
+    "only the contract that never reached main is an orphan",
+  );
+  assert.equal(stalled.report.treatment.registered, 2,
+    "the allocator still counts it, which is exactly why it has to be reported");
 });
 
 test("the allocator never offers a deprecated archetype to the exploration arm", (dir) => {
