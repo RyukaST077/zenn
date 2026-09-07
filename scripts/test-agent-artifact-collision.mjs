@@ -141,6 +141,41 @@ try {
     "a registration must still reach the shared checkout",
   );
 
+  // The same three files must still travel the other way. The committed copies
+  // are only as fresh as the last commit of analytics/, while the shared
+  // checkout is rewritten every morning, so every run -- not just a resumed one
+  // -- is handed the shared copies before it allocates an arm. GA4 traffic and
+  // the raw snapshots stay behind.
+  const loopInputs = path.join(testRoot, "loop-inputs");
+  fs.mkdirSync(path.join(loopInputs, "shared/analytics/contracts"), { recursive: true });
+  fs.mkdirSync(path.join(loopInputs, "shared/analytics/private"), { recursive: true });
+  fs.mkdirSync(path.join(loopInputs, "shared/analytics/raw"), { recursive: true });
+  fs.mkdirSync(path.join(loopInputs, "worktree"), { recursive: true });
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/article-ledger.jsonl"), "fresh\n");
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/market-index.json"), "fresh\n");
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/topic-feedback.md"), "fresh\n");
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/contracts/a.json"), "{}\n");
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/private/ga4-ledger.jsonl"), "traffic\n");
+  fs.writeFileSync(path.join(loopInputs, "shared/analytics/raw/self.json"), "raw\n");
+  expectStatus(
+    run(checkout, "node", [artifactTool, "import-analytics",
+      path.join(loopInputs, "shared"), path.join(loopInputs, "worktree")]),
+    0, "import loop inputs",
+  );
+  for (const handed of ["article-ledger.jsonl", "market-index.json", "topic-feedback.md", "contracts/a.json"]) {
+    assert.equal(
+      fs.readFileSync(path.join(loopInputs, "worktree/analytics", handed), "utf8").trim(),
+      handed.startsWith("contracts") ? "{}" : "fresh",
+      `${handed} must be handed to the worktree`,
+    );
+  }
+  for (const withheld of ["private/ga4-ledger.jsonl", "raw/self.json"]) {
+    assert.equal(
+      fs.existsSync(path.join(loopInputs, "worktree/analytics", withheld)), false,
+      `${withheld} must never enter a worktree`,
+    );
+  }
+
   console.log("agent artifact collision tests passed");
 } finally {
   fs.rmSync(testRoot, { recursive: true, force: true });

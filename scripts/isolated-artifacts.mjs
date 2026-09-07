@@ -18,13 +18,17 @@ const EXCLUDED_PREFIXES = [
   // GA4-derived per-article traffic. Never synced out of the shared tree, so it
   // cannot ride a worktree branch into a PR on a public repository.
   "analytics/private/",
-  // Derived state owned by the daily improvement loop, which rewrites all three
-  // in the shared checkout every morning. A pipeline run can outlive that hour
-  // -- a usage-limit wait alone is five hours -- and a whole-file export of a
-  // file both sides edited is a collision, which discards the entire run's
-  // artifacts. The registrations themselves ride back in analytics/contracts/,
-  // one immutable file per slug, and `collect-zenn-metrics.mjs` rebuilds these
-  // three from those files plus the API.
+];
+// Derived state owned by the daily improvement loop, which rewrites all three in
+// the shared checkout every morning. A pipeline run can outlive that hour -- a
+// usage-limit wait alone is five hours -- and exporting a whole file both sides
+// edited is a collision, which discards the entire run's artifacts. So these
+// never travel worktree -> shared. They must still travel shared -> worktree:
+// the committed copies are only as fresh as the last time someone committed
+// analytics/, and the search stage reads the observation report. Registrations
+// ride back in analytics/contracts/, one immutable file per slug, and
+// `collect-zenn-metrics.mjs` rebuilds these three from those files plus the API.
+const EXPORT_ONLY_EXCLUDED_PREFIXES = [
   "analytics/article-ledger.jsonl",
   "analytics/market-index.json",
   "analytics/topic-feedback.md",
@@ -36,17 +40,19 @@ const die = (message) => {
 };
 
 const normalizeRelative = (value) => value.split(path.sep).join("/");
-const isAllowed = (relative) => {
+const isAllowed = (relative, direction = "export") => {
   const normalized = normalizeRelative(relative);
   const [root] = normalized.split("/");
   if (!ALLOWED_ROOTS.has(root)) return false;
   if (EXCLUDED_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return false;
+  if (direction === "export"
+    && EXPORT_ONLY_EXCLUDED_PREFIXES.some((prefix) => normalized.startsWith(prefix))) return false;
   return !normalized.split("/").some((part) => EXCLUDED_COMPONENTS.has(part));
 };
 
 const hashFile = (file) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 
-const inventory = (root) => {
+const inventory = (root, direction = "export", roots = ALLOWED_ROOTS) => {
   const result = {};
   const visit = (absolute, relative) => {
     const stat = fs.lstatSync(absolute);
@@ -54,17 +60,17 @@ const inventory = (root) => {
     if (stat.isDirectory()) {
       for (const name of fs.readdirSync(absolute).sort()) {
         const childRelative = relative ? path.join(relative, name) : name;
-        if (isAllowed(childRelative) || !childRelative.includes(path.sep)) {
+        if (isAllowed(childRelative, direction) || !childRelative.includes(path.sep)) {
           visit(path.join(absolute, name), childRelative);
         }
       }
       return;
     }
-    if (!stat.isFile() || !isAllowed(relative)) return;
+    if (!stat.isFile() || !isAllowed(relative, direction)) return;
     result[normalizeRelative(relative)] = { hash: hashFile(absolute), mode: stat.mode & 0o777 };
   };
 
-  for (const rootName of [...ALLOWED_ROOTS].sort()) {
+  for (const rootName of [...roots].sort()) {
     const absolute = path.join(root, rootName);
     if (fs.existsSync(absolute)) visit(absolute, rootName);
   }
@@ -117,11 +123,22 @@ if (command === "snapshot") {
 } else if (command === "import") {
   const [sourceRoot, destinationRoot] = args;
   if (!sourceRoot || !destinationRoot) die("usage: import <source-root> <destination-root>");
-  const files = inventory(path.resolve(sourceRoot));
+  const files = inventory(path.resolve(sourceRoot), "import");
   for (const [relative, metadata] of Object.entries(files)) {
     copyFile(path.resolve(sourceRoot), path.resolve(destinationRoot), relative, metadata.mode);
   }
   console.error(`[isolated-artifacts] imported ${Object.keys(files).length} artifact files for resume`);
+} else if (command === "import-analytics") {
+  // The loop's inputs, handed to every run and not just a resumed one. The
+  // committed ledger and observation report are only as fresh as the last
+  // commit of analytics/, while the shared checkout is refreshed every morning.
+  const [sourceRoot, destinationRoot] = args;
+  if (!sourceRoot || !destinationRoot) die("usage: import-analytics <source-root> <destination-root>");
+  const files = inventory(path.resolve(sourceRoot), "import", new Set(["analytics"]));
+  for (const [relative, metadata] of Object.entries(files)) {
+    copyFile(path.resolve(sourceRoot), path.resolve(destinationRoot), relative, metadata.mode);
+  }
+  console.error(`[isolated-artifacts] imported ${Object.keys(files).length} loop input files`);
 } else if (command === "check-sync" || command === "sync") {
   const [sourceRoot, destinationRoot, snapshotFile] = args;
   if (!sourceRoot || !destinationRoot || !snapshotFile) {

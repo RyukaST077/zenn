@@ -155,6 +155,15 @@ if [ -d "$ROOT/images/$SLUG" ]; then
   mkdir -p "$WORKTREE/images"
   cp -R "$ROOT/images/$SLUG" "$WORKTREE/images/$SLUG"
 fi
+# The arm allocator counts registrations from analytics/contracts/, and every
+# run reads them out of a fresh worktree built from origin. A contract that is
+# never committed leaves the experiment stuck at 0 of 12 forever and sends every
+# article to the treatment arm, so it ships in the same commit as its article.
+CONTRACT="analytics/contracts/$SLUG.json"
+if [ -f "$ROOT/$CONTRACT" ]; then
+  mkdir -p "$WORKTREE/$(dirname "$CONTRACT")"
+  cp "$ROOT/$CONTRACT" "$WORKTREE/$CONTRACT"
+fi
 
 ENQUEUE_ARGS=(enqueue --queue "$PUBLISH_QUEUE_FILE" --article "$ARTICLE")
 [ -z "${PUBLISH_QUEUE_NOW:-}" ] || ENQUEUE_ARGS+=(--now "$PUBLISH_QUEUE_NOW")
@@ -162,10 +171,11 @@ ENQUEUE_ARGS=(enqueue --queue "$PUBLISH_QUEUE_FILE" --article "$ARTICLE")
   || die "failed to add article to publication queue"
 git -C "$WORKTREE" add -- "$ARTICLE" "$PUBLISH_QUEUE_FILE"
 [ ! -d "$WORKTREE/images/$SLUG" ] || git -C "$WORKTREE" add -- "images/$SLUG"
+[ ! -f "$WORKTREE/$CONTRACT" ] || git -C "$WORKTREE" add -- "$CONTRACT"
 STAGED="$(git -C "$WORKTREE" diff --cached --name-only)"
 [ -n "$STAGED" ] || die "nothing was staged for the publication queue"
 while IFS= read -r staged_path; do
-  case "$staged_path" in "$ARTICLE"|"$PUBLISH_QUEUE_FILE"|images/"$SLUG"/*) ;; *) die "disallowed staged path: $staged_path" ;; esac
+  case "$staged_path" in "$ARTICLE"|"$PUBLISH_QUEUE_FILE"|"$CONTRACT"|images/"$SLUG"/*) ;; *) die "disallowed staged path: $staged_path" ;; esac
 done <<EOF
 $STAGED
 EOF

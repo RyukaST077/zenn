@@ -306,6 +306,71 @@ test("register reads the contract out of a research report and refuses silent ov
   assert.match(again.stderr, /already registered/);
 });
 
+test("register refuses to re-arm a slug whose contract file outlived its ledger line", (dir) => {
+  // Only analytics/contracts/ travels back out of a pipeline worktree, so a slug
+  // registered there normally has no ledger line until the next collection. If
+  // the guard read the ledger alone, the next run would silently re-register the
+  // same slug under a different arm and the experiment would miscount.
+  const contract = writeJson(dir, "c.json", {
+    slug: "deny-recipe",
+    policyVersion: "2026-09-05.1",
+    experimentId: "EXP-001",
+    arm: "B-payload",
+    valueArchetype: "asset",
+    targetReader: "reader",
+    readerDecision: "決められる",
+    takeaway: "設定全文",
+    verificationItems: ["a", "b", "c"],
+    titleDraft: "案",
+    primaryTopic: "claudecode",
+    topics: ["claudecode"],
+    demandEvidence: "657いいね",
+  });
+  ok(run(scripts.register, ["--contract", contract], dir), "register");
+  fs.rmSync(path.join(dir, "analytics/article-ledger.jsonl"));
+
+  const again = run(scripts.register, ["--contract", contract], dir);
+  assert.equal(again.status, 2, "a surviving contract file must block a silent re-registration");
+  assert.match(again.stderr, /already registered/);
+
+  ok(run(scripts.register, ["--contract", contract, "--force"], dir), "--force must still overwrite");
+});
+
+test("collect realigns a ledger line that disagrees with the contract file", (dir) => {
+  const contract = writeJson(dir, "c.json", {
+    slug: "deny-recipe",
+    policyVersion: "2026-09-05.1",
+    experimentId: "EXP-001",
+    arm: "B-payload",
+    valueArchetype: "asset",
+    targetReader: "reader",
+    readerDecision: "決められる",
+    takeaway: "設定全文",
+    verificationItems: ["a", "b", "c"],
+    titleDraft: "案",
+    primaryTopic: "claudecode",
+    topics: ["claudecode"],
+    demandEvidence: "657いいね",
+  });
+  ok(run(scripts.register, ["--contract", contract], dir), "register");
+
+  // Simulate the stale copy: the ledger keeps an older contract line while the
+  // per-slug file -- the one a worktree run syncs back -- says something else.
+  const ledgerPath = path.join(dir, "analytics/article-ledger.jsonl");
+  const stale = readLedger(dir);
+  stale[0].classification = { ...stale[0].classification, arm: "exploration", experimentId: null };
+  fs.writeFileSync(ledgerPath, `${stale.map((e) => JSON.stringify(e)).join("\n")}\n`);
+
+  const self = writeJson(dir, "self.json", [{ articles: [article({
+    slug: "deny-recipe", published_at: "2026-09-04T10:00:00.000+09:00", liked_count: 1,
+  })] }]);
+  ok(run(scripts.collect, ["--self-json", self, "--now", NOW], dir), "collect");
+
+  const ledger = readLedger(dir);
+  assert.equal(ledger[0].classification.arm, "B-payload", "the contract file must win");
+  assert.equal(ledger[0].classification.experimentId, "EXP-001");
+});
+
 test("collect fills in the publish time of a pre-registered contract without touching it", (dir) => {
   const contract = writeJson(dir, "c.json", {
     slug: "deny-recipe",

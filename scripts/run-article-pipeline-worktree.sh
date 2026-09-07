@@ -105,6 +105,13 @@ if [ "$IMPORT_ARTIFACTS" = 1 ]; then
   node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" import "$SHARED_ROOT" "$RUN_WORKTREE" \
     || { echo "failed to import resume artifacts" >&2; exit 1; }
 fi
+# The improvement loop's inputs are refreshed in the shared checkout every
+# morning and are never exported back out of a worktree, so hand them in on
+# every run -- not only a resumed one. Without this the run would allocate its
+# arm from whatever copy of the ledger was last committed.
+node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" import-analytics "$SHARED_ROOT" "$RUN_WORKTREE" \
+  || { echo "failed to import improvement-loop inputs" >&2; exit 1; }
+
 node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$SHARED_ROOT" "$SHARED_SNAPSHOT" \
   || { echo "failed to snapshot shared artifacts" >&2; exit 1; }
 node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$RUN_WORKTREE" "$SNAPSHOT" \
