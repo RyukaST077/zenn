@@ -161,6 +161,9 @@ die()  {
 state_get() { node "$STATE_TOOL" get "$STATE" "$1"; }
 state_set() { node "$STATE_TOOL" set "$STATE" "$1" "$2"; }
 is_done() { [ "$(state_get "completed.$1")" = true ]; }
+pr_is_merged() {
+  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
+}
 require_artifact() {
   local value
   value="$(state_get "artifacts.$1")"
@@ -565,10 +568,13 @@ ARTICLE="$(state_get artifacts.article)"
 SLUG="$(basename "$ARTICLE" .md)"
 if ! is_done pr; then
   publog="$PIPE_DIR/6-publish.log"
+  : >"$publog"
   QUEUE_SUMMARY="$(AGENT_PIPELINE_BASE_BRANCH="$BASE_BRANCH" AGENT_PIPELINE_MERGE_METHOD="$MERGE_METHOD" \
+    AGENT_PIPELINE_OUTER_AUTO_MERGE="$AUTO_MERGE" \
     bash scripts/agent-practice/enqueue-reviewed-article.sh \
       --article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR" \
-      --review-style claude --pr-only)" || die "公開キュー追加に失敗した。ログ: $publog"
+      --review-style claude --pr-only \
+      2> >(tee -a "$publog" >&2))" || die "公開キュー追加に失敗した。ログ: $publog"
   printf '%s\n' "$QUEUE_SUMMARY" >"$publog"
   PR_URL="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^PR: //p' | head -1)"
   [ -n "$PR_URL" ] || die "公開キューPRのURLを確認できなかった。ログ: $publog"
@@ -593,10 +599,14 @@ MERGED=0
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   [ "$HAS_GH" = 1 ] || die "--auto-merge には gh CLI が必要"
   # branch protection があれば --auto、無ければ即時マージ。ここでは公開ではなくキュー追加になる。
-  if gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch >>"$PLOG" 2>&1; then
+  if pr_is_merged; then
+    log "PRはすでにマージ済み。マージ成功として処理を継続する"
+  elif gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch >>"$PLOG" 2>&1; then
     log "auto-merge を予約した（必須チェック通過後に公開キューへ追加）"
   elif gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch >>"$PLOG" 2>&1; then
     log "PR を即時マージした（公開キューへ追加）"
+  elif pr_is_merged; then
+    log "マージコマンドは失敗したが、GitHub上ではマージ済み。成功として処理を継続する"
   else
     die "PR のマージに失敗した: $PR_URL ($PLOG 参照)"
   fi

@@ -1,0 +1,42 @@
+{
+  "slug": "bumblebee-catalog-preflight-kit",
+  "topics": [
+    "security",
+    "supplychain",
+    "npm",
+    "go",
+    "cli"
+  ],
+  "primaryTopic": "security",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 54,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": true
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T08:15:08.258Z",
+    "contract": {
+      "targetReader": "Bumblebee のようなカタログ駆動のサプライチェーンスキャナを CI や端末に入れようとしていて、findings=0 をそのまま合格として扱ってよいか判断したい開発者",
+      "readerDecision": "Bumblebee を導入してよいか、導入するなら何を一緒に用意しないと無意味かを決められる",
+      "takeaway": "exposure catalog の各エントリが実際に発火しうるかを、同じスキャンが出したパッケージ一覧と突き合わせて3値（0=1件以上が実際に発火し壊れたエントリ無し / 1=書いたままでは発火しないエントリあり / 2=発火実績ゼロなど判定不能）で返す依存ゼロのスクリプト。陽性対照が1件も無い実行は合格にせず exit 2 にする。",
+      "verificationItems": [
+        "カタログ無しの deep スキャンで、既知の脆弱パッケージ(lodash@4.17.15)が package レコードとして出るのに findings=0 / exit 0 になるか",
+        "スキーマとして正しいのに一致しない5状態（版違い / パッケージ名の打ち間違い / ecosystem 違い / entries 空 / バージョン範囲 ^4.17.0）が、正解の findings=3 と区別できない exit 0 findings=0 を返すか",
+        "モジュールキャッシュ同梱の v0.1.2 README は schema_version 0.1.0 と package/versions を正しく載せている一方、GitHub デフォルトブランチの README の 0.2.0 は同じバイナリに拒否されるか",
+        "キットが5判定（FIRES / DEAD / BAD / NO-HIT / ABSENT）を返し、混在カタログと --strict-version-drift で exit が変わるか",
+        "陽性対照が機能するか — FIRES が1件も無い実行を exit 0 にせず exit 2 にするか、および重複 catalog_id で別エントリの finding が保証書にならないか（id+ecosystem+正規化名+version で照合）",
+        "キットの名前正規化が bumblebee 本体（internal/normalize の NPM / PyPI=PEP 503）と一致するか（Go 実装との9パターン差分テスト）",
+        "finding / package レコードに endpoint.hostname / username / uid が含まれるか（出力の取り扱い上の注意）"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Bumblebee は脆弱性データベースを内蔵せず、finding は自前の exposure catalog と (ecosystem, 正規化名, バージョン) の完全一致でのみ出る。このため『手元に危険が無い』と『カタログが何にも一致しない』が同じ exit 0 / findings=0 になる。とくに advisory は範囲（lodash <=4.17.23）で書かれるのに v0.1 は範囲を解釈しないので、advisory を素直に写したカタログは永久に発火しないまま合格を出し続ける。公開情報にはこの曖昧さを解消する手段が無く、README のスキーマ例(0.2.0)は go install @latest で入る v0.1.2 が拒否する。カタログが発火しうるかを別途検証する仕組みが要る。"
+    }
+  }
+}

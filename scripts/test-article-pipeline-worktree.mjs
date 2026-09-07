@@ -41,13 +41,16 @@ try {
 set -euo pipefail
 [ "\${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" = 1 ]
 [ "\${ARTICLE_PIPELINE_SHARED_ROOT:-}" = "${checkout}" ]
+[ -f "\${ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT:-}" ]
+[ -f "\${ARTICLE_PIPELINE_ARTIFACT_BASELINE:-}" ]
 [ -z "$(git branch --show-current)" ]
 [ "$(pwd)" != "${checkout}" ]
 bash scripts/safe-sync-main.sh main
 case "\${1:-}" in
-  collision)
+  collision|retry-collision)
     mkdir -p articles
     printf 'isolated value\\n' > articles/collision.md
+    [ "\${1:-}" != retry-collision ] || exit 20
     ;;
   resume)
     [ -f logs/pipeline-resume/state.json ]
@@ -94,6 +97,17 @@ esac
   assert.equal(fs.readFileSync(path.join(checkout, "logs/pipeline-resume/state.json"), "utf8"), '{"step":2}\n');
 
   fs.writeFileSync(path.join(checkout, "articles/collision.md"), "local evidence\n");
+  const retryCollision = run(checkout, "bash", [
+    runner, "--shared-root", checkout, "--", "scripts/fake-pipeline.sh", "retry-collision",
+  ]);
+  assert.equal(retryCollision.status, 20,
+    `retryable collision run returned ${retryCollision.status}\n${retryCollision.stderr}`);
+  assert.match(retryCollision.stderr, /isolated artifacts were discarded/);
+  assert.equal(fs.readFileSync(path.join(checkout, "articles/collision.md"), "utf8"), "local evidence\n");
+  const worktreesAfterRetry = run(checkout, "git", ["worktree", "list", "--porcelain"]);
+  assert.equal((worktreesAfterRetry.stdout.match(/^worktree /gm) || []).length, 1,
+    `retryable collision leaked a worktree:\n${worktreesAfterRetry.stdout}`);
+
   const collision = run(checkout, "bash", [
     runner, "--shared-root", checkout, "--", "scripts/fake-pipeline.sh", "collision",
   ]);

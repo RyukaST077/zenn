@@ -1,0 +1,39 @@
+{
+  "slug": "claude-sandbox-loopback-eperm-check",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "sandbox",
+    "macos"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "mental-model",
+    "titleFeatures": {
+      "length": 54,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T03:08:48.986Z",
+    "contract": {
+      "targetReader": "Claude Code の sandbox を有効にしたあとローカル接続系のテストが落ち、sandbox のせいなのか自分のコードのせいなのか切り分けられずに止まっている開発者",
+      "readerDecision": "server 側やクライアント側で観測した「0件」「接続拒否」を、socket が拒否された証拠として扱ってよいかを決められる",
+      "takeaway": "観測ごとに『記録が揃っているとき何を言えて、欠けているとき何を言えないか』を並べた対応表と、sandbox 有効化後にローカル接続が落ちたときの4段階の判定順序",
+      "verificationItems": [
+        "sandbox 無効 / 有効 × allowlist 有無 × filesystem.disabled の6ケースで loopback への直接 connect がどうなるか",
+        "allowedDomains に 127.0.0.1 / localhost / [::1] を足して結果が変わるか",
+        "socket を開かないコマンドが同じ profile で完走し、自分の実行記録を残すか（起動と拒否の区別）",
+        "loopback への page.goto が ERR_CONNECTION_REFUSED になった別 run で、listener 側の生存記録が無ければ socket 拒否と読めないこと",
+        "3ブラウザエンジンが page 到達前に落ちた別 run で、機能問い合わせの0件を『未対応』と読めないこと"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "anthropics/claude-code の issue #28018 は allowLocalBinding: true と localhost / 127.0.0.1 / ::1 の許可を設定しても sandbox 内からの loopback TCP が EPERM になると報告しており（2026-02-24 起票・参照時点で open）、同じ症状で止まっている読者が実在する。analytics/topic-feedback.md では claudecode の市場コホートで mental-model 型が平均37.5いいね・最大178と asset に次ぐ位置にあり、切り分けの型そのものを配る記事に需要がある。"
+    }
+  }
+}

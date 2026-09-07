@@ -49,13 +49,26 @@ touch "$PLOG"
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
 die() { log "ERROR: $*"; exit 1; }
 
+has_blocking_tracked_changes() {
+  # knowledge/ is local troubleshooting evidence. Some baseline files remain
+  # tracked from before the directory was gitignored, so changes there must not
+  # contaminate or block the isolated publication worktree.
+  if ! git diff --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  if ! git diff --cached --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  return 1
+}
+
 [ -f "$ROOT/$ARTICLE" ] || die "article does not exist: $ARTICLE"
 [ -f "$ROOT/$REVIEW" ] || die "review does not exist: $REVIEW"
 if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
   [ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
     || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
-  if git status --porcelain --untracked-files=no | rg . >/dev/null 2>&1; then
-    die "tracked files contain uncommitted changes"
+  if has_blocking_tracked_changes; then
+    die "tracked files outside local knowledge/ contain uncommitted changes"
   fi
 fi
 command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"

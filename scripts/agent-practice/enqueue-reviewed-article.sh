@@ -60,14 +60,30 @@ mkdir -p "$ROOT/$PIPE_DIR"
 touch "$PLOG"
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
 die() { log "ERROR: $*"; exit 1; }
+pr_is_merged() {
+  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
+}
+
+has_blocking_tracked_changes() {
+  # knowledge/ is local troubleshooting evidence. Some baseline files remain
+  # tracked from before the directory was gitignored, so changes there must not
+  # contaminate or block the isolated publication-queue worktree.
+  if ! git diff --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  if ! git diff --cached --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  return 1
+}
 
 [ -f "$ROOT/$ARTICLE" ] || die "article does not exist: $ARTICLE"
 [ -f "$ROOT/$REVIEW" ] || die "review does not exist: $REVIEW"
 if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
   [ "$(git branch --show-current)" = "$AGENT_PIPELINE_BASE_BRANCH" ] \
     || die "current branch must be $AGENT_PIPELINE_BASE_BRANCH"
-  if git status --porcelain --untracked-files=no | grep -q .; then
-    die "tracked files contain uncommitted changes"
+  if has_blocking_tracked_changes; then
+    die "tracked files outside local knowledge/ contain uncommitted changes"
   fi
 fi
 command -v gh >/dev/null 2>&1 || die "gh is required"
@@ -172,13 +188,19 @@ if [ "$AUTO_MERGE" = 1 ]; then
     MERGE_RESULT="merged immediately"
   elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --auto --delete-branch; then
     MERGE_RESULT="auto-merge requested"
+  elif pr_is_merged; then
+    MERGE_RESULT="already merged (merge command raced)"
   else
     die "PR merge failed: $PR_URL"
   fi
   bash "$SAFE_SYNC_TOOL" "$AGENT_PIPELINE_BASE_BRANCH" \
     || log "WARN: could not safely refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
 else
-  MERGE_RESULT="PR created; waiting for human merge"
+  if [ "${AGENT_PIPELINE_OUTER_AUTO_MERGE:-0}" = 1 ]; then
+    MERGE_RESULT="PR created; outer pipeline will auto-merge"
+  else
+    MERGE_RESULT="PR created; waiting for human merge"
+  fi
 fi
 
 log "queue complete: article=$ARTICLE PR=$PR_URL merge=$MERGE_RESULT"

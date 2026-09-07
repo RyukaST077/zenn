@@ -1,0 +1,40 @@
+{
+  "slug": "bun-markdown-marked-migration-verdict",
+  "topics": [
+    "bun",
+    "markdown",
+    "security",
+    "migration",
+    "javascript"
+  ],
+  "primaryTopic": "bun",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "migration",
+    "titleFeatures": {
+      "length": 55,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:47:45.076Z",
+    "contract": {
+      "targetReader": "ユーザー入力の Markdown を HTML 化するのに marked を使っていて、Bun 1.4 の Bun.markdown へ置き換えられるか検討している開発者",
+      "readerDecision": "marked を Bun.markdown へ置き換えてよいかを決められる",
+      "takeaway": "15入力×4経路の比較結果と、移行前に直すべき2点（GFMタスクリストのCSS、ブロックリスト正規表現の sanitizer）を特定した判断手順",
+      "verificationItems": [
+        "javascript: URL を4経路（インライン / 参照リンク / autolink / 画像）で与えたとき、両parser の raw 出力に残るか",
+        "難読化3通り（大文字小文字混在 / 先頭空白 / HTMLエンティティ）で両parser の raw 出力が一致するか",
+        "生の script / iframe / イベント属性 / data: URL が同じ sanitize-html 設定で両方から消えるか",
+        "sanitize 後の出力がタグ間空白の正規化で一致するか（15入力のうち何件が意味的に異なるか）",
+        "GFM タスクリストの出力構造が両parser で異なるか（class 属性・ラベル前の空白）"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Bun 1.4 の Bun.markdown は marked の置き換え候補として紹介されるが、公式ドキュメントはどちらも『出力を sanitize せよ』と述べるだけで、同じ sanitizer を通したときに出力が互換かを示していない。実測すると sanitize 後に危険が残る入力は両parser とも0件で安全性の差は無く、一方で意味が変わるのは GFM タスクリストの1件だけ、さらに HTMLエンティティで難読化した javascript: URL を Bun だけが literal に展開するため、ブロックリスト正規表現で守っている実装では移行方向によって検出結果が反転する。置換可否の判断にはこの粒度の比較が要る。"
+    }
+  }
+}

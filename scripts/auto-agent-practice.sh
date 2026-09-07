@@ -8,7 +8,6 @@ set -euo pipefail
 : "${CODEX_BIN:=codex}"
 : "${CLAUDE_BIN:=claude}"
 : "${AGENT_PIPELINE_ORCHESTRATOR:=codex}"
-: "${AGENT_PIPELINE_PROVIDER_SCOPE:=both}"
 : "${AGENT_PIPELINE_MODEL:=}"
 : "${AGENT_PIPELINE_EFFORT:=high}"
 : "${AGENT_PIPELINE_SEARCH:=1}"
@@ -17,13 +16,16 @@ set -euo pipefail
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 : "${MAX_AGENT_PREFLIGHT_REPAIRS:=2}"
+: "${MAX_AGENT_STAGE_CONTRACT_REPAIRS:=1}"
 : "${AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT:=1}"
 : "${AGENT_PIPELINE_MAX_USAGE_RESUMES:=8}"
 : "${AGENT_PIPELINE_USAGE_RESUME_COUNT:=0}"
 : "${AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS:=30}"
 : "${AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE:=}"
+: "${AGENT_EXPERIMENT_RUNNER:=scripts/agent-practice/run-experiment.mjs}"
+: "${AGENT_PIPELINE_RETRY_SIGNAL_FILE:=}"
 
-TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature, or reproducible failure boundary that is not already covered by this repository"
+TOPIC="Current practical Claude Code or OpenAI Codex know-how, configuration, workflow, harness, model or CLI feature that is not already covered by this repository, framed so the article leaves the reader a configuration, script, checklist, migration path, or decision table they can take away"
 DRY_RUN=0
 SCHEDULED=0
 AUTO_MERGE=1
@@ -49,21 +51,13 @@ esac
 case "$MAX_AGENT_PREFLIGHT_REPAIRS" in
   *[!0-9]*|'') echo "MAX_AGENT_PREFLIGHT_REPAIRS must be a non-negative integer" >&2; exit 2 ;;
 esac
+case "$MAX_AGENT_STAGE_CONTRACT_REPAIRS" in
+  *[!0-9]*|'') echo "MAX_AGENT_STAGE_CONTRACT_REPAIRS must be a non-negative integer" >&2; exit 2 ;;
+esac
 case "$AGENT_PIPELINE_ORCHESTRATOR" in
   codex|claude) ;;
   *) echo "AGENT_PIPELINE_ORCHESTRATOR must be codex or claude" >&2; exit 2 ;;
 esac
-case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-  both|codex|claude) ;;
-  *) echo "AGENT_PIPELINE_PROVIDER_SCOPE must be both, codex, or claude" >&2; exit 2 ;;
-esac
-case "$AGENT_PIPELINE_PROVIDER_SCOPE:$AGENT_PIPELINE_ORCHESTRATOR" in
-  codex:claude|claude:codex)
-    echo "AGENT_PIPELINE_PROVIDER_SCOPE must include the selected orchestrator" >&2
-    exit 2
-    ;;
-esac
-export AGENT_PIPELINE_PROVIDER_SCOPE
 case "$AGENT_PIPELINE_SEARCH" in 0|1) ;; *) echo "AGENT_PIPELINE_SEARCH must be 0 or 1" >&2; exit 2 ;; esac
 case "$AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT" in
   0|1) ;;
@@ -93,7 +87,11 @@ TS="$(date +%Y%m%d-%H%M%S)"
 PIPE_DIR="logs/agent/pipeline-$TS"
 PLOG="$PIPE_DIR/pipeline.log"
 CONTRACT_TOOL="scripts/agent-stage-result-contract.mjs"
+ARM_TOOL="scripts/analytics/next-arm.mjs"
 RESULT_TOOL="scripts/validate-agent-stage-result.mjs"
+RUN_RESULT_TOOL="scripts/validate-agent-run-result.mjs"
+GENERATED_PATH_TOOL="scripts/validate-agent-generated-paths.mjs"
+ARTIFACT_TOOL="scripts/isolated-artifacts.mjs"
 CLAUDE_LIMIT_TOOL="scripts/claude-usage-limit.mjs"
 RUN_LOG_FINDER="scripts/find-agent-run-log.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
@@ -117,17 +115,18 @@ if [ "$DRY_RUN" = 1 ]; then
   topic: $TOPIC
   pipeline: $PIPE_DIR
   orchestrator: $AGENT_PIPELINE_ORCHESTRATOR ($([ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ] && printf '%s' "$CODEX_BIN" || printf '%s' "$CLAUDE_BIN"), model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
-  experiment provider scope: $AGENT_PIPELINE_PROVIDER_SCOPE
+  experiment CLIs: $CLAUDE_BIN, $CODEX_BIN
   policy: non-interactive, outer permissions=unrestricted, ephemeral=true
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   review rounds: $MAX_AGENT_REVIEW_ROUNDS
   preflight repairs: $MAX_AGENT_PREFLIGHT_REPAIRS
+  stage contract repairs: $MAX_AGENT_STAGE_CONTRACT_REPAIRS
   base branch: $AGENT_PIPELINE_BASE_BRANCH
   auto merge: $AUTO_MERGE
   resume after run: ${RESUME_RUN_LOG:-none}
   auto resume at usage limit: $AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT (attempt $AGENT_PIPELINE_USAGE_RESUME_COUNT/$AGENT_PIPELINE_MAX_USAGE_RESUMES)
-  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight <-> plan repair -> zenn-agent-run-practice -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
+  stages: zenn-agent-search-knowhow -> zenn-agent-plan-practice -> fake-CLI preflight <-> plan repair -> deterministic experiment runner -> zenn-agent-analyze-results -> zenn-agent-draft-article -> zenn-agent-review-article <-> zenn-agent-revise-article -> publication queue -> commit/push -> PR -> $([ "$AUTO_MERGE" = 1 ] && echo "merge" || echo "human merge")
   result: a reviewed article added to the rate-limited Zenn publication queue
 EOF
   exit 0
@@ -137,34 +136,52 @@ mkdir -p "$PIPE_DIR"
 touch "$PLOG"
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
 die() { log "ERROR: $*"; log "pipeline evidence: $PIPE_DIR"; exit 1; }
+retry_pipeline() {
+  local kind="$1" signature="$2"
+  shift 2
+  log "RETRYABLE: $*"
+  log "retry classification: $kind/$signature"
+  if [ -n "$AGENT_PIPELINE_RETRY_SIGNAL_FILE" ]; then
+    if ! printf '%s|%s\n' "$kind" "$signature" >"$AGENT_PIPELINE_RETRY_SIGNAL_FILE"; then
+      die "could not write retry classification"
+    fi
+  fi
+  log "pipeline evidence: $PIPE_DIR"
+  exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+}
+system_failure() {
+  local signature="$1"
+  shift
+  if [ "$SCHEDULED" = 1 ]; then
+    retry_pipeline system "$signature" "$*; another scheduled topic may be tried"
+  fi
+  die "$*"
+}
 
 [ -n "$TIMEOUT_BIN" ] || die "timeout or gtimeout is required (macOS: brew install coreutils)"
-case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-  both|codex) command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN" ;;
-esac
-case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-  both|claude) command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN" ;;
-esac
+command -v "$CODEX_BIN" >/dev/null 2>&1 || die "Codex CLI not found: $CODEX_BIN"
+command -v "$CLAUDE_BIN" >/dev/null 2>&1 || die "Claude Code CLI not found: $CLAUDE_BIN"
 command -v node >/dev/null 2>&1 || die "node is required"
 command -v git >/dev/null 2>&1 || die "git is required"
 command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
+[ -f "$ARM_TOOL" ] || die "experiment arm allocator is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
+[ -f "$RUN_RESULT_TOOL" ] || die "agent direct-run result validator is missing"
+[ -f "$GENERATED_PATH_TOOL" ] || die "agent generated-path validator is missing"
+[ -f "$ARTIFACT_TOOL" ] || die "isolated artifact helper is missing"
 [ -f "$CLAUDE_LIMIT_TOOL" ] || die "Claude usage limit parser is missing"
 [ -f "$RUN_LOG_FINDER" ] || die "agent execution log finder is missing"
+[ -f "$AGENT_EXPERIMENT_RUNNER" ] || die "agent experiment runner is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
-case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-  both|codex) "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated" ;;
-esac
-case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-  both|claude) "$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated" ;;
-esac
+"$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
+"$CLAUDE_BIN" auth status >/dev/null 2>&1 || die "Claude Code is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
 git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
 git check-ref-format --branch "$AGENT_PIPELINE_BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $AGENT_PIPELINE_BASE_BRANCH"
-log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions so the run stage can start authenticated $AGENT_PIPELINE_PROVIDER_SCOPE provider experiments"
+log "WARN: outer $AGENT_PIPELINE_ORCHESTRATOR stages use unrestricted permissions; the authenticated experiment runner is invoked directly by the pipeline"
 
 LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
 LOCK="$LOCK_ROOT/.agent-practice-pipeline.lock"
@@ -255,20 +272,28 @@ restart_after_usage_limit() {
 bash scripts/safe-sync-main.sh "$AGENT_PIPELINE_BASE_BRANCH" \
   || die "safe synchronization with origin/$AGENT_PIPELINE_BASE_BRANCH failed"
 
+SHARED_ARTIFACT_SNAPSHOT="${ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT:-$PIPE_DIR/shared-artifacts-before.json}"
+if [ -z "${ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT:-}" ]; then
+  node "$ARTIFACT_TOOL" snapshot "$ROOT" "$SHARED_ARTIFACT_SNAPSHOT" \
+    || die "could not snapshot existing artifacts for generated-path validation"
+fi
+
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
   local reuse_after="${7:-}"
+  local contract_repair="${8:-0}"
   local marker="$PIPE_DIR/.$idx-$stage.marker"
   local events="$PIPE_DIR/$idx-$stage.events.jsonl"
   local result="$PIPE_DIR/$idx-$stage.result.json"
   local schema="$PIPE_DIR/$idx-$stage.schema.json"
+  local validation_error="$PIPE_DIR/$idx-$stage.validation.stderr"
   local seconds contract rc stage_prompt schema_json
   seconds="$(stage_timeout "$stage")"
   node "$CONTRACT_TOOL" schema "$stage" "$schema" || die "$stage schema generation failed"
   contract="$(node "$CONTRACT_TOOL" prompt "$stage")" || die "$stage result prompt generation failed"
   touch "$marker"
 
-  stage_prompt="Use \$$skill. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
+  stage_prompt="Use \$$skill. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", artifact must be one existing safe repository-relative regular file under $allowed and reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
 
   local cmd
   if [ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ]; then
@@ -280,7 +305,7 @@ run_stage() {
     cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result" "$stage_prompt")
   else
     schema_json="$(tr -d '\n' <"$schema")"
-    stage_prompt="Read .agents/skills/$skill/SKILL.md completely, resolve its relative references from that skill directory, and follow it as the stage workflow. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
+    stage_prompt="Read .agents/skills/$skill/SKILL.md completely, resolve its relative references from that skill directory, and follow it as the stage workflow. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", artifact must be one existing safe repository-relative regular file under $allowed and reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
     cmd=("$CLAUDE_BIN" "-p" "$stage_prompt" "--output-format" "json" "--json-schema" "$schema_json")
     cmd+=("--no-session-persistence" "--safe-mode" "--permission-mode" "bypassPermissions")
     [ "$search" = 1 ] || cmd+=("--disallowedTools" "WebSearch,WebFetch")
@@ -293,52 +318,131 @@ run_stage() {
   "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
   rc=$?
   set -e
-  [ "$rc" != 124 ] || die "$stage timed out; events: $events"
+  if [ "$rc" = 124 ]; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline system "stage-timeout-$stage" "$stage timed out; another scheduled topic may be tried"
+    fi
+    die "$stage timed out; events: $events"
+  fi
   if [ "$rc" != 0 ]; then
     if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
       restart_after_usage_limit "$stage" "$events" "$marker" || true
     fi
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline system "stage-exit-$stage-$rc" "$stage failed with exit $rc; another scheduled topic may be tried"
+    fi
     die "$stage failed with exit $rc; events: $events"
   fi
   if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
-    node scripts/extract-claude-stage-result.mjs "$events" "$result" \
-      || die "$stage Claude output extraction failed; output: $events"
+    if ! node scripts/extract-claude-stage-result.mjs "$events" "$result"; then
+      if [ "$SCHEDULED" = 1 ]; then
+        retry_pipeline system "stage-extraction-$stage" "$stage Claude output extraction failed; another scheduled topic may be tried"
+      fi
+      die "$stage Claude output extraction failed; output: $events"
+    fi
   fi
   set +e
   local validation_args=("$result" "$allowed" "$marker" "$stage")
   [ -z "$reuse_after" ] || validation_args+=("$reuse_after")
-  STAGE_ARTIFACT="$(node "$RESULT_TOOL" "${validation_args[@]}" 2>>"$PLOG")"
+  STAGE_ARTIFACT="$(node "$RESULT_TOOL" "${validation_args[@]}" 2>"$validation_error")"
   local result_rc=$?
   set -e
+  [ ! -s "$validation_error" ] || sed -n '1,200p' "$validation_error" >>"$PLOG"
   if [ "$result_rc" = 4 ] && [ "$SCHEDULED" = 1 ]; then
-    log "$stage selected no safe or article-worthy output; another scheduled topic may be tried"
-    exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+    retry_pipeline content "stage-abort-$stage" "$stage selected no safe or article-worthy output; another scheduled topic may be tried"
+  fi
+  if [ "$result_rc" != 0 ] && [ "$result_rc" != 4 ] \
+      && [ "$contract_repair" -lt "$MAX_AGENT_STAGE_CONTRACT_REPAIRS" ]; then
+    local next_repair=$((contract_repair + 1))
+    local repair_prompt="$prompt The previous $stage attempt returned an invalid stage-result contract. Inspect $result and $validation_error. Repair only this stage: create or update the required primary artifact as a real regular file under $allowed, verify it exists before answering, and then return its exact repository-relative path in schema-conforming JSON. Do not claim an artifact that was not written."
+    log "$stage contract repair start ($next_repair/$MAX_AGENT_STAGE_CONTRACT_REPAIRS)"
+    run_stage "$stage" "$idx-contract-repair-$next_repair" "$skill" "$allowed" "$search" \
+      "$repair_prompt" "$reuse_after" "$next_repair"
+    return
+  fi
+  if [ "$result_rc" != 0 ] && [ "$SCHEDULED" = 1 ]; then
+    retry_pipeline system "stage-result-contract-$stage" "$stage returned an invalid result contract; another scheduled topic may be tried"
   fi
   [ "$result_rc" = 0 ] || die "$stage result contract failed: $result"
   STAGE_RESULT="$result"
   log "$stage complete: $STAGE_ARTIFACT"
 }
 
+run_experiment_direct() {
+  local marker="$PIPE_DIR/.3-run.marker"
+  local stdout_file="$PIPE_DIR/3-run.stdout"
+  local stderr_file="$PIPE_DIR/3-run.stderr"
+  local validation_error="$PIPE_DIR/3-run-validation.stderr"
+  local seconds rc validation_rc
+  seconds="$(stage_timeout run)"
+  touch "$marker"
+  log "run start (timeout=${seconds}s, deterministic runner=$AGENT_EXPERIMENT_RUNNER)"
+  set +e
+  "$TIMEOUT_BIN" "$seconds" node "$AGENT_EXPERIMENT_RUNNER" "$MANIFEST" \
+    >"$stdout_file" 2>"$stderr_file"
+  rc=$?
+  set -e
+  [ ! -s "$stderr_file" ] || sed -n '1,200p' "$stderr_file" >>"$PLOG"
+  if [ "$rc" = 124 ]; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline system "run-experiment-timeout" "deterministic experiment runner timed out; another scheduled topic may be tried"
+    fi
+    die "deterministic experiment runner timed out; output: $stdout_file"
+  fi
+  if [ "$rc" != 0 ]; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline system "run-experiment-exit-$rc" "deterministic experiment runner failed with exit $rc; another scheduled topic may be tried"
+    fi
+    die "deterministic experiment runner failed with exit $rc; output: $stdout_file"
+  fi
+
+  set +e
+  RUN_LOG="$(node "$RUN_RESULT_TOOL" "$stdout_file" "$MANIFEST" "$marker" 2>"$validation_error")"
+  validation_rc=$?
+  set -e
+  [ ! -s "$validation_error" ] || sed -n '1,200p' "$validation_error" >>"$PLOG"
+  if [ "$validation_rc" != 0 ]; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline system "run-result-contract" "deterministic experiment runner returned an invalid artifact contract; another scheduled topic may be tried"
+    fi
+    die "deterministic experiment runner result contract failed: $stdout_file"
+  fi
+  log "run complete: $RUN_LOG"
+}
+
 validate_generated_manifest() {
-  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null \
-    || die "generated manifest failed independent validation"
-  node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST" \
-    || die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
-  node - "$MANIFEST" "$AGENT_PIPELINE_PROVIDER_SCOPE" <<'NODE' \
-    || die "generated manifest contains a provider outside AGENT_PIPELINE_PROVIDER_SCOPE=$AGENT_PIPELINE_PROVIDER_SCOPE"
-const fs = require("node:fs");
-const [manifestPath, scope] = process.argv.slice(2);
-const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-process.exit(scope === "both" || manifest.cases.every((item) => item.provider === scope) ? 0 : 1);
-NODE
+  if ! node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline content "invalid-manifest" "generated manifest failed independent validation; another scheduled topic may be tried"
+    fi
+    die "generated manifest failed independent validation"
+  fi
+  if ! node -e 'const fs=require("node:fs"); const m=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.exit(m.version === 2 ? 0 : 1)' "$MANIFEST"; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline content "legacy-manifest" "generated manifest did not use version 2; another scheduled topic may be tried"
+    fi
+    die "generated manifest must use version 2 so wrapper cases cannot bypass fake-CLI preflight"
+  fi
 }
 
 run_manifest_preflight() {
   local repair_round="$1"
   local stdout_file="$PIPE_DIR/2-preflight-$repair_round.stdout"
   local stderr_file="$PIPE_DIR/2-preflight-$repair_round.stderr"
-  local rc summary
+  local rc summary path_stdout="$PIPE_DIR/2-path-preflight-$repair_round.stdout"
+  local path_stderr="$PIPE_DIR/2-path-preflight-$repair_round.stderr"
   log "preflight start (repair=$repair_round/$MAX_AGENT_PREFLIGHT_REPAIRS, manifest=$MANIFEST)"
+  set +e
+  node "$GENERATED_PATH_TOOL" "$MANIFEST" "$SHARED_ARTIFACT_SNAPSHOT" \
+    >"$path_stdout" 2>"$path_stderr"
+  rc=$?
+  set -e
+  if [ "$rc" != 0 ]; then
+    PREFLIGHT_EVIDENCE="$path_stderr"
+    [ ! -s "$path_stderr" ] || sed -n '1,200p' "$path_stderr" >>"$PLOG"
+    log "generated artifact namespace preflight failed before any authenticated experiment (exit=$rc, evidence=$PREFLIGHT_EVIDENCE)"
+    return 1
+  fi
   set +e
   node scripts/agent-practice/run-experiment.mjs "$MANIFEST" --preflight-only \
     >"$stdout_file" 2>"$stderr_file"
@@ -346,8 +450,11 @@ run_manifest_preflight() {
   set -e
   summary="$(sed -n '1p' "$stdout_file")"
   if [ "$rc" = 0 ]; then
-    [ -n "$summary" ] && [ -f "$summary" ] \
-      || die "preflight exited 0 without a summary artifact: $stdout_file"
+    if [ -z "$summary" ] || [ ! -f "$summary" ]; then
+      PREFLIGHT_EVIDENCE="$stdout_file"
+      log "preflight exited 0 without a summary artifact"
+      return 1
+    fi
     PREFLIGHT_EVIDENCE="$summary"
     log "preflight complete: $PREFLIGHT_EVIDENCE"
     return 0
@@ -372,7 +479,8 @@ if [ -n "$RESUME_RUN_LOG" ]; then
     process.stdout.write(match[1]);
   ' "$RUN_LOG")" || die "resume execution log does not declare a manifest"
   case "$MANIFEST" in practice/agent/*.json) ;; *) die "resume manifest path is invalid: $MANIFEST" ;; esac
-  validate_generated_manifest
+  node scripts/agent-practice/validate-manifest.mjs "$MANIFEST" >/dev/null \
+    || die "resume manifest failed independent validation"
   REPORT="$(node -e '
     const fs = require("node:fs");
     const manifest = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
@@ -382,24 +490,20 @@ if [ -n "$RESUME_RUN_LOG" ]; then
   [ -f "$REPORT" ] || die "resume research report does not exist: $REPORT"
   log "resuming after verified run: $RUN_LOG"
 else
-  case "$AGENT_PIPELINE_PROVIDER_SCOPE" in
-    codex)
-      PROVIDER_CONSTRAINT="For this run, use OpenAI Codex only: the selected claim, plan, and every manifest case must use provider codex; do not select Claude Code or a cross-provider comparison."
-      ;;
-    claude)
-      PROVIDER_CONSTRAINT="For this run, use Claude Code only: the selected claim, plan, and every manifest case must use provider claude; do not select OpenAI Codex or a cross-provider comparison."
-      ;;
-    both)
-      PROVIDER_CONSTRAINT="The manifest may use Claude Code, OpenAI Codex, or both, but use the fewest providers needed to resolve the reader decision."
-      ;;
-  esac
-  SEARCH_PROMPT="Research this scope: $TOPIC. Select exactly one current, article-worthy, falsifiable practice claim for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision. Exclude topics already covered by articles or prior agent reports. Prefer a boundary, failure mode, configuration, new feature, or reproducible workflow that adds value beyond official documentation and can be verified locally with a bounded offline fixture. Every authenticated live case must be runnable with the machine's existing successful claude auth status or codex login status and subscription authentication, without an API key, new secret, separate paid API billing, or interactive login. Exclude modes such as Claude Code --bare when official behavior says they discard subscription credentials and require ANTHROPIC_API_KEY. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
-  SEARCH_PROMPT="$SEARCH_PROMPT $PROVIDER_CONSTRAINT Prefer a claim whose expected and competing outcomes can be distinguished from deterministic CLI output, filesystem state, or configuration behavior without depending on a model to reproduce precise timing, simultaneous tool ordering, or probabilistic narration."
+  # Which arm the next article belongs to is decided from the ledger BEFORE the
+  # research stage sees the topic. Letting the research stage pick its own arm
+  # is how EXP-001 ended up with 0 of its 12 treatment articles while both
+  # registered contracts went to exploration.
+  ARM_PROMPT="$(node "$ARM_TOOL" --prompt)" || die "experiment arm allocation failed"
+  log "arm assignment: $(node "$ARM_TOOL" | sed -n '1p;4p' | tr '\n' ' ')"
+
+  SEARCH_PROMPT="Research this scope: $TOPIC. Select one current, article-worthy reader decision for Claude Code, OpenAI Codex, or a fair cross-provider workflow only when comparison serves a concrete reader decision, and three or more falsifiable claims that together answer it. Exclude topics already covered by articles or prior agent reports. A boundary, failure mode, configuration, new feature, or reproducible workflow is evidence inside the article, not the article itself: a single boundary check is the deprecated archetype that produced 57 articles with no result above four likes. Every claim must add value beyond official documentation and be verifiable locally with a bounded offline fixture. $ARM_PROMPT Every authenticated live case must be runnable with the machine's existing successful claude auth status or codex login status and subscription authentication, without an API key, new secret, separate paid API billing, or interactive login. Exclude modes such as Claude Code --bare when official behavior says they discard subscription credentials and require ANTHROPIC_API_KEY. Use current official primary sources, record access dates, use community guidance only as a hypothesis, and create exactly one research report."
+  SEARCH_PROMPT="$SEARCH_PROMPT Prefer a claim whose expected and competing outcomes can be distinguished from deterministic CLI output, filesystem state, or configuration behavior without depending on a model to reproduce precise timing, simultaneous tool ordering, or probabilistic narration."
   run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
   REPORT="$STAGE_ARTIFACT"
 
-  PLAN_PROMPT="Research report: $REPORT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every authenticated live case must complete with the machine's existing successful claude auth status or codex login status and subscription authentication; do not require an API key, new secret, separate paid API billing, or interactive login, and reject the report as infeasible if its tested mode discards those existing credentials. Bound live probes with the manifest timeout and turn limits; do not add --max-budget-usd because a low currency cap can terminate a valid subscription-backed probe before verification. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Inspect scripts/agent-practice/run-experiment.mjs and make the wrapper accept its exact buildAgentArgs contract; in particular, Codex cases receive --sandbox workspace-write, so a wrapper must not require read-only. If a fake CLI starts asynchronous work needed by verification, wait for its required artifacts with a bounded timeout before the fake CLI exits. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an existing fixture only when it fits without distortion; otherwise create the smallest deterministic self-contained fixture and optional product guidance under fixtures/agent-practice/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
-  PLAN_PROMPT="$PLAN_PROMPT $PROVIDER_CONSTRAINT The verifier must treat every pre-registered conclusive expected or competing outcome as a successful evidence capture, emit an outcome-specific marker for each, and leave the verdict to analysis; it must fail only for inconclusive harness, safety, service, or evidence-integrity conditions. Do not require an exact count of provider result events unless the wrapper first filters nested child events from the single top-level result."
+  PLAN_PROMPT="Research report: $REPORT. Before choosing any generated path, inspect the existing shared artifact inventory at $SHARED_ARTIFACT_SNAPSHOT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every authenticated live case must complete with the machine's existing successful claude auth status or codex login status and subscription authentication; do not require an API key, new secret, separate paid API billing, or interactive login, and reject the report as infeasible if its tested mode discards those existing credentials. Bound live probes with the manifest timeout and turn limits; do not add --max-budget-usd because a low currency cap can terminate a valid subscription-backed probe before verification. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Inspect scripts/agent-practice/run-experiment.mjs and make the wrapper accept its exact buildAgentArgs contract; in particular, Codex cases receive --sandbox workspace-write, so a wrapper must not require read-only. If a fake CLI starts asynchronous work needed by verification, wait for its required artifacts with a bounded timeout before the fake CLI exits. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an origin-tracked existing fixture only when it fits without distortion and do not modify it. Otherwise create the smallest deterministic self-contained fixture under fixtures/agent-practice/: the new manifest id and fixture basename must be identical and end in -YYYYMMDD-HHMM. Never overwrite or reuse an untracked shared artifact path. New product guidance must live under fixtures/agent-practice/guidance/<manifest-id>/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
+  PLAN_PROMPT="$PLAN_PROMPT The verifier must treat every pre-registered conclusive expected or competing outcome as a successful evidence capture, emit an outcome-specific marker for each, and leave the verdict to analysis; it must fail only for inconclusive harness, safety, service, or evidence-integrity conditions. Do not require an exact count of provider result events unless the wrapper first filters nested child events from the single top-level result."
   run_stage plan 2 zenn-agent-plan-practice practice/agent 0 "$PLAN_PROMPT"
   MANIFEST="$STAGE_ARTIFACT"
   validate_generated_manifest
@@ -408,22 +512,19 @@ else
   while ! run_manifest_preflight "$preflight_repair"; do
     if [ "$preflight_repair" -ge "$MAX_AGENT_PREFLIGHT_REPAIRS" ]; then
       if [ "$SCHEDULED" = 1 ]; then
-        log "preflight did not pass after $MAX_AGENT_PREFLIGHT_REPAIRS repairs; another scheduled topic may be tried"
-        exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+        retry_pipeline content "preflight-exhausted" "preflight did not pass after $MAX_AGENT_PREFLIGHT_REPAIRS repairs; another scheduled topic may be tried"
       fi
       die "preflight did not pass after $MAX_AGENT_PREFLIGHT_REPAIRS repairs; evidence: $PREFLIGHT_EVIDENCE"
     fi
     preflight_repair=$((preflight_repair + 1))
-    REPAIR_PROMPT="Research report: $REPORT. The previous manifest $MANIFEST failed the runner's offline fake-CLI preflight before any authenticated experiment. Inspect $PREFLIGHT_EVIDENCE and its sibling per-case preflight logs and preserved preflight-work directory. Repair the same selected claim by creating exactly one corrected safe plan and runner-compatible version 2 manifest. Fix the recorded failure rather than changing the claim or weakening verification. Every authenticated live case must remain runnable with existing subscription authentication only, without an API key, new secret, separate paid API billing, interactive login, or --max-budget-usd. The wrapper must accept the exact arguments built by scripts/agent-practice/run-experiment.mjs, and asynchronous fake-CLI effects required by verification must be durably observable before the fake CLI exits. Preserve credential rejection, zero network and paid requests in preflight, bounded cleanup, strict protected paths, and deterministic competing outcomes. Validate the corrected manifest and return it as the primary artifact."
-    REPAIR_PROMPT="$REPAIR_PROMPT $PROVIDER_CONSTRAINT Preserve outcome-specific success markers for all pre-registered conclusive expected and competing observations; do not turn an honest negative result into a verifier failure."
+    REPAIR_PROMPT="Research report: $REPORT. The previous manifest $MANIFEST failed either the generated-artifact namespace check or the runner's offline fake-CLI preflight before any authenticated experiment. Inspect $PREFLIGHT_EVIDENCE and any sibling per-case preflight logs and preserved preflight-work directory that exist. Repair the same selected claim by creating exactly one corrected safe plan and runner-compatible version 2 manifest. Fix the recorded failure rather than changing the claim or weakening verification. If the evidence reports an artifact path collision or new-fixture naming failure, choose a fresh manifest id and identical fixture basename ending in -YYYYMMDD-HHMM; do not rename or mutate an origin-tracked fixture. Every authenticated live case must remain runnable with existing subscription authentication only, without an API key, new secret, separate paid API billing, interactive login, or --max-budget-usd. The wrapper must accept the exact arguments built by scripts/agent-practice/run-experiment.mjs, and asynchronous fake-CLI effects required by verification must be durably observable before the fake CLI exits. Preserve credential rejection, zero network and paid requests in preflight, bounded cleanup, strict protected paths, and deterministic competing outcomes. Validate the corrected manifest and return it as the primary artifact."
+    REPAIR_PROMPT="$REPAIR_PROMPT Preserve outcome-specific success markers for all pre-registered conclusive expected and competing observations; do not turn an honest negative result into a verifier failure."
     run_stage plan "2-repair-$preflight_repair" zenn-agent-plan-practice practice/agent 0 "$REPAIR_PROMPT"
     MANIFEST="$STAGE_ARTIFACT"
     validate_generated_manifest
   done
 
-  RUN_PROMPT="Experiment manifest: $MANIFEST. Execute it once with the deterministic repository runner. Preserve its redacted evidence and return only the generated execution-log.md as the primary artifact."
-  run_stage run 3 zenn-agent-run-practice logs/agent 0 "$RUN_PROMPT"
-  RUN_LOG="$STAGE_ARTIFACT"
+  run_experiment_direct
 fi
 
 ANALYZE_PROMPT="Execution log: $RUN_LOG. Inspect the manifest and every case's raw metrics, verifier output, and diff. Create exactly one analysis report with one verdict, one next action, and the required editorial brief. A negative or conditional finding may still recommend drafting when it is reproducible and gives the named reader a useful decision."
@@ -432,8 +533,7 @@ ANALYSIS="$STAGE_ARTIFACT"
 ACTION="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.action)' "$STAGE_RESULT")"
 if [ "$ACTION" != draft ]; then
   if [ "$SCHEDULED" = 1 ]; then
-    log "analysis selected action=$ACTION; another scheduled topic may be tried"
-    exit "$AGENT_PIPELINE_RETRYABLE_EXIT"
+    retry_pipeline content "analysis-action-$ACTION" "analysis selected action=$ACTION; another scheduled topic may be tried"
   fi
   die "analysis selected action=$ACTION; an honest article cannot be drafted without a new run"
 fi
@@ -441,7 +541,12 @@ fi
 DRAFT_PROMPT="Analysis: $ANALYSIS. Execution log: $RUN_LOG. Draft exactly one unpublished Japanese Zenn article using the editorial brief and the appropriate article-type structure. Lead with the reader's practical problem and evidence-backed answer. Focus on the selected tested practice and its observed limits, not an unsupported broad ranking or a pipeline-shaped report."
 run_stage draft 5 zenn-agent-draft-article articles 0 "$DRAFT_PROMPT"
 ARTICLE="$STAGE_ARTIFACT"
-bash scripts/check-article.sh "$ARTICLE" --expect-published false || die "draft article check failed"
+if ! bash scripts/check-article.sh "$ARTICLE" --expect-published false; then
+  if [ "$SCHEDULED" = 1 ]; then
+    retry_pipeline system "draft-article-check" "draft article check failed; another scheduled topic may be tried"
+  fi
+  die "draft article check failed"
+fi
 
 round=1
 while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
@@ -451,27 +556,65 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
   VERDICT="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.verdict)' "$STAGE_RESULT")"
   case "$VERDICT" in
     pass)
-      [ "$(rg -c '^blockers: 0$' "$REVIEW" || true)" = 1 ] || die "passing review must declare blockers: 0"
-      [ "$(rg -c '^warnings: 0$' "$REVIEW" || true)" = 1 ] || die "passing review must declare warnings: 0"
+      [ "$(rg -c '^blockers: 0$' "$REVIEW" || true)" = 1 ] \
+        || system_failure "review-pass-contract" "passing review must declare blockers: 0"
+      [ "$(rg -c '^warnings: 0$' "$REVIEW" || true)" = 1 ] \
+        || system_failure "review-pass-contract" "passing review must declare warnings: 0"
       [ "$(rg -c '^editorial_score: [0-9]{1,3}/100$' "$REVIEW" || true)" = 1 ] \
-        || die "passing review must declare exactly one editorial_score: N/100"
+        || system_failure "review-pass-contract" "passing review must declare exactly one editorial_score: N/100"
       EDITORIAL_SCORE="$(sed -nE 's/^editorial_score: ([0-9]{1,3})\/100$/\1/p' "$REVIEW")"
       [ "$EDITORIAL_SCORE" -ge 80 ] && [ "$EDITORIAL_SCORE" -le 100 ] \
-        || die "passing review editorial score must be 80-100, got $EDITORIAL_SCORE"
+        || system_failure "review-pass-contract" "passing review editorial score must be 80-100, got $EDITORIAL_SCORE"
       break
       ;;
     fix)
       REVISION_PROMPT="Article: $ARTICLE. Review: $REVIEW. Analysis: $ANALYSIS. Execution log: $RUN_LOG. Apply every evidence-resolvable integrity and editorial finding, including structural changes needed by the weakest rubric categories. Keep the article unpublished, run deterministic checks, and create the revision log required by the skill. Return the revised article as the primary artifact."
       run_stage revise "7-$round" zenn-agent-revise-article articles 0 "$REVISION_PROMPT"
       ARTICLE="$STAGE_ARTIFACT"
-      bash scripts/check-article.sh "$ARTICLE" --expect-published false || die "revised article check failed"
+      if ! bash scripts/check-article.sh "$ARTICLE" --expect-published false; then
+        if [ "$SCHEDULED" = 1 ]; then
+          retry_pipeline system "revised-article-check" "revised article check failed; another scheduled topic may be tried"
+        fi
+        die "revised article check failed"
+      fi
       ;;
-    rerun|blocker) die "review verdict=$VERDICT requires new evidence: $REVIEW" ;;
-    *) die "unsupported review verdict: $VERDICT" ;;
+    rerun|blocker)
+      if [ "$SCHEDULED" = 1 ]; then
+        retry_pipeline content "review-$VERDICT" "review verdict=$VERDICT requires new evidence; another scheduled topic may be tried"
+      fi
+      die "review verdict=$VERDICT requires new evidence: $REVIEW"
+      ;;
+    *) system_failure "unsupported-review-verdict" "unsupported review verdict: $VERDICT" ;;
   esac
   round=$((round + 1))
 done
-[ "${VERDICT:-}" = pass ] || die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
+if [ "${VERDICT:-}" != pass ]; then
+  if [ "$SCHEDULED" = 1 ]; then
+    retry_pipeline content "review-rounds-exhausted" "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds; another scheduled topic may be tried"
+  fi
+  die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
+fi
+
+if [ -n "${ARTICLE_PIPELINE_SHARED_ROOT:-}" ] && [ -n "${ARTICLE_PIPELINE_ARTIFACT_BASELINE:-}" ] \
+    && [ "$ROOT" != "$ARTICLE_PIPELINE_SHARED_ROOT" ]; then
+  EXPORT_PREFLIGHT="$PIPE_DIR/artifact-export-precheck.stderr"
+  log "artifact export precheck start before publication side effects"
+  set +e
+  node "$ARTIFACT_TOOL" check-sync "$ROOT" "$ARTICLE_PIPELINE_SHARED_ROOT" \
+    "$ARTICLE_PIPELINE_ARTIFACT_BASELINE" 2>"$EXPORT_PREFLIGHT"
+  EXPORT_PREFLIGHT_RC=$?
+  set -e
+  [ ! -s "$EXPORT_PREFLIGHT" ] || sed -n '1,200p' "$EXPORT_PREFLIGHT" >>"$PLOG"
+  if [ "$EXPORT_PREFLIGHT_RC" = 3 ]; then
+    if [ "$SCHEDULED" = 1 ]; then
+      retry_pipeline content "artifact-path-collision" "artifact export precheck found a shared-path collision before PR creation"
+    fi
+    die "artifact export precheck found a shared-path collision before PR creation: $EXPORT_PREFLIGHT"
+  elif [ "$EXPORT_PREFLIGHT_RC" != 0 ]; then
+    system_failure "artifact-export-precheck" "artifact export precheck failed with exit $EXPORT_PREFLIGHT_RC"
+  fi
+  log "artifact export precheck complete"
+fi
 
 PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
 [ "$AUTO_MERGE" = 1 ] && PUBLISH_ARGS+=(--auto-merge) || PUBLISH_ARGS+=(--pr-only)

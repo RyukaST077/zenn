@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Codex Zenn pipeline: research -> practice -> draft -> review/revise -> publication queue PR.
-# By default this matches the Claude pipeline's unattended host access. Run only on a
-# dedicated machine or inside an outer isolation boundary such as a dev container.
+# Codex runs with repository-scoped writes. Stage-specific network access is enabled
+# only where the pipeline contract requires it.
 set -euo pipefail
 
 : "${CODEX_BIN:=codex}"
 : "${CODEX_MODEL:=gpt-5.6-sol}"
 : "${CODEX_REASONING_EFFORT:=high}"
 : "${CODEX_SEARCH:=1}"
-: "${CODEX_SANDBOX_MODE:=danger-full-access}"
+: "${CODEX_SANDBOX_MODE:=workspace-write}"
 : "${MAX_REVIEW_ROUNDS:=5}"
 : "${BASE_BRANCH:=main}"
 : "${MERGE_METHOD:=--squash}"
@@ -44,12 +44,21 @@ while [ "$#" -gt 0 ]; do
 done
 
 case "$MAX_REVIEW_ROUNDS" in *[!0-9]*|0) echo "MAX_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;; esac
-case "$CODEX_SANDBOX_MODE" in
-  workspace-write|danger-full-access) ;;
-  *) echo "CODEX_SANDBOX_MODE must be workspace-write or danger-full-access" >&2; exit 2 ;;
-esac
+[ "$CODEX_SANDBOX_MODE" = "workspace-write" ] \
+  || { echo "CODEX_SANDBOX_MODE must be workspace-write" >&2; exit 2; }
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
+
+# Keep direct Codex invocations equivalent to the scheduled Claude path: run
+# the real pipeline in a detached worktree and export only isolated artifacts
+# back to the shared checkout. The worktree runner sets this flag for the
+# inner invocation, preventing recursion. Dry-runs remain local and do not
+# need a worktree.
+if [ "$DRY_RUN" = 0 ] && [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  exec bash scripts/run-article-pipeline-worktree.sh \
+    --shared-root "$ROOT" -- scripts/auto-publish-codex.sh "$@"
+fi
+
 TS="$(date +%Y%m%d-%H%M%S)"
 if [ -n "$RESUME_DIR" ]; then
   case "$RESUME_DIR" in
@@ -64,6 +73,7 @@ PLOG="$PIPE_DIR/pipeline.log"
 STATE_TOOL="scripts/pipeline-state.mjs"
 RESULT_TOOL="scripts/validate-stage-result.mjs"
 CONTRACT_TOOL="scripts/stage-result-contract.mjs"
+COMPLETION_TOOL="scripts/validate-codex-completion.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
@@ -76,6 +86,42 @@ die() {
 state_get() { node "$STATE_TOOL" get "$STATE" "$1"; }
 state_set() { node "$STATE_TOOL" set "$STATE" "$1" "$2"; }
 is_done() { [ "$(state_get "completed.$1")" = "true" ]; }
+pr_is_merged() {
+  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
+}
+cleanup_merged_pr_branch() {
+  local head remote_ref remote_rc
+  head="$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state,headRefName \
+    --jq 'select(.state == "MERGED") | .headRefName')" \
+    || die "failed to inspect merged PR branch"
+  case "$head" in
+    queue/*) ;;
+    *) die "refusing to delete unexpected merged PR branch: ${head:-<empty>}" ;;
+  esac
+  git check-ref-format --branch "$head" >/dev/null \
+    || die "merged PR returned an invalid branch name: $head"
+
+  set +e
+  remote_ref="$(GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads origin "refs/heads/$head" 2>>"$PLOG")"
+  remote_rc=$?
+  set -e
+  case "$remote_rc" in
+    0)
+      [ -n "$remote_ref" ] || die "remote branch lookup returned no ref for $head"
+      GIT_TERMINAL_PROMPT=0 git push origin --delete "$head" \
+        || die "failed to delete merged remote branch: $head"
+      ;;
+    2) ;;
+    *) die "failed to inspect merged remote branch: $head" ;;
+  esac
+
+  if git show-ref --verify --quiet "refs/heads/$head"; then
+    if git worktree list --porcelain | rg -Fxq "branch refs/heads/$head"; then
+      die "merged local branch is still checked out in a worktree: $head"
+    fi
+    git branch -D "$head" >/dev/null || die "failed to delete merged local branch: $head"
+  fi
+}
 require_artifact() { local value; value="$(state_get "artifacts.$1")"; [ -n "$value" ] && [ -f "$value" ]; }
 invalidate_from() {
   local stage="$1" seen=0 name
@@ -127,8 +173,9 @@ if [ "$DRY_RUN" = 1 ]; then
   review rounds: $MAX_REVIEW_ROUNDS
   base branch: $BASE_BRANCH
   auto merge: $AUTO_MERGE
+  run child env: ASTRO_TELEMETRY_DISABLED=1
   stages: zenn-search-topic -> zenn-plan-practice -> zenn-run-practice -> zenn-draft-article -> zenn-review-article <-> zenn-revise-article -> published:false publication queue -> commit/push -> PR
-  codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox $CODEX_SANDBOX_MODE -C $ROOT --json --output-schema <stage-schema> -o <result> <prompt>
+  codex command: $CODEX_BIN -a never [--search] exec --ephemeral --ignore-user-config --sandbox $CODEX_SANDBOX_MODE -C $ROOT --json --output-schema <stage-schema> -o <final> <prompt>
 EOF
   exit 0
 fi
@@ -144,23 +191,20 @@ command -v rg >/dev/null 2>&1 || die "ripgrep (rg) is required"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not authenticated"
 [ -f "$CONTRACT_TOOL" ] || die "stage result contract tool is missing"
+[ -f "$COMPLETION_TOOL" ] || die "Codex completion validator is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "publication queue helper is missing"
-if [ "$CODEX_SANDBOX_MODE" = "workspace-write" ]; then
-  SANDBOX_PROBE=".codex-sandbox-probe-$$"
-  OUTSIDE_PROBE="$HOME/.codex-sandbox-outside-probe-$$"
+SANDBOX_PROBE=".codex-sandbox-probe-$$"
+OUTSIDE_PROBE="$HOME/.codex-sandbox-outside-probe-$$"
+rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
+if ! "$CODEX_BIN" sandbox -P :workspace -C "$ROOT" sh -c 'touch "$1" || exit 2; if touch "$2" 2>/dev/null; then exit 3; fi' sh "$SANDBOX_PROBE" "$OUTSIDE_PROBE"; then
   rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-  if ! "$CODEX_BIN" sandbox -P :workspace -C "$ROOT" sh -c 'touch "$1" || exit 2; if touch "$2" 2>/dev/null; then exit 3; fi' sh "$SANDBOX_PROBE" "$OUTSIDE_PROBE"; then
-    rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-    die "Codex :workspace sandbox diagnostic failed"
-  fi
-  if [ ! -f "$SANDBOX_PROBE" ] || [ -f "$OUTSIDE_PROBE" ]; then
-    rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-    die "Codex sandbox does not enforce the expected write boundary"
-  fi
-  rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
-else
-  log "WARN: danger-full-access is enabled; generated commands can access the host without sandbox restrictions"
+  die "Codex :workspace sandbox diagnostic failed"
 fi
+if [ ! -f "$SANDBOX_PROBE" ] || [ -f "$OUTSIDE_PROBE" ]; then
+  rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
+  die "Codex sandbox does not enforce the expected write boundary"
+fi
+rm -f "$SANDBOX_PROBE" "$OUTSIDE_PROBE"
 
 LOCK_ROOT="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}"
 LOCK="$LOCK_ROOT/.auto-publish-codex.lock"
@@ -206,8 +250,9 @@ fi
 run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" network="$5" search="$6" prompt="$7"
   local marker="$PIPE_DIR/.$idx-$stage.marker" events="$PIPE_DIR/$idx-$stage.events.jsonl"
-  local result="$PIPE_DIR/$idx-$stage.result.json" schema="$PIPE_DIR/$idx-$stage.schema.json"
-  local seconds rc contract repaired
+  local final="$PIPE_DIR/$idx-$stage.final.json" result="$PIPE_DIR/$idx-$stage.result.json"
+  local schema="$PIPE_DIR/$idx-$stage.schema.json"
+  local seconds rc contract repaired completion_candidate
   STAGE_MARKER="$marker"
   seconds="$(stage_timeout "$stage")"
   node "$CONTRACT_TOOL" schema "$stage" "$schema" || die "$stage result schema generation failed"
@@ -216,31 +261,56 @@ run_stage() {
   # A prior attempt may have produced a valid artifact but populated metadata fields
   # that this stage is not allowed to own. Canonicalize only those forbidden fields;
   # never invent required verdict, slug, or PR metadata values.
-  if [ -f "$marker" ] && [ -f "$result" ]; then
-    repaired="$(node "$CONTRACT_TOOL" normalize "$stage" "$result")" || die "$stage result repair failed"
-    [ -z "$repaired" ] || log "$stage result repair: set $repaired to null"
-    if STAGE_ARTIFACT="$(node "$RESULT_TOOL" "$result" "$allowed" "$marker" "$stage" 2>>"$PLOG")"; then
-      log "$stage recovered existing result: $STAGE_ARTIFACT"
-      return
+  if [ -f "$marker" ] && [ -f "$events" ]; then
+    completion_candidate=""
+    if [ -f "$final" ]; then
+      completion_candidate="$final"
+    elif [ -f "$result" ]; then
+      # Compatibility for pipeline directories created before final/result split.
+      completion_candidate="$result"
     fi
+    if [ -n "$completion_candidate" ] \
+        && node "$COMPLETION_TOOL" "$events" "$completion_candidate" 2>>"$PLOG"; then
+      if [ "$completion_candidate" = "$result" ]; then
+        node -e 'require("node:fs").copyFileSync(process.argv[1], process.argv[2])' "$result" "$final" \
+          || die "$stage final artifact migration failed"
+      fi
+      node -e 'require("node:fs").copyFileSync(process.argv[1], process.argv[2])' "$final" "$result" \
+        || die "$stage result copy failed"
+      repaired="$(node "$CONTRACT_TOOL" normalize "$stage" "$result")" || die "$stage result repair failed"
+      [ -z "$repaired" ] || log "$stage result repair: set $repaired to null"
+      if STAGE_ARTIFACT="$(node "$RESULT_TOOL" "$result" "$allowed" "$marker" "$stage" 2>>"$PLOG")"; then
+        log "$stage recovered existing result: $STAGE_ARTIFACT"
+        return
+      fi
+    fi
+    log "$stage existing result is not a completed final artifact; rerunning the stage"
   fi
 
   touch "$marker"
   local cmd=("$CODEX_BIN" "-a" "never")
   [ "$search" = 1 ] && cmd+=("--search")
   cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "$CODEX_SANDBOX_MODE")
-  [ "$CODEX_SANDBOX_MODE" != "workspace-write" ] || cmd+=("-c" "sandbox_workspace_write.network_access=$network")
+  cmd+=("-c" "sandbox_workspace_write.network_access=$network")
   cmd+=("-c" "model_reasoning_effort=\"$CODEX_REASONING_EFFORT\"")
   [ -n "$CODEX_MODEL" ] && cmd+=("--model" "$CODEX_MODEL")
-  cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result")
-  cmd+=("Use \$$skill. $prompt The effective Codex sandbox mode for every pipeline stage, including run, is $CODEX_SANDBOX_MODE. If it is danger-full-access, override any workspace-write assumption in the skill: real-browser and Playwright verification are allowed, with a capability gate that stops rather than infers results when browser launch fails. Do not ask questions. Obey AGENTS.md. Your final response must be only the schema-conforming stage result JSON. When status is \"ok\", set \"reason\" to an empty string; use \"reason\" only when status is \"abort\". When status is \"abort\", set \"artifact\" to an empty string and put the precise cause in \"reason\". $contract")
+  cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$final")
+  cmd+=("Use \$$skill. $prompt The effective Codex sandbox mode for every pipeline stage is workspace-write. Do not ask questions. Obey AGENTS.md. Never change HOME or CODEX_HOME. In the run stage, preserve the inherited ASTRO_TELEMETRY_DISABLED=1 value and use documented product-specific opt-out variables before invoking any other tool that would persist telemetry or preferences outside the run workspace. Your final response must be only the schema-conforming stage result JSON. When status is \"ok\", set \"reason\" to an empty string; use \"reason\" only when status is \"abort\". When status is \"abort\", set \"artifact\" to an empty string and put the precise cause in \"reason\". $contract")
   log "$stage start (timeout=${seconds}s, skill=$skill)"
   set +e
-  "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
+  if [ "$stage" = "run" ]; then
+    ASTRO_TELEMETRY_DISABLED=1 "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
+  else
+    "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
+  fi
   rc=$?
   set -e
   [ "$rc" != 124 ] || die "$stage timed out; events: $events"
   [ "$rc" = 0 ] || die "$stage failed with exit $rc; events: $events"
+  node "$COMPLETION_TOOL" "$events" "$final" \
+    || die "$stage Codex completion/final-artifact gate failed: events=$events final=$final"
+  node -e 'require("node:fs").copyFileSync(process.argv[1], process.argv[2])' "$final" "$result" \
+    || die "$stage result copy failed"
   repaired="$(node "$CONTRACT_TOOL" normalize "$stage" "$result")" || die "$stage result normalization failed"
   [ -z "$repaired" ] || log "$stage result normalization: set $repaired to null"
   STAGE_ARTIFACT="$(node "$RESULT_TOOL" "$result" "$allowed" "$marker" "$stage")" || die "$stage result contract failed: $result"
@@ -316,6 +386,7 @@ SLUG="$(basename "$ARTICLE" .md)"
 if ! is_done pr; then
   REVIEW="$(state_get artifacts.review)"
   QUEUE_SUMMARY="$(AGENT_PIPELINE_BASE_BRANCH="$BASE_BRANCH" AGENT_PIPELINE_MERGE_METHOD="$MERGE_METHOD" \
+    AGENT_PIPELINE_OUTER_AUTO_MERGE="$AUTO_MERGE" \
     bash scripts/agent-practice/enqueue-reviewed-article.sh \
       --article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR" \
       --review-style codex --pr-only)" || die "publication queue helper failed"
@@ -330,13 +401,18 @@ fi
 
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   # PRのマージは公開ではなく、published:falseの記事を公開キューへ追加する。
-  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch; then
+  if pr_is_merged; then
+    log "PRはすでにマージ済み。マージ成功として処理を継続する"
+  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch; then
     log "auto-merge scheduled (adds the unpublished article to the queue after checks)"
   elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch; then
     log "PR merged immediately; unpublished article added to the queue"
+  elif pr_is_merged; then
+    log "マージコマンドは失敗したが、GitHub上ではマージ済み。成功として処理を継続する"
   else
     die "auto-merge setup failed"
   fi
+  cleanup_merged_pr_branch
   state_set completed.merge true
 fi
 

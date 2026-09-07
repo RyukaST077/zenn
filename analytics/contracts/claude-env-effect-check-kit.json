@@ -1,0 +1,40 @@
+{
+  "slug": "claude-env-effect-check-kit",
+  "topics": [
+    "claudecode",
+    "cli",
+    "aiagent",
+    "environment",
+    "debug"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 50,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:33:34.134Z",
+    "contract": {
+      "targetReader": "Claude Code を環境変数で制御しようとしていて、設定した値が本当に効いているか確かめられていない運用者",
+      "readerDecision": "設定した環境変数に依存した設計を進めてよいか、確認できないものとして扱うかを決められる",
+      "takeaway": "依存なし1ファイルの差分チェック（同じプロンプトを環境変数の有無だけ変えて2回走らせ、init の全フィールドと result.modelUsage と stderr を突き合わせて変化の有無を exit code で返す）と、変数ごとの確認手段の対応表",
+      "verificationItems": [
+        "CLAUDE_CODE_SUBAGENT_MODEL が model: で pin された subagent のモデルを変えるか（result.modelUsage で観測）",
+        "CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1 を足すと pin に勝つか",
+        "CLAUDE_CODE_TOOL_MEMORY_LIMIT の効果が init / stderr / --debug のいずれかに現れるか",
+        "CLAUDE_CONFIG_DIR が認証・モデル既定・skills・slash_commands・memory_paths のどこまでを移すか",
+        "--debug api にプロンプトキャッシュの cache_control / cache_read が出るか、stream-json の result.usage に出るか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Claude Code の環境変数はドキュメントに一覧があるが、設定が反映されたことを確認する手段は記載がない。実測すると 2.1.261 で CLAUDE_CODE_SUBAGENT_MODEL は pin 済み subagent に対して単独では無効で、エラーも警告も出ない。CLAUDE_CODE_TOOL_MEMORY_LIMIT は --debug を付けても出力に memory が0件で、確認手段自体が存在しない。--debug api にはプロンプトキャッシュの情報が1件も出ず、必要な cache_read_input_tokens は stream-json の result.usage 側にある。analytics/topic-feedback.md では claudecode の市場コホートで asset 型が平均91.5いいね・最大664と最上位にある。"
+    }
+  }
+}

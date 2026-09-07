@@ -46,6 +46,7 @@ TMP_BASE="${TMPDIR:-/tmp}"
 RUN_PARENT="$(mktemp -d "$TMP_BASE/zenn-article-pipeline.XXXXXX")" || exit 1
 RUN_WORKTREE="$RUN_PARENT/worktree"
 SNAPSHOT="$RUN_PARENT/artifacts-before.json"
+SHARED_SNAPSHOT="$RUN_PARENT/shared-artifacts-before.json"
 WORKTREE_ACTIVE=0
 PRESERVE_WORKTREE=0
 cleanup() {
@@ -54,7 +55,7 @@ cleanup() {
     WORKTREE_ACTIVE=0
   fi
   if [ "$PRESERVE_WORKTREE" = 0 ]; then
-    rm -f "$SNAPSHOT"
+    rm -f "$SNAPSHOT" "$SHARED_SNAPSHOT"
     rmdir "$RUN_PARENT" 2>/dev/null || true
   else
     echo "[pipeline-worktree] preserved after artifact collision: $RUN_WORKTREE" >&2
@@ -66,14 +67,25 @@ git -C "$SHARED_ROOT" worktree add --detach "$RUN_WORKTREE" "origin/$BASE_BRANCH
   || { echo "failed to create detached pipeline worktree" >&2; exit 1; }
 WORKTREE_ACTIVE=1
 
-# The scheduler controller is local configuration. Overlay only its bounded
-# control scripts so this isolation change takes effect before the next commit;
-# article inputs, skills, and repository content still come from origin/base.
+# The scheduler controller is local configuration. Overlay its bounded control
+# scripts and the Codex pipeline's directly coupled completion/safety contracts
+# so an uncommitted controller is never paired with stale origin/base behavior.
 for controller in \
   "$PIPELINE_SCRIPT" \
   scripts/safe-sync-main.sh \
   scripts/agent-practice/enqueue-reviewed-article.sh \
-  scripts/agent-practice/publish-reviewed-article.sh
+  scripts/agent-practice/publish-reviewed-article.sh \
+  scripts/agent-practice/run-experiment.mjs \
+  scripts/analytics/next-arm.mjs \
+  scripts/analytics/zenn-metrics-lib.mjs \
+  scripts/isolated-artifacts.mjs \
+  scripts/validate-agent-generated-paths.mjs \
+  scripts/validate-agent-run-result.mjs \
+  scripts/validate-codex-completion.mjs \
+  .agents/skills/zenn-plan-practice/SKILL.md \
+  .agents/skills/zenn-plan-practice/references/plan-template.md \
+  .agents/skills/zenn-run-practice/SKILL.md \
+  .agents/skills/zenn-run-practice/references/execution-log-template.md
 do
   if [ -f "$SHARED_ROOT/$controller" ]; then
     mkdir -p "$RUN_WORKTREE/$(dirname "$controller")"
@@ -93,6 +105,8 @@ if [ "$IMPORT_ARTIFACTS" = 1 ]; then
   node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" import "$SHARED_ROOT" "$RUN_WORKTREE" \
     || { echo "failed to import resume artifacts" >&2; exit 1; }
 fi
+node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$SHARED_ROOT" "$SHARED_SNAPSHOT" \
+  || { echo "failed to snapshot shared artifacts" >&2; exit 1; }
 node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$RUN_WORKTREE" "$SNAPSHOT" \
   || { echo "failed to snapshot pipeline artifacts" >&2; exit 1; }
 
@@ -103,6 +117,8 @@ set +e
   export ARTICLE_PIPELINE_ISOLATED_WORKTREE=1
   export ARTICLE_PIPELINE_SHARED_ROOT="$SHARED_ROOT"
   export ARTICLE_PIPELINE_LOCK_ROOT="$SHARED_ROOT"
+  export ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT="$SHARED_SNAPSHOT"
+  export ARTICLE_PIPELINE_ARTIFACT_BASELINE="$SNAPSHOT"
   bash "$RUN_WORKTREE/$PIPELINE_SCRIPT" "$@"
 )
 PIPELINE_RC=$?
@@ -113,6 +129,10 @@ node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" sync "$RUN_WORKTREE" "$SHARED
 SYNC_RC=$?
 set -e
 if [ "$SYNC_RC" != 0 ]; then
+  if [ "$SYNC_RC" = 3 ] && [ "$PIPELINE_RC" = "${AGENT_PIPELINE_RETRYABLE_EXIT:-20}" ]; then
+    echo "[pipeline-worktree] retryable attempt had an artifact collision; isolated artifacts were discarded" >&2
+    exit "$PIPELINE_RC"
+  fi
   PRESERVE_WORKTREE=1
   echo "[pipeline-worktree] artifact export failed; shared files were not overwritten" >&2
   exit "$SYNC_RC"

@@ -1,0 +1,41 @@
+{
+  "slug": "claude-deny-regression-kit",
+  "topics": [
+    "claudecode",
+    "security",
+    "cli",
+    "ci",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 50,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T03:19:31.850Z",
+    "contract": {
+      "targetReader": "permissions.deny でシークレットや本番設定を守りながら claude -p を CI や無人ランナーで回していて、Claude Code を上げるたびに deny がまだ効いているか確認できていないメンテナ",
+      "readerDecision": "Claude Code のバージョンを上げてよいかを、changelog の記述ではなく自分の環境で実行した回帰チェックの exit code で決められる",
+      "takeaway": "依存なし1ファイルの回帰チェックキット（3経路4チェックを control/treatment で回し、tool_use_id で拒否をツール呼び出しに対応づけ、Write のみディスク上のバイト列で判定、約30秒・$0.13、回帰は exit 1・判定不能は exit 2）と、2.1.261 実測の対応表",
+      "verificationItems": [
+        "許可リスト外コマンドへの < リダイレクト（sort < ./secret.txt）が Read deny に阻まれるか。deny 無しの control では canary が実際にツール結果へ出ること",
+        "read-skip 対象モデルからの未読ファイル Write 上書きが阻まれ、ディスク上のバイト列が不変か。かつ Write が実際に呼ばれたうえで拒否されているか",
+        "探索起点引数が symlink の Grep に Read(...) deny が適用されるか（Glob とは独立に判定する）",
+        "探索起点引数が symlink の Glob に Read(...) deny が適用されるか（Grep とは独立に判定する）",
+        "期待したツールが1回も呼ばれなかった場合に、合格でも回帰でもなく判定不能（exit 2）として扱われるか",
+        "Write の拒否が permission_denials に出ず tool_result のみに現れること（拒否が権限層とツール層の2箇所で起きること）"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "changelog 2.1.251（Grep/Glob が symlink 経由のファイルに Read(...) deny を適用していなかった）、2.1.257（Bash のリダイレクトを使った回避策）、2.1.228（未読ファイルへの Write 緩和と Read deny の Edit/Write 適用）は、いずれも『修正した』と記すだけで再現条件も確認手順も書いていない。permissions ドキュメントも symlink 解決の一般原則までで、探索起点引数そのものが symlink のケースを名指ししていない。さらに実測すると Write の拒否は permission_denials に一切出ず、権限層のイベントだけを見る CI は Write 経路を『拒否されていない』と誤報する。analytics/topic-feedback.md では claudecode の市場コホートで asset 型が平均91.5いいね・最大664と最上位で、『そのまま置ける実行可能な資産』の需要が測定できている。"
+    }
+  }
+}

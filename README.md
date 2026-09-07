@@ -22,6 +22,16 @@ Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆
 /queue          → queue/<slug> + PR                published:falseのまま公開キューへ追加
 ```
 
+このパイプラインの**上流**に、テーマ選定を継続的に改善するループがある。
+公開後の実績と市場を毎日観測し、選定方針を更新していく
+→ [テーマ選定の継続的改善ループ](#テーマ選定の継続的改善ループ)。
+
+```
+Zenn公開API → analytics/            観測（自分の実績＋市場ベースライン）
+            → strategy/             選定方針（人間がPRでマージしたときだけ変わる）
+            → /search-topic が読む  → 記事契約を発行 → 後工程が執行
+```
+
 ## auto-publish.sh の使い方
 
 ### 前提
@@ -32,7 +42,7 @@ Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆
 | `gh` CLI | PR作成・自動マージに使用（無くても compare URL のフォールバックあり） |
 | `npm install` 済み | zenn-cli / playwright（run-practice がスクショ取得に使用） |
 | `coreutils`（推奨） | macOS には `timeout` が無い。`brew install coreutils` で `gtimeout` を入れると段ごとのタイムアウトが有効になる（無いと警告のうえタイムアウト無しで実行） |
-| クリーンな作業ツリー | 追跡ファイルに未コミット変更があると開始時に中止する |
+| Git worktree と origin | 直接実行でも一時worktreeを作成するため、共有ツリーの未コミット変更は保持される |
 
 > ⚠ **権限について**: headless 実行では許可プロンプトに応答できないため、既定で
 > `--permission-mode bypassPermissions` を使う。run-practice は調査対象の任意コードを
@@ -179,9 +189,12 @@ Claude 版との主な違い:
   機械検証する。禁止されたmetadataだけが原因で前回結果が止まった場合は、必須値を捏造せず
   `null`へ正規化して既存成果物を再検証する（成功時は `reason` を空にする決まり。経緯は
   `knowledge/2026-07-11-codex-stage-result-empty-reason-contract.md`）
-- 実行は既定で `--sandbox danger-full-access` を使う。専用環境または外側の隔離境界でのみ実行する。
-  `CODEX_SANDBOX_MODE=workspace-write` を指定した場合は、起動時に書き込み境界を診断し、
-  search / run だけネットワークを許可する
+- 実行は `--sandbox workspace-write` に固定し、起動時にリポジトリ外への書き込み拒否を診断する。
+  search / run だけネットワークを許可し、`danger-full-access` は受け付けない
+- run段には `ASTRO_TELEMETRY_DISABLED=1` を強制的に継承させる。計画・実行スキルも、製品固有の
+  telemetry／設定永続化のopt-outを最初のコマンドより前に要求し、`HOME`や`CODEX_HOME`は変更しない
+- 各段は終了コード0に加え、JSONL内の単一`turn.completed`、`turn.failed`不在、`-o`と最後の
+  completed `agent_message`の一致を検査する。途中メッセージからstage resultを復元しない
 - `coreutils`（`timeout` / `gtimeout`）が**必須**（Claude 版は警告のみだが Codex 版は無いと開始しない）
 
 ### 前提
@@ -198,6 +211,7 @@ Claude 版との主な違い:
 
 ```bash
 # 1サイクル実行（published:falseの公開キュー追加PRまで）
+# 共有ツリーの変更を保持したまま、一時worktree内で実行
 bash scripts/auto-publish-codex.sh
 
 # 公開キュー追加PRの自動マージまで行う（記事はpublished:false）
@@ -226,6 +240,7 @@ bash scripts/auto-publish-codex.sh --dry-run
 | `CODEX_MODEL` | 全段のモデル（空 = CLI の既定） | `gpt-5.6-sol` |
 | `CODEX_REASONING_EFFORT` | 全段の reasoning effort | `high` |
 | `CODEX_SEARCH` | `1` なら search 段で `--search`（Web検索）を有効化 | `1` |
+| `CODEX_SANDBOX_MODE` | Codex sandbox。安全境界を弱める値は拒否 | `workspace-write`固定 |
 | `MAX_REVIEW_ROUNDS` | `--max-rounds` と同じ | `5` |
 | `BASE_BRANCH` | PR の base ブランチ | `main` |
 | `MERGE_METHOD` | 自動マージ方式（`--merge` でマージコミット） | `--squash` |
@@ -243,7 +258,8 @@ logs/codex-pipeline-<日時>/        ← このパイプライン実行の記録
 ├── pipeline.log                   ← 進行ログ（何をいつ実行したか）
 ├── state.json                     ← 段ごとの完了状態と成果物パス（resume が読む）
 ├── 1-search.events.jsonl          ← 各段の codex イベントストリーム（失敗調査はここを見る）
-├── 1-search.result.json           ← 各段の stage result（契約検証の対象）
+├── 1-search.final.json            ← `-o`が保存する不変の最終メッセージ（completion gate対象）
+├── 1-search.result.json           ← finalのコピー。禁止metadataだけを正規化してstage契約を検証
 └── ...
 ```
 
@@ -257,17 +273,18 @@ bash scripts/auto-publish-codex.sh --resume logs/codex-pipeline-20260710-232528 
 
 resume は `state.json` を読み、完了済みの段をスキップして失敗した段からやり直す。
 `--auto-merge` は resume 時にも付け直す必要がある（エラー表示の resume コマンドをそのまま使えば付いてくる）。
+既存stage resultを再利用する場合も、対応するJSONLと`-o`がcompletion gateを通ることが必要。
+安全停止後に実践計画を修正した場合は、証拠の意味を変えないため旧runをresumeせず、新しい計画・runとして実行する。
 
 ### 定期実行（launchd）
 
-`scripts/auto-publish-codex-launchd.sh` が launchd 用ラッパー（ログは `logs/launchd/` に出力、
-引数は環境変数 `CODEX_AP_ARGS` で渡す。例: `CODEX_AP_ARGS="--auto-merge"`）。
+`scripts/auto-publish-codex-launchd.sh` が launchd 用ラッパー（ログは `logs/launchd/` に出力）。
+自動実行は既定で `--auto-merge` を使う。人間の確認を挟む場合だけ
+`CODEX_AP_ARGS="--pr-only"` を指定する。
 
 > **Zenn の投稿数レートリミット**: Zenn の正確な上限判定は非公開。そのためこのリポジトリは
 > `config/zenn-publish-queue.json` で直近24時間を最大4件として扱い、先頭の記事だけを
 > 公開する。公開できなかった記事は6時間空けて再試行し、公開APIで確認できるまで次へ進まない。
-> ただし再試行は `maxAttempts`（既定3回）で打ち切る。Zennがデプロイを受け付けたまま記事を
-> HTTP 403で配信しない場合、その記事は公開APIに永久に現れず、打ち切りが無いと後続が止まる。
 
 ## Zenn公開キュー
 
@@ -288,15 +305,10 @@ bash scripts/zenn-publish-queue.sh
 ワーカーは次の順で動く。
 
 1. `https://zenn.dev/api/articles?username=clopy&order=latest` から直近24時間の公開数を数える
-2. `maxPublicationsPer24Hours` に達していれば何もせず待つ
+2. 2件以上なら何もせず待つ
 3. 枠があれば先頭記事だけを `published: true` にしてPRをマージする
 4. 次回実行で公開APIに記事があればキューから削除する
 5. 見つからなければ6時間の間隔を空け、キュー状態の更新pushでZennデプロイを再試行する
-6. `maxAttempts` 回試しても公開APIに現れない記事は `blocked` へ退避し、先頭を次の記事へ進める
-
-`blocked` に入った記事は `articles/<slug>.md` も `published: true` のまま残るので、Zenn側の
-状態を人が確認してから対応する。原因を直して再投稿する場合は、`blocked` から該当エントリを
-削除し、`published: false` に戻してから `enqueue` し直す（blockedのままでは `enqueue` は失敗する）。
 
 `config/launchd/com.zenn.publish-queue.plist` はこのワーカーを1時間ごとに実行する設定で、ログは
 `logs/launchd/zenn-publish-queue-*.log` に残る。記事作成側はキュー残量に関係なく毎朝動き、
@@ -424,6 +436,125 @@ researchから安全に再始動する。リセット時刻を解釈できない
 ```
 
 各スキルは引数省略時「最新の成果物」を自動選択する。詳細は各 `.claude/skills/<name>/SKILL.md` を参照。
+
+## テーマ選定の継続的改善ループ
+
+「どのテーマで書けば読まれるか」を、観測 → 方針 → 記事 → 再観測で回す仕組み。
+設計の根拠と読み方は [docs/analytics-feedback-loop.md](docs/analytics-feedback-loop.md)。
+
+### なぜ入れたか（2026-09-05 時点の実測）
+
+| 観測 | 値 |
+|---|---|
+| 公開記事 | 57本 |
+| いいね 合計 / 平均 / 最大 | 42 / 0.74 / 3 |
+| 5いいね以上 | **0本** |
+| 公開ペース | 2026-07: 20本 / 2026-08: 31本（頻度は足りている） |
+| 市場（`claudecode` 新着48本） | 中央値 **0** いいね / 0いいねが60% / p90=4 / 5+到達 6% |
+
+自分の平均は市場の新着中央値を下回ってはいない。問題は**裾（上位層）に一度も入れていない**こと。
+主因はカテゴリ選択ではなく、「単一の境界条件が成立するかを1記事にしていて、読者の持ち帰りが無く
+対象読者が極小になっている」こと。
+
+### ファイル構成
+
+| パス | 役割 | 書き換える主体 |
+|---|---|---|
+| `strategy/topic-selection-policy.json` | **正式な選定方針**（唯一の権威） | 人間がPRをマージしたときだけ |
+| `strategy/decision-log.md` | なぜそう決めたかの履歴 | 人間 / スクリプトは提案履歴の追記のみ |
+| `strategy/proposals/*.md` | 方針変更の提案 | `evaluate-policy.mjs` |
+| `strategy/article-contract.md` | 記事契約のスキーマ | 人間 |
+| `analytics/contracts/<slug>.json` | **契約の正本**（不変）。台帳が失われても復元できる | `register-article.mjs` |
+| `analytics/article-ledger.jsonl` | 契約＋APIから導出される台帳（D7/D30観測＋市場内順位） | `register-article.mjs` / `collect-zenn-metrics.mjs` |
+| `analytics/market-index.json` | トピック×記事年齢の他者いいね分布 | `collect-zenn-metrics.mjs` |
+| `analytics/topic-feedback.md` | 観測レポート（**方針ではない**） | `build-topic-feedback.mjs` |
+| `experiments/EXP-*.json` | 事前登録した実験 | 人間 |
+
+観測が方針を自動で書き換えることはない。傾向は提案を経由し、**人間のPRマージで初めて方針になる**
+（publish PR と同じゲート方式）。
+
+### 使い方
+
+```bash
+# 日次: 収集（自分＋市場の最新ページ）→ 観測レポート更新
+bash scripts/auto-improve-topics.sh
+
+# 週1（必須）: 市場を46日分まで遡る。これをやらないとD30順位が永久に出ない
+bash scripts/auto-improve-topics.sh --deep
+
+# 実験の判定 → policy へ実差分を書いて提案PR（マージが承認ゲート）
+bash scripts/auto-improve-topics.sh --evaluate --pr
+
+# 個別に実行
+bash scripts/analytics/fetch-zenn-metrics.sh          # API取得＋台帳・市場インデックス更新
+node scripts/analytics/build-topic-feedback.mjs       # analytics/topic-feedback.md 生成
+node scripts/analytics/evaluate-policy.mjs            # 実験判定＋提案生成
+node scripts/analytics/register-article.mjs --from-research research/search-topic-<日時>.md
+```
+
+`register-article.mjs` は**公開前**に記事契約を登録する。deprecated な価値型・検証3件未満・
+持ち帰りの無い契約・`experimentId` の省略は exit 2 で棄却される（テーマ選定のゲート）。
+
+> ⚠ **`--deep` は必須**。`claudecode` は1日に約24本公開されるため、最新ページだけを毎日取っても
+> 記事は7日・30日になる前にページから流れて消える。深いスイープが無いと `d7-14` / `d30-45` の
+> 市場コホートが永久に空になり、**主指標のD30順位が計算できない**。launchd は日曜に `--deep` を付ける。
+
+launchd 常駐（日次4:20 / 日曜は `--deep` / 毎月1日は判定つき）:
+
+```bash
+cp config/launchd/com.zenn.improve-topics.plist ~/Library/LaunchAgents/
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.zenn.improve-topics.plist
+```
+
+### 判定指標（4層）
+
+| 層 | 指標 | 用途 |
+|---|---|---|
+| 品質ゲート | 記事契約の充足 | 公開可否。成果指標ではない |
+| 短期（主指標） | D30の市場コホート内パーセンタイル中央値 / 上位25%到達率 | 方針の続行判断 |
+| 劣化検知 | 0いいね率 / 非ゼロ率 / 平均いいね | 明確な悪化の検出のみ |
+| 最終成果 | D30で上位10% / 5いいね以上 | 長期確認。昇格の必須条件にしない |
+
+**平均いいねを目標にしない。** ゼロ過剰・裾が重い分布では1本の当たりが平均を支配する。
+**hitが1本出ても勝ち型の証拠にしない。** 市場のhit率は約6%で、12本での期待hit数は0.7本。
+出ても偶然、出なくても偶然。
+
+### 群（arm）と未公開ドラフトの扱い
+
+| arm | experimentId | 用途 |
+|---|---|---|
+| `historical-control` | `null` | 方針導入前に公開済みの57本。ループが自動で付ける歴史的対照群 |
+| `B-payload` | `EXP-001` | 新方針で選定した実験対象（`asset` / `migration` / `quantified`） |
+| `exploration` | `null` | 探索枠（`stage: candidate` の価値型） |
+| `legacy-transition` | `null` | 方針導入前の未公開ドラフトを束ね直した記事。**実験判定には使わない** |
+
+方針導入時点で `published: false` のドラフトが33本あり、本文を読んで分類した結果
+**24本（73%）が deprecated な型**
+（「〜検証した」「〜話」）。**そのまま公開しない**。同じ読者判断に寄与するものを3〜5件束ね、
+`asset` / `migration` / `decision` に再設計して新しい slug・新しい契約で出す
+（詳細は [strategy/article-contract.md](strategy/article-contract.md)）。
+
+### 到達と反応の分離（GA4）
+
+Zenn のユーザー別 GA 設定で `zenn.dev/<user>` 配下に自分の測定IDが入るので、
+**自分の記事のページ到達だけ**は GA4 Data API から取れる。これで「誰も来ていない」と
+「来たが刺さらない」が割れる。セットアップと、GA4データの扱いで守っている規則は
+[docs/analytics-feedback-loop.md](docs/analytics-feedback-loop.md) の「GA4 の接続」を参照。
+
+記事別の実数は `analytics/private/`（git管理外）にのみ書き、コミットされる
+`analytics/topic-feedback.md` には帯と本数だけを出す。このリポジトリは公開なので。
+
+### 取れないもの
+
+- **Zennの露出（インプレッション）**: 非公開。GA4で取れるのは「到達」であって
+  フィードや検索結果での表示回数ではない。到達の低さの原因をテーマとタイトルに分けられない。
+- **過去記事のD30いいね率**: D30到達は復元できるが、D30時点のいいね数は復元できない。
+  過去分は到達の分析にのみ使う。
+- **窓ごとのユニークユーザー数**: 日次 `totalUsers` の合計は user-days で、
+  ユニークユーザー数ではない。
+
+GA4を見て何が出たら診断を撤回するかは、データを見る前に
+[experiments/EXP-GA4-DIAG-001.json](experiments/EXP-GA4-DIAG-001.json) に判定線ごと固定してある。
 
 ## 開発トラブルのナレッジループ
 

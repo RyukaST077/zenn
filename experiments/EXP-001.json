@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "id": "EXP-001",
+  "title": "単一境界条件の検証報告から、持ち帰れる資産型へ切り替える",
+  "status": "active",
+  "registeredAt": "2026-09-05",
+  "policyVersion": "2026-09-05.1",
+  "hypothesis": "読者が持ち帰れる成果物を中心に据えた記事（asset / migration / quantified 型）は、単一の境界条件を検証して報告する記事より、同時期・同トピック市場の上位層に入りやすい。",
+  "design": {
+    "type": "historical-control",
+    "whyNotAB": "同時期A/Bにするには現行型にも6〜8本を割く必要があるが、現行型は57本すべてが5いいね未満で、追加投資する理由がない。よって新規記事は全て新方針に振り、過去57本を歴史的対照群として使う。",
+    "control": {
+      "arm": "A-historical",
+      "source": "analytics/article-ledger.jsonl の classification.arm == \"historical-control\"",
+      "n": 57,
+      "observed": {
+        "meanLikes": 0.74,
+        "nonZeroShare": 0.56,
+        "hitShare5plus": 0.0,
+        "maxLikes": 3
+      },
+      "caveat": "この57本はD30値が復元できないため、現在値（生涯累積）を保守的な上限として扱う。対照群に有利な向きの誤差なので、新方針が勝った場合の結論は強くなる。"
+    },
+    "treatment": {
+      "arm": "B-payload",
+      "n": 12,
+      "allocation": "valueArchetype が asset / migration / quantified のいずれか。順序は固定せず、3型を混ぜて出す。契約で experimentId と arm を明示したものだけが対象（暗黙の割り付けはしない）。",
+      "constraints": [
+        "投稿頻度は対照期間と同水準（月20〜30本ペースを維持）",
+        "article_type は tech に固定",
+        "primaryTopic は marketWatch.topics 内から選ぶ",
+        "1本あたりの検証項目は3つ以上（契約で強制）",
+        "既存の未公開ドラフトを書き直した記事はこの実験に入れない（arm: legacy-transition で別群にする）"
+      ],
+      "valueArchetypes": [
+        "asset",
+        "migration",
+        "quantified"
+      ]
+    },
+    "excludedFromExperiment": {
+      "legacy-transition": "方針導入前に書かれた未公開ドラフト33本のうち、deprecated 型の24本を束ね直した記事（計画: strategy/legacy-transition-plan.md）。新policyで選定されていないのでB群に入れると仮説を検証していない記事で判定が汚れる。arm: \"legacy-transition\"、experimentId: null で登録する。",
+      "exploration": "探索枠（stage: candidate の価値型）。arm: \"exploration\"、experimentId: null で登録する。"
+    }
+  },
+  "confounders": [
+    "Zenn全体のトレンド変動・季節性 → 同時期・同トピック市場コホートとの相対順位で補正する",
+    "トピック構成の偏り → primaryTopic 別にも集計する",
+    "到達（PV）と反応（いいね率）が分離できていなかった → GA4接続後は到達を診断指標として併読する。ただし本実験の判定指標は市場パーセンタイルのままで、GA4は判定に使わない（EXP-GA4-DIAG-001 で別に事前登録）。"
+  ],
+  "evaluation": {
+    "primary": {
+      "metric": "D30観測に凍結された市場コホート内パーセンタイル（中央値）",
+      "comparedAgainst": "対照群ではなく市場そのもの。ループ導入前の57本はD30時点の市場コホートが存在せず順位を復元できないため、順位の比較対象は市場中央値（50）と後続バッチにする。対照群は0いいね率などの劣化検知にのみ使う。",
+      "cohortRequirement": "順位を判断に使うには市場コホート n>=50、昇格根拠に使うには n>=100。",
+      "supporting": [
+        "上位25%到達率",
+        "上位10%到達率",
+        "5いいね以上の到達率"
+      ]
+    },
+    "degradation": {
+      "metric": "0いいね率（D30実測ぶんのみ）",
+      "stopRule": "通常の停止は、B群12本のD30実測が揃ったうえで「0いいね率が対照群より20ポイント以上悪化」かつ「D30市場順位中央値が50未満」の両方を満たしたときだけ。片方だけでは十数本のノイズに収まる。",
+      "catastrophicStopRule": "最初の6本が全て0いいねで、B群に非ゼロが1本も無い場合は12本を待たずに停止する。"
+    },
+    "minimumObservationDays": 30,
+    "verdicts": {
+      "continue": "B群12本のD30パーセンタイル中央値が対照群より悪化していない。→ 方針を続行（昇格ではない）",
+      "hold": "差が読み取れない。→ 判定保留。次の12本を同じ方針で出す",
+      "regress": "劣化検知の stopRule に触れた。→ 方針を見直すPRを出す"
+    },
+    "promotionToPreferred": {
+      "description": "価値型を policy の stage: preferred に上げる条件。1バッチでは上げない。未公開・D30未実測・コホート不足の記事は本数に数えない。",
+      "conditions": [
+        "公開済み・D30実測済み・市場コホート n>=100 で順位が出た記事が、その価値型で24本以上ある",
+        "そのうち市場上位10%の記事が、異なる2バッチ（batchId）から出ている",
+        "上位25%到達率が市場の自然発生率25%を下回っていない"
+      ]
+    }
+  },
+  "statisticalNote": "市場の5いいね以上到達率は約6%。12本のバッチで期待hit数は0.7本で、1本以上出る確率は約54%。したがって『hitが1本出た』は勝ち型の証拠にならず、『0本だった』も失敗の証拠にならない。hitは追試の候補を示す発見シグナルとしてのみ扱い、有意差を主張しない。"
+}

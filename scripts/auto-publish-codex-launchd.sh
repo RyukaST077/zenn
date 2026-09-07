@@ -7,7 +7,9 @@ cd "$REPO" || exit 1
 mkdir -p "$REPO/logs/launchd"
 find "$REPO/logs/launchd" -type f -name 'auto-publish-codex-*.log' -mtime +30 -delete 2>/dev/null || true
 LOG="$REPO/logs/launchd/auto-publish-codex-$(date +%Y%m%d-%H%M%S).log"
-ARGS="${CODEX_AP_ARGS:-}"
+# Scheduled Codex runs should merge the publication PR automatically after
+# GitHub checks pass. Set CODEX_AP_ARGS=--pr-only for an explicit review gate.
+ARGS="${CODEX_AP_ARGS:---auto-merge}"
 PIPELINE_SCRIPT="${AUTO_PUBLISH_CODEX_SCRIPT:-}"
 WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 {

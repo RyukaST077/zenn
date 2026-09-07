@@ -45,13 +45,31 @@
 | 2 |  |  |  |  |  |  |  |
 | 3 |  |  |  |  |  |  |  |
 
+## 参照した方針と観測
+
+- 読んだ policyVersion:
+- 読んだ `analytics/topic-feedback.md` の生成時刻（無ければ「未生成＝中立扱い」）:
+- 市場の勝ち型として読み取ったもの（生データから自分で分類した結果）:
+- 探索枠に振った候補と、その理由:
+
+## 足切りで落ちた候補
+
+| # | 候補 | 落ちた gate | 備考 |
+|---|---|---|---|
+| 1 |  |  |  |
+
 ## Zenn記事テーマ候補
 
-| # | テーマ | 記事タイプ | 想定読者 | トレンド性 | 新人向き | 記事化 | 実用性 | 検証コスト | 差別化 | 合計 | 優先度 |
+配点は `strategy/topic-selection-policy.json` の `scoring.weights`（需要30 / 問題・判断25 /
+転用15 / トレンド15 / 差別化10 / コスト5）。
+
+| # | テーマ | 価値型 | 想定読者 | 需要30 | 問題25 | 転用15 | トレンド15 | 差別化10 | コスト5 | 合計 | 優先度 |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
 | 1 |  |  |  |  |  |  |  |  |  |  |  |
 | 2 |  |  |  |  |  |  |  |  |  |  |  |
 | 3 |  |  |  |  |  |  |  |  |  |  |  |
+
+需要の点数には根拠を書く（同トピック上位記事のいいね数・taggings_count・観測した検索結果）。
 
 ## 上位候補の詳細
 
@@ -231,3 +249,34 @@
 * `〇〇の環境構築でハマったこと`
 * `〇〇を動かすまでにやったこと`
 * `〇〇でエラーが出たので原因を調べた`
+
+## レポート末尾に必ず付ける: 記事契約
+
+`## 記事契約` 見出しと ```json ブロックで、選定した1本の契約を埋め込む。
+スキーマと記入例は `strategy/article-contract.md`。`register-article.mjs` がこのブロックを読む。
+`experimentId` / `arm` は省略不可。実験対象なら `"EXP-001"` / `"B-payload"`、
+探索枠なら `null` / `"exploration"`。`primaryTopic` は `analytics/topic-feedback.md` の
+「primaryTopic に選べるトピック」で「続行判断まで測れる」以上のものから選ぶ。
+
+````md
+## 記事契約
+
+```json
+{
+  "slug": "",
+  "policyVersion": "",
+  "experimentId": null,
+  "arm": "exploration",
+  "valueArchetype": "",
+  "targetReader": "",
+  "readerDecision": "",
+  "takeaway": "",
+  "verificationItems": ["", "", ""],
+  "quantifiedMetric": null,
+  "titleDraft": "",
+  "primaryTopic": "",
+  "topics": ["", "", ""],
+  "demandEvidence": ""
+}
+```
+````

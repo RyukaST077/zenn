@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "policyVersion": "2026-09-05.1",
+  "updatedAt": "2026-09-05",
+  "approval": {
+    "mode": "human-merge",
+    "note": "Only a human-merged PR may change this file. Scripts may propose diffs (strategy/proposals/) and append to strategy/decision-log.md, never edit this file in place."
+  },
+  "objective": {
+    "goal": "記事で知名度を獲得する。すなわち、同時期・同トピックに公開される他者記事群の上位層に入る記事を出せるようになること。",
+    "notGoal": "平均いいねを 0.7 から 1.2 に上げること。いいねはゼロ過剰・裾が重い分布なので、平均の微増は知名度に結びつかない。",
+    "evidenceOfProblem": {
+      "own": "公開57本 / いいね合計42 / 平均0.74 / 最大3 / 5いいね以上0本 / ブックマークほぼ0 / コメント0",
+      "market": "claudecode トピックの新着48本は 中央値0いいね・0いいねが60%・5いいね以上が6%・p90が4",
+      "reading": "自分の平均は市場の新着中央値を下回っているわけではない。問題は『裾（上位層）に一度も入れていない』こと。",
+      "cadence": "2026-07に20本 / 2026-08に31本。頻度は十分あって全て低反応なので、投稿頻度は主因ではない。",
+      "diagnosedRootCause": "テーマの粗いカテゴリ（Claude Code / Node / TypeScript）は間違っていない。単一の境界条件が成立するかを1記事にしていて、読者の持ち帰りが無く対象読者が極小になっていることが主因。"
+    }
+  },
+  "metrics": {
+    "qualityGate": {
+      "description": "公開可否。review-article が判定する。成果指標ではない。",
+      "checks": [
+        "記事契約（strategy/article-contract.md）の必須項目が埋まっている",
+        "読者が下せる判断が1つに絞られている",
+        "持ち帰れる成果物（設定・コード・手順・表）が本文にある",
+        "検証項目が3つ以上ある（単一境界条件の検証だけの記事は不合格）"
+      ]
+    },
+    "primary": {
+      "description": "方針を続けるか降りるかの短期判断に使う。絶対値ではなく、年齢を揃えた同トピック市場コホート内の相対順位。",
+      "signals": [
+        "D30 の市場内パーセンタイル（中央値）",
+        "上位25%到達率",
+        "上位10%到達率"
+      ]
+    },
+    "degradation": {
+      "description": "劣化検知のみ。改善目標には使わない。",
+      "signals": [
+        "0いいね率",
+        "非ゼロ率",
+        "平均いいね"
+      ]
+    },
+    "longTerm": {
+      "description": "最終成果。稀なので昇格の必須条件にはしない。",
+      "signals": [
+        "D30で同一市場の上位10%",
+        "5いいね以上（hit）"
+      ]
+    },
+    "unavailable": {
+      "zennPv": "Zenn自身のPV/インプレッションは非公開でAPIから取得できない。自前のGA4で取れるのは『記事ページへの到達（screenPageViews）』であって、Zennのフィードや検索結果にどれだけ露出したかではない。到達とインプレッションを混同しない。",
+      "d30LikeRateForBackCatalogue": "ループ導入前の記事はD30時点のいいね数が復元できない（basis: current-upper-bound）。GA4からD30到達は復元できるが、分子が揃わないので『D30いいね率』は作れない。過去分は到達の分析にのみ使う。",
+      "uniqueUsersPerWindow": "GA4の totalUsers は日次で重複排除されているため、日別合計はユニークユーザー数ではなく user-days。窓ごとのユニークユーザー数は別レポートが必要で、現在は取得していない。",
+      "sourceMediumPerWindow": "流入元レポートに日付の軸が無いため、D7/D30の窓では切れない。取得範囲全体の値としてのみ読む。"
+    },
+    "reach": {
+      "description": "GA4による上流診断。いいね0の原因を『到達されなかった』と『読まれて刺さらなかった』に分ける。判定には使わず、診断とボトルネック特定にのみ使う。",
+      "signals": [
+        "D30到達（screenPageViews、公開日から30日ちょうどの窓）",
+        "D30いいね率（分子が measured-on-time のときのみ）",
+        "検索流入（google / organic）の比率"
+      ],
+      "usedForJudgement": false,
+      "note": "evaluate-policy.mjs はGA4を一切読まない。GA4は観測レポート専用で、方針の昇格・撤回は experiments/EXP-GA4-DIAG-001.json の事前登録条件を人間がPRで判断する。"
+    }
+  },
+  "valueArchetypes": [
+    {
+      "id": "asset",
+      "stage": "provisional",
+      "label": "そのまま使える資産",
+      "description": "読者が自分の環境にコピーして使える設定・コード・テンプレート・自作ツールを提示する。",
+      "contractRequirements": [
+        "読者がコピーできる成果物が本文にある（設定ファイル全文・スクリプト・リポジトリ）",
+        "その成果物が『なぜその形か』を検証結果で裏づけている"
+      ],
+      "marketEvidence": [
+        "「202608個人的claude code設定」657いいね",
+        "「会話セッションを邪魔せずにClaude Code/Codex/Cursorを外部イベントで動かすCLIの作り方まとめ」61いいね",
+        "「TypeScriptライブラリとして動作する組版エンジン minitype を公開しました」241いいね"
+      ]
+    },
+    {
+      "id": "migration",
+      "stage": "provisional",
+      "label": "移行・落とし穴の網羅",
+      "description": "あるバージョン更新や乗り換えで踏む落とし穴を、1つではなく網羅的に洗い出して一覧にする。",
+      "contractRequirements": [
+        "落とし穴を3つ以上、再現条件と回避策つきで並べる",
+        "読者が『自分のプロジェクトが該当するか』を判定できるチェックリストがある"
+      ],
+      "marketEvidence": [
+        "「Prisma v7 移行のつまづきポイントと、importを安全に置き換えた話」10いいね"
+      ]
+    },
+    {
+      "id": "quantified",
+      "stage": "provisional",
+      "label": "定量インパクト",
+      "description": "施策の前後を数値で示し、効果の大きさをタイトルに出せる形にする。",
+      "contractRequirements": [
+        "before/after の測定条件を明示した数値がある",
+        "効果の大きさがタイトルに書ける水準（桁が変わる・数割変わる）である",
+        "測定が1回きりなら、その限界を本文に書く"
+      ],
+      "marketEvidence": [
+        "「トークン2000分の1——オントロジー×ナレッジグラフでClaude Codeの推測を消す」78いいね",
+        "「データを一気に取り出すのをやめて、DBからHTTPレスポンスまでStreamで繋いだらメモリ使用量が激減した」"
+      ]
+    },
+    {
+      "id": "mental-model",
+      "stage": "candidate",
+      "label": "理解のモデル",
+      "description": "新しい概念や『なぜこうなっているのか』を、読者が他の場面にも転用できるモデルとして説明する。",
+      "contractRequirements": [
+        "読者が別の場面に当てはめられる一般化された説明がある",
+        "その説明が実際に動かした証拠に裏づけられている"
+      ],
+      "marketEvidence": [
+        "「「ページのトップへ戻るボタン」はなぜ非推奨か」175いいね",
+        "「Google提唱の「SKILL.state」について。プロンプトに型の概念を導入」109いいね"
+      ]
+    },
+    {
+      "id": "decision",
+      "stage": "candidate",
+      "label": "迷う判断への答え",
+      "description": "多くの人が実際に迷う選択に、検証にもとづいて答えを出す。",
+      "contractRequirements": [
+        "読者が迷っている選択肢が2つ以上、実在の判断として提示されている",
+        "選択の基準が条件つきで示されている（『こういう場合はA』）"
+      ],
+      "marketEvidence": [
+        "「Codexの新モデルGPT-5.6を調べて分かった、Sol・Terra・Lunaとmax・ultraの選び方」自記事最高帯"
+      ]
+    },
+    {
+      "id": "boundary-verification",
+      "stage": "deprecated",
+      "label": "単一境界条件の検証報告",
+      "description": "ある一点の挙動（denyが効くか、ゲートが塞ぐか等）が成立するかを検証して報告する。",
+      "whyDeprecated": "この型で57本書いて5いいね以上が0本。対象読者が極小で、読者の持ち帰りが無い。新規記事をこの型に割り当てない。",
+      "reuse": "同じ検証は捨てず、asset / migration / decision 型の記事を裏づける証拠として3〜5本束ねて使う。"
+    },
+    {
+      "id": "incident-log",
+      "stage": "deprecated",
+      "label": "詰まった記録",
+      "description": "作業中に踏んだ問題の時系列ログ。",
+      "whyDeprecated": "読者の再現条件と回避策が一般化されていないと持ち帰りが無い。migration 型（網羅＋回避策）に格上げして書く。"
+    }
+  ],
+  "scoring": {
+    "description": "gates を全て通った候補だけを weights で採点する。合計100点。",
+    "gates": [
+      "AIエージェント単独で完結できる（課金APIキー・人手サインアップ・手動デプロイが不要）",
+      "過去記事と実質同じでない（バージョン・条件・切り口のいずれかが違う）",
+      "stage が deprecated の価値型ではない",
+      "読者が下せる判断を1文で書ける",
+      "読者が持ち帰れる成果物を1つ挙げられる"
+    ],
+    "weights": {
+      "readerDemand": {
+        "points": 30,
+        "description": "読者母数と需要。トピックの市場規模（taggings_count）と、そのトピックの上位記事が実際に何いいね付いているかで判断する。誰も検索しない問いは0点。"
+      },
+      "readerProblemOrDecision": {
+        "points": 25,
+        "description": "読者が実際に抱えている問題・実際に迷う判断か。『言われてみれば気になる』は低得点、『今まさに詰まっている』は高得点。"
+      },
+      "transferability": {
+        "points": 15,
+        "description": "結果が読者の別の場面にも転用できるか。特定バージョンの特定フラグ限定なら低得点。"
+      },
+      "trend": {
+        "points": 15,
+        "description": "直近の話題性。一次情報の日付で裏づける。"
+      },
+      "differentiation": {
+        "points": 10,
+        "description": "既存の日本語記事に対して何が新しいか。"
+      },
+      "verificationCost": {
+        "points": 5,
+        "description": "AIエージェントが半日〜1日で検証を終えられるか。"
+      }
+    }
+  },
+  "explorationShare": {
+    "value": 0.25,
+    "description": "候補の25%は探索枠。ただし探索先は deprecated 型ではなく、stage が candidate の価値型に割り当てる。"
+  },
+  "marketWatch": {
+    "topics": [
+      "claudecode",
+      "ai",
+      "aiagent",
+      "typescript",
+      "nodejs",
+      "security",
+      "cli"
+    ],
+    "description": "市場ベースラインを取り続けるトピック。自分が書くトピックと、勝ち型を観測したいトピックを含める。"
+  },
+  "activeExperiment": "EXP-001",
+  "arms": {
+    "description": "記事契約の arm。改善ループはこれで群を分ける。experimentId は暗黙に埋めず、契約で必ず明示する。",
+    "historical-control": "方針導入前に公開済みの記事。ループが後付けで heuristic 分類した歴史的対照群",
+    "B-payload": "新方針で選定された実験対象（experimentId: EXP-001）",
+    "legacy-transition": "方針導入前の未公開ドラフトを束ね直した記事。experimentId: null。実験判定には使わない",
+    "exploration": "探索枠（stage: candidate の価値型）。experimentId: null"
+  },
+  "cohortRequirements": {
+    "display": 20,
+    "decision": 50,
+    "promotion": 100,
+    "description": "市場コホートの最小サンプル数。n=20 は表示のみ。順位で方針を続行判断するには50、価値型を昇格させるには100。"
+  }
+}

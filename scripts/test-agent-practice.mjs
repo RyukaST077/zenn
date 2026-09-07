@@ -53,7 +53,9 @@ const testSafeSync = () => {
     assertRun(runAt(checkout, "git", ["config", "user.name", "Safe Sync Test"]), "safe-sync user.name");
     assertRun(runAt(checkout, "git", ["config", "user.email", "safe-sync@example.com"]), "safe-sync user.email");
     fs.writeFileSync(path.join(checkout, "README.md"), "# safe sync\n");
-    assertRun(runAt(checkout, "git", ["add", "README.md"]), "safe-sync add");
+    fs.mkdirSync(path.join(checkout, "knowledge"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), "# shared baseline\n");
+    assertRun(runAt(checkout, "git", ["add", "README.md", "knowledge/INDEX.md"]), "safe-sync add");
     assertRun(runAt(checkout, "git", ["commit", "-m", "base"]), "safe-sync commit");
     assertRun(runAt(testRoot, "git", ["init", "--bare", remote]), "safe-sync bare remote");
     assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "safe-sync remote add");
@@ -61,6 +63,9 @@ const testSafeSync = () => {
     assertRun(runAt(testRoot, "git", ["clone", "-b", "main", remote, publisher]), "safe-sync publisher clone");
     assertRun(runAt(publisher, "git", ["config", "user.name", "Safe Sync Publisher"]), "safe-sync publisher name");
     assertRun(runAt(publisher, "git", ["config", "user.email", "publisher@example.com"]), "safe-sync publisher email");
+
+    const localKnowledge = "# shared baseline\n\n- local-only finding\n";
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), localKnowledge);
 
     fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
     fs.mkdirSync(path.join(publisher, "articles"), { recursive: true });
@@ -75,7 +80,14 @@ const testSafeSync = () => {
     assertRun(identical, "safe-sync identical merged duplicate");
     assert.match(identical.stderr, /removed byte-identical merged duplicate/);
     assert.equal(fs.readFileSync(path.join(checkout, "articles/merged.md"), "utf8"), articleText);
-    assert.equal(runAt(checkout, "git", ["status", "--porcelain"]).stdout, "");
+    assert.equal(fs.readFileSync(path.join(checkout, "knowledge/INDEX.md"), "utf8"), localKnowledge);
+    assert.match(runAt(checkout, "git", ["status", "--porcelain"]).stdout, /knowledge\/INDEX\.md/);
+
+    fs.writeFileSync(path.join(checkout, "README.md"), "# unsafe local change\n");
+    const dirtyTracked = runAt(checkout, "bash", [path.join(root, "scripts/safe-sync-main.sh"), "main"]);
+    assert.notEqual(dirtyTracked.status, 0, "safe-sync accepted a tracked change outside knowledge/");
+    assert.match(dirtyTracked.stderr, /outside local knowledge\/ contain uncommitted changes/);
+    fs.writeFileSync(path.join(checkout, "README.md"), "# safe sync\n");
 
     fs.writeFileSync(path.join(checkout, "articles/conflict.md"), "local evidence\n");
     fs.writeFileSync(path.join(publisher, "articles/conflict.md"), "remote article\n");
@@ -119,11 +131,16 @@ published: false
 Publication fixture body.
 `);
     fs.writeFileSync(path.join(checkout, "README.md"), "# publication integration fixture\n");
-    assertRun(runAt(checkout, "git", ["add", "articles", "README.md"]), "git add fixture");
+    fs.mkdirSync(path.join(checkout, "knowledge"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), "# shared knowledge\n");
+    assertRun(runAt(checkout, "git", ["add", "articles", "README.md", "knowledge/INDEX.md"]), "git add fixture");
     assertRun(runAt(checkout, "git", ["commit", "-m", "fixture"]), "git commit fixture");
     assertRun(runAt(publishRoot, "git", ["init", "--bare", remote]), "git init bare");
     assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "git remote add");
     assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "git push main");
+
+    const localKnowledge = "# shared knowledge\n\n- local-only finding\n";
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), localKnowledge);
 
     fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
     fs.writeFileSync(path.join(checkout, review), `# Integration review
@@ -203,6 +220,7 @@ exit 2
     assert.equal((worktrees.stdout.match(/^worktree /gm) || []).length, 1,
       `temporary worktree leaked:\n${worktrees.stdout}`);
     assert.match(fs.readFileSync(path.join(checkout, article), "utf8"), /published: false/);
+    assert.equal(fs.readFileSync(path.join(checkout, "knowledge/INDEX.md"), "utf8"), localKnowledge);
 
     if (failPrepare) {
       assert.notEqual(result.status, 0, "prepare failure unexpectedly succeeded");
@@ -222,6 +240,12 @@ exit 2
     ]);
     assertRun(remoteArticle, "read published remote article");
     assert.match(remoteArticle.stdout, /published: true/);
+    const remoteKnowledge = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/publish/${slug}:knowledge/INDEX.md`,
+    ]);
+    assertRun(remoteKnowledge, "read publication branch knowledge baseline");
+    assert.equal(remoteKnowledge.stdout, "# shared knowledge\n",
+      "local-only knowledge leaked into the publication branch");
     const calls = fs.readFileSync(ghLog, "utf8");
     assert.match(calls, /pr create/);
     if (autoMerge) assert.match(calls, /pr merge/);
@@ -270,11 +294,16 @@ Queue fixture body.
       retryAfterHours: 6,
       entries: [],
     }, null, 2)}\n`);
-    assertRun(runAt(checkout, "git", ["add", "articles", "config"]), "queue git add fixture");
+    fs.mkdirSync(path.join(checkout, "knowledge"), { recursive: true });
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), "# shared knowledge\n");
+    assertRun(runAt(checkout, "git", ["add", "articles", "config", "knowledge/INDEX.md"]), "queue git add fixture");
     assertRun(runAt(checkout, "git", ["commit", "-m", "fixture"]), "queue git commit fixture");
     assertRun(runAt(publishRoot, "git", ["init", "--bare", remote]), "queue git init bare");
     assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "queue git remote add");
     assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "queue git push main");
+
+    const localKnowledge = "# shared knowledge\n\n- local-only finding\n";
+    fs.writeFileSync(path.join(checkout, "knowledge/INDEX.md"), localKnowledge);
 
     fs.mkdirSync(path.join(checkout, path.dirname(review)), { recursive: true });
     const reviewText = reviewStyle === "claude" ? `# 公開前レビュー
@@ -327,6 +356,7 @@ exit 2
     assert.equal((worktrees.stdout.match(/^worktree /gm) || []).length, 1,
       `temporary queue worktree leaked:\n${worktrees.stdout}`);
     assert.match(fs.readFileSync(path.join(checkout, article), "utf8"), /published: false/);
+    assert.equal(fs.readFileSync(path.join(checkout, "knowledge/INDEX.md"), "utf8"), localKnowledge);
 
     if (failPrCreate) {
       assert.notEqual(result.status, 0, "queue PR creation failure unexpectedly succeeded");
@@ -348,6 +378,12 @@ exit 2
     const queue = JSON.parse(remoteQueue.stdout);
     assert.equal(queue.entries.length, 1);
     assert.equal(queue.entries[0].article, article);
+    const remoteKnowledge = runAt(checkout, "git", [
+      `--git-dir=${remote}`, "show", `refs/heads/queue/${slug}:knowledge/INDEX.md`,
+    ]);
+    assertRun(remoteKnowledge, "read queued branch knowledge baseline");
+    assert.equal(remoteKnowledge.stdout, "# shared knowledge\n",
+      "local-only knowledge leaked into the publication queue branch");
     const calls = fs.readFileSync(ghLog, "utf8");
     assert.match(calls, /pr create/);
     if (autoMerge) assert.match(calls, /pr merge/);
@@ -362,6 +398,7 @@ try {
     "-n",
     "scripts/auto-agent-practice.sh",
     "scripts/auto-agent-practice-launchd.sh",
+    "scripts/run-article-pipeline-worktree.sh",
     "scripts/auto-publish.sh",
     "scripts/auto-publish-launchd.sh",
     "scripts/auto-publish-codex-launchd.sh",
@@ -377,13 +414,14 @@ try {
   assert.equal(dryRun.status, 0, dryRun.stderr);
   assert.match(dryRun.stdout, /scheduled: 1/);
   assert.match(dryRun.stdout, /orchestrator: codex/);
-  assert.match(dryRun.stdout, /experiment provider scope: both/);
   assert.match(dryRun.stdout, /Current practical Claude Code or OpenAI Codex know-how/);
   assert.match(dryRun.stdout, /auto merge: 1/);
   assert.match(dryRun.stdout, /auto resume at usage limit: 1 \(attempt 0\/8\)/);
   assert.match(dryRun.stdout, /fake-CLI preflight/);
   assert.match(dryRun.stdout, /preflight repairs: 2/);
   assert.match(dryRun.stdout, /fake-CLI preflight <-> plan repair/);
+  assert.match(dryRun.stdout, /deterministic experiment runner/);
+  assert.doesNotMatch(dryRun.stdout, /zenn-agent-run-practice/);
   assert.match(dryRun.stdout, /publication queue -> commit\/push -> PR -> merge/);
   assert.match(dryRun.stdout, /rate-limited Zenn publication queue/);
   assert.doesNotMatch(dryRun.stdout, /reviewed unpublished/);
@@ -395,7 +433,8 @@ try {
   assert.match(agentPipelineSource, /outcome-specific marker/);
   assert.match(agentPipelineSource, /precise timing, simultaneous tool ordering/);
   assert.match(agentPipelineSource, /do not turn an honest negative result into a verifier failure/);
-  assert.match(agentPipelineSource, /generated manifest contains a provider outside AGENT_PIPELINE_PROVIDER_SCOPE/);
+  assert.match(agentPipelineSource, /artifact must be one existing safe repository-relative regular file/);
+  assert.match(agentPipelineSource, /run_experiment_direct/);
   assert.match(agentPipelineSource, /wait_seconds - remaining/,
     "usage-limit progress must be based on elapsed wait time so reset-time remainders still log");
   const prOnlyDryRun = run("bash", ["scripts/auto-agent-practice.sh", "--pr-only", "--dry-run"]);
@@ -407,21 +446,6 @@ try {
   ]);
   assert.equal(claudeOrchestratorDryRun.status, 0, claudeOrchestratorDryRun.stderr);
   assert.match(claudeOrchestratorDryRun.stdout, /orchestrator: claude/);
-  const codexOnlyDryRun = run("bash", [
-    "scripts/auto-agent-practice.sh", "--orchestrator", "codex", "--dry-run",
-  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "codex" } });
-  assert.equal(codexOnlyDryRun.status, 0, codexOnlyDryRun.stderr);
-  assert.match(codexOnlyDryRun.stdout, /experiment provider scope: codex/);
-  const providerOrchestratorMismatch = run("bash", [
-    "scripts/auto-agent-practice.sh", "--orchestrator", "claude", "--dry-run",
-  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "codex" } });
-  assert.equal(providerOrchestratorMismatch.status, 2);
-  assert.match(providerOrchestratorMismatch.stderr, /must include the selected orchestrator/);
-  const invalidProviderScope = run("bash", [
-    "scripts/auto-agent-practice.sh", "--dry-run",
-  ], { env: { AGENT_PIPELINE_PROVIDER_SCOPE: "invalid" } });
-  assert.equal(invalidProviderScope.status, 2);
-  assert.match(invalidProviderScope.stderr, /must be both, codex, or claude/);
   const invalidOrchestrator = run("bash", [
     "scripts/auto-agent-practice.sh", "--orchestrator", "invalid", "--dry-run",
   ]);
@@ -437,6 +461,12 @@ try {
   ], { env: { MAX_AGENT_PREFLIGHT_REPAIRS: "invalid" } });
   assert.equal(invalidPreflightRepairs.status, 2);
   assert.match(invalidPreflightRepairs.stderr, /MAX_AGENT_PREFLIGHT_REPAIRS must be a non-negative integer/);
+  const invalidSameSystemFailures = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: { AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES: "invalid" },
+  });
+  assert.equal(invalidSameSystemFailures.status, 2);
+  assert.match(invalidSameSystemFailures.stderr,
+    /AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES must be a positive integer/);
   const resumeDryRun = run("bash", [
     "scripts/auto-agent-practice.sh",
     "--resume-after-run", "logs/agent/run-example/execution-log.md",
@@ -489,7 +519,10 @@ count=0
 [ ! -f "$FAKE_RETRY_COUNT" ] || count="$(cat "$FAKE_RETRY_COUNT")"
 count=$((count + 1))
 printf '%s\\n' "$count" >"$FAKE_RETRY_COUNT"
-[ "$count" -gt 1 ] || exit 20
+if [ "$count" -le 1 ]; then
+  printf 'content|evidence-safe-skip\\n' >"$AGENT_PIPELINE_RETRY_SIGNAL_FILE"
+  exit 20
+fi
 echo "complete: publication queued for articles/fake.md"
 exit 0
 `, { mode: 0o755 });
@@ -508,11 +541,71 @@ exit 0
   assert.equal(fs.readFileSync(retryCount, "utf8").trim(), "2",
     "launchd wrapper must retry one evidence-safe scheduled skip");
 
+  const systemFailureScript = path.join(retryDir, "system-failure-pipeline.sh");
+  const systemFailureCount = path.join(retryDir, "system-failure-count");
+  const systemFailureStatusDir = path.join(retryDir, "system-failure-status");
+  const systemFailureLogDir = path.join(retryDir, "system-failure-logs");
+  fs.writeFileSync(systemFailureScript, `#!/bin/bash
+count=0
+[ ! -f "$FAKE_SYSTEM_FAILURE_COUNT" ] || count="$(cat "$FAKE_SYSTEM_FAILURE_COUNT")"
+count=$((count + 1))
+printf '%s\\n' "$count" >"$FAKE_SYSTEM_FAILURE_COUNT"
+printf 'system|run-experiment-exit-2\\n' >"$AGENT_PIPELINE_RETRY_SIGNAL_FILE"
+exit 20
+`, { mode: 0o755 });
+  const systemFailureRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: {
+      AGENT_PRACTICE_SCRIPT: systemFailureScript,
+      AGENT_PRACTICE_ARGS: "--scheduled",
+      AGENT_PRACTICE_MAX_ATTEMPTS: "5",
+      AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES: "2",
+      AGENT_PIPELINE_RETRYABLE_EXIT: "20",
+      FAKE_SYSTEM_FAILURE_COUNT: systemFailureCount,
+      AGENT_PRACTICE_LOG_DIR: systemFailureLogDir,
+      AGENT_PRACTICE_STATUS_DIR: systemFailureStatusDir,
+    },
+  });
+  assert.equal(systemFailureRun.status, 1, "repeated system failure did not open the circuit breaker");
+  assert.equal(fs.readFileSync(systemFailureCount, "utf8").trim(), "2",
+    "circuit breaker must stop a repeated system failure after two attempts");
+  const systemFailureStatusFiles = fs.readdirSync(systemFailureStatusDir);
+  assert.equal(systemFailureStatusFiles.length, 1, "failed launchd run must write one status file");
+  const systemFailureStatus = JSON.parse(fs.readFileSync(path.join(
+    systemFailureStatusDir, systemFailureStatusFiles[0],
+  ), "utf8"));
+  assert.equal(systemFailureStatus.status, "failed");
+  assert.equal(systemFailureStatus.retry_kind, "system");
+  assert.equal(systemFailureStatus.retry_signature, "run-experiment-exit-2");
+
+  const missingSuccessScript = path.join(retryDir, "missing-success-pipeline.sh");
+  const missingSuccessStatusDir = path.join(retryDir, "missing-success-status");
+  const missingSuccessLogDir = path.join(retryDir, "missing-success-logs");
+  fs.writeFileSync(missingSuccessScript, "#!/bin/bash\nexit 0\n", { mode: 0o755 });
+  const missingSuccessRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: {
+      AGENT_PRACTICE_SCRIPT: missingSuccessScript,
+      AGENT_PRACTICE_ARGS: "--scheduled",
+      AGENT_PRACTICE_MAX_ATTEMPTS: "1",
+      AGENT_PRACTICE_LOG_DIR: missingSuccessLogDir,
+      AGENT_PRACTICE_STATUS_DIR: missingSuccessStatusDir,
+    },
+  });
+  assert.equal(missingSuccessRun.status, 1, "missing success contract unexpectedly passed");
+  const missingSuccessStatusFiles = fs.readdirSync(missingSuccessStatusDir);
+  assert.equal(missingSuccessStatusFiles.length, 1,
+    "missing success contract must write one failed status file");
+  const missingSuccessStatus = JSON.parse(fs.readFileSync(path.join(
+    missingSuccessStatusDir, missingSuccessStatusFiles[0],
+  ), "utf8"));
+  assert.equal(missingSuccessStatus.status, "failed");
+  assert.equal(missingSuccessStatus.exit_code, 1);
+
   const defaultArgsScript = path.join(retryDir, "default-args-pipeline.sh");
   const defaultArgsFile = path.join(retryDir, "default-args");
   fs.writeFileSync(defaultArgsScript, `#!/bin/bash
 printf '%s\\n' "$*" >"$FAKE_DEFAULT_ARGS"
 printf '%s|%s\\n' "$AGENT_PIPELINE_MODEL" "$AGENT_PIPELINE_EFFORT" >"$FAKE_DEFAULT_MODEL"
+printf '%s\\n' "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" >"$FAKE_USAGE_WAIT"
 echo "complete: publication queued for articles/fake-default.md"
 `, { mode: 0o755 });
   const defaultArgsRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
@@ -522,6 +615,7 @@ echo "complete: publication queued for articles/fake-default.md"
       AGENT_PRACTICE_MAX_ATTEMPTS: "1",
       FAKE_DEFAULT_ARGS: defaultArgsFile,
       FAKE_DEFAULT_MODEL: path.join(retryDir, "default-model"),
+      FAKE_USAGE_WAIT: path.join(retryDir, "usage-wait"),
       AGENT_PRACTICE_LOG_DIR: retryDir,
       AGENT_PRACTICE_STATUS_DIR: path.join(retryDir, "default-status"),
     },
@@ -532,6 +626,8 @@ echo "complete: publication queued for articles/fake-default.md"
   assert.equal(fs.readFileSync(path.join(retryDir, "default-model"), "utf8").trim(),
     "claude-sonnet-5|medium",
     "scheduled Claude pipeline must use the usage-fit model and effort defaults");
+  assert.equal(fs.readFileSync(path.join(retryDir, "usage-wait"), "utf8").trim(), "18000",
+    "scheduled Claude pipeline must wait five hours after a usage limit");
   fs.rmSync(retryDir, { recursive: true, force: true });
   const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
   assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);
@@ -549,6 +645,10 @@ echo "complete: publication queued for articles/fake-default.md"
   ), "utf8");
   assert.match(agentLaunchdSource, /AGENT_PRACTICE_MAX_ATTEMPTS:=12/,
     "scheduled AI articles must keep searching past a five-topic safe-rejection streak");
+  assert.match(agentPipelineSource, /MAX_AGENT_STAGE_CONTRACT_REPAIRS:=1/,
+    "AI article stages must repair one invalid artifact contract before abandoning the topic");
+  assert.match(agentPipelineSource, /Do not claim an artifact that was not written/,
+    "stage contract repair must explicitly require a real artifact");
 
   testSafeSync();
 
@@ -702,6 +802,36 @@ console.log(JSON.stringify(provider === "claude"
   const executionLogRelative = experiment.stdout.trim();
   assert.match(executionLogRelative, /^logs\/agent\/run-runner-test-/);
   generatedRun = path.dirname(path.join(root, executionLogRelative));
+  const directRunStdout = path.join(fakeDir, "direct-run.stdout");
+  const directRunMarker = path.join(fakeDir, "direct-run.marker");
+  fs.writeFileSync(directRunStdout, experiment.stdout);
+  fs.writeFileSync(directRunMarker, "");
+  const executionMtime = fs.statSync(path.join(root, executionLogRelative)).mtimeMs;
+  fs.utimesSync(directRunMarker, new Date(executionMtime - 1000), new Date(executionMtime - 1000));
+  const directRunContract = run(process.execPath, [
+    "scripts/validate-agent-run-result.mjs", directRunStdout, manifestRelative, directRunMarker,
+  ]);
+  assertRun(directRunContract, "validate direct experiment runner artifact");
+  assert.equal(directRunContract.stdout, executionLogRelative);
+
+  const emptyDirectRunStdout = path.join(fakeDir, "direct-run-empty.stdout");
+  fs.writeFileSync(emptyDirectRunStdout, "");
+  const emptyDirectRunContract = run(process.execPath, [
+    "scripts/validate-agent-run-result.mjs", emptyDirectRunStdout, manifestRelative, directRunMarker,
+  ]);
+  assert.notEqual(emptyDirectRunContract.status, 0,
+    "empty direct-run artifact unexpectedly passed validation");
+  assert.match(emptyDirectRunContract.stderr, /exactly one artifact path/);
+
+  const absoluteDirectRunStdout = path.join(fakeDir, "direct-run-absolute.stdout");
+  fs.writeFileSync(absoluteDirectRunStdout, `${path.join(root, executionLogRelative)}\n`);
+  const absoluteDirectRunContract = run(process.execPath, [
+    "scripts/validate-agent-run-result.mjs", absoluteDirectRunStdout, manifestRelative, directRunMarker,
+  ]);
+  assert.notEqual(absoluteDirectRunContract.status, 0,
+    "absolute direct-run artifact unexpectedly passed validation");
+  assert.match(absoluteDirectRunContract.stderr, /safe repository-relative path/);
+
   const summary = JSON.parse(fs.readFileSync(path.join(generatedRun, "summary.json"), "utf8"));
   assert.equal(summary.cases.length, 4);
   assert.ok(summary.cases.every((item) => item.passed), JSON.stringify(summary.cases, null, 2));

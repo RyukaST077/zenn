@@ -7,6 +7,19 @@ BASE_BRANCH="${1:-main}"
 log() { printf '[safe-sync] %s\n' "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
 
+has_blocking_tracked_changes() {
+  # knowledge/ is intentionally local-only (see .gitignore), but files that
+  # predate that policy are still tracked. Preserve those local notes without
+  # weakening the guard for repository changes that could be overwritten.
+  if ! git diff --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  if ! git diff --cached --quiet --no-ext-diff --no-renames -- . ':(exclude)knowledge/**'; then
+    return 0
+  fi
+  return 1
+}
+
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || die "not inside a Git worktree"
 cd "$ROOT"
 
@@ -24,8 +37,8 @@ fi
 
 [ "$(git branch --show-current)" = "$BASE_BRANCH" ] \
   || die "current branch must be $BASE_BRANCH"
-if git status --porcelain --untracked-files=no | grep -q .; then
-  die "tracked files contain uncommitted changes"
+if has_blocking_tracked_changes; then
+  die "tracked files outside local knowledge/ contain uncommitted changes"
 fi
 
 TMP_BASE="${TMPDIR:-/tmp}"

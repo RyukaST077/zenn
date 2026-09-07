@@ -1,0 +1,40 @@
+{
+  "slug": "hono-query-vs-get-body-decision",
+  "topics": [
+    "hono",
+    "http",
+    "nodejs",
+    "fetch",
+    "cors"
+  ],
+  "primaryTopic": "hono",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "mental-model",
+    "titleFeatures": {
+      "length": 46,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "legacy-transition",
+    "registeredAt": "2026-09-05T07:52:33.870Z",
+    "contract": {
+      "targetReader": "検索APIに構造化された条件を渡したくて、GET にボディを付けるか QUERY メソッド（RFC 10008）を使うかを Hono で検討している開発者",
+      "readerDecision": "GET+body / QUERY をいま採用してよいかを決められる",
+      "takeaway": "GET+body と QUERY は同じ層の選択肢ではない。GET+body はクライアントの fetch が送信前に例外を投げるのでサーバー側の対処が届かず、QUERY はメソッド名の大文字化と cors() の2ゲートだけで通る。ただし QUERY への移行で往復回数も body の扱いも改善しないという判断材料。",
+      "verificationItems": [
+        "curl / Node 同梱 fetch(undici 6.21.2) / undici 8.10.2 の3経路で GET+body を送ったとき、どこで止まるか（curl は送信できるがサーバーの bodyLen が 0、fetch は送信前に TypeError）",
+        "同じ3経路で QUERY を送ったとき Hono 4.13.7 の app.query が 200 と bodyLen=13 を返すか",
+        "メソッド名を小文字 query にしたとき、undici のバージョンで結果が割れるか（6.21.2 と curl は 400、8.10.2 は QUERY に正規化されて 200）",
+        "小文字 400 を返しているのが Hono かどうか（アプリのログに残らない = Node の HTTP パーサが接続を切っている）",
+        "Hono 4.13.7 の cors() が既定で QUERY を access-control-allow-methods に含むか、および QUERY と POST でプリフライトの有無に差があるか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Hono 4.13 が app.query() を追加し RFC 10008 の QUERY メソッドが実装可能になったことで、『GET にボディ』の代替として QUERY が挙げられるようになった。しかし公開情報は両者を並列の選択肢として並べるだけで、GET+body が fetch 仕様によりクライアント側で送信前に例外になる（サーバー実装では回避不能）のに対し、QUERY はメソッド名の正規化と CORS という設定可能なゲートしか持たないという非対称性を示していない。さらに小文字 query の可否が Node 同梱 undici 6.21.2 と npm 版 8.10.2 で反転し、400 の発生元が Hono ではなく llhttp のためアプリログに何も残らない。採用可否を決めるにはこの層の違いを明示した比較が要る。"
+    }
+  }
+}

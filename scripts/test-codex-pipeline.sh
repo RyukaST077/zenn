@@ -14,6 +14,57 @@ node --check scripts/check-article.mjs
 node --check scripts/validate-stage-result.mjs
 node --check scripts/validate-pr-metadata.mjs
 node --check scripts/stage-result-contract.mjs
+node --check scripts/validate-codex-completion.mjs
+
+FINAL_MESSAGE='{"status":"ok","artifact":"logs/run-fixture/execution-log.md","reason":"","metadata":{"verdict":null,"slug":null,"pr_metadata":null}}'
+printf '%s\n' "$FINAL_MESSAGE" >"$TMP/final.json"
+printf '%s\n' \
+  '{"type":"thread.started"}' \
+  '{"type":"item.completed","item":{"type":"agent_message","text":"{\"status\":\"ok\",\"artifact\":\"progress\"}"}}' \
+  '{"type":"item.completed","item":{"type":"command_execution","status":"completed","exit_code":0}}' \
+  '{"type":"item.completed","item":{"type":"agent_message","text":"'"$(printf '%s' "$FINAL_MESSAGE" | sed 's/"/\\"/g')"'"}}' \
+  '{"type":"turn.completed"}' >"$TMP/completed.events.jsonl"
+node scripts/validate-codex-completion.mjs "$TMP/completed.events.jsonl" "$TMP/final.json"
+
+expect_completion_failure() {
+  local expected="$1" events="$2" final="$3"
+  if node scripts/validate-codex-completion.mjs "$events" "$final" \
+      >"$TMP/completion.stdout" 2>"$TMP/completion.stderr"; then
+    echo "Codex completion unexpectedly passed: $expected" >&2
+    exit 1
+  fi
+  rg -Fq "$expected" "$TMP/completion.stderr"
+}
+
+printf '%s\n' \
+  '{"type":"item.completed","item":{"type":"agent_message","text":"'"$(printf '%s' "$FINAL_MESSAGE" | sed 's/"/\\"/g')"'"}}' \
+  >"$TMP/no-completion.events.jsonl"
+expect_completion_failure 'expected exactly one turn.completed, found 0' \
+  "$TMP/no-completion.events.jsonl" "$TMP/final.json"
+
+printf '%s\n' \
+  '{"type":"item.completed","item":{"type":"agent_message","text":"'"$(printf '%s' "$FINAL_MESSAGE" | sed 's/"/\\"/g')"'"}}' \
+  '{"type":"turn.completed"}' \
+  '{"type":"turn.completed"}' >"$TMP/duplicate-completion.events.jsonl"
+expect_completion_failure 'expected exactly one turn.completed, found 2' \
+  "$TMP/duplicate-completion.events.jsonl" "$TMP/final.json"
+
+printf '%s\n' \
+  '{"type":"item.completed","item":{"type":"agent_message","text":"'"$(printf '%s' "$FINAL_MESSAGE" | sed 's/"/\\"/g')"'"}}' \
+  '{"type":"turn.failed"}' \
+  '{"type":"turn.completed"}' >"$TMP/failed.events.jsonl"
+expect_completion_failure 'events contain turn.failed' "$TMP/failed.events.jsonl" "$TMP/final.json"
+
+printf '%s\n' '{"different":true}' >"$TMP/mismatched-final.json"
+expect_completion_failure 'final output does not equal the last completed agent message' \
+  "$TMP/completed.events.jsonl" "$TMP/mismatched-final.json"
+
+printf '%s\n' '{not-json}' >"$TMP/malformed.events.jsonl"
+expect_completion_failure 'events line 1 is not valid JSON' \
+  "$TMP/malformed.events.jsonl" "$TMP/final.json"
+
+expect_completion_failure 'final output file is missing' \
+  "$TMP/completed.events.jsonl" "$TMP/missing-final.json"
 
 for stage in search plan run draft review revise prepare_publish; do
   node scripts/stage-result-contract.mjs schema "$stage" "$TMP/$stage.schema.json"
@@ -83,11 +134,15 @@ printf '%s\n' \
   '{"status":"ok","artifact":"'"$RUN_FIXTURE"'","reason":"",' \
   ' "metadata":{"verdict":"pass","slug":"codex-pipeline-fixture","pr_metadata":null}}' \
   >"$TMP/run-invalid-result.json"
+node -e 'require("node:fs").copyFileSync(process.argv[1], process.argv[2])' \
+  "$TMP/run-invalid-result.json" "$TMP/run-invalid-final.json"
 expect_contract_failure 'only review may set metadata.verdict' \
   node scripts/validate-stage-result.mjs "$TMP/run-invalid-result.json" logs "$TMP/marker" run
 
 node scripts/stage-result-contract.mjs normalize run "$TMP/run-invalid-result.json" >"$TMP/run-normalized-fields.txt"
 rg -q 'metadata.verdict,metadata.slug' "$TMP/run-normalized-fields.txt"
+rg -q '"verdict":"pass"' "$TMP/run-invalid-final.json"
+rg -q '"verdict":null' "$TMP/run-invalid-result.json"
 [ "$(node scripts/validate-stage-result.mjs "$TMP/run-invalid-result.json" logs "$TMP/marker" run)" = "$RUN_FIXTURE" ]
 
 printf '%s\n' \
@@ -110,18 +165,28 @@ printf '%s\n' "{\"title\":\"Fixture PR\",\"body_file\":\"$PR_FIXTURE/pr-body.md\
 node scripts/validate-pr-metadata.mjs "$PR_FIXTURE/pr-metadata.json" "$PR_FIXTURE" >/dev/null
 
 bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run.txt"
-rg -q 'approval=never, sandbox=danger-full-access' "$TMP/dry-run.txt"
+rg -q 'approval=never, sandbox=workspace-write' "$TMP/dry-run.txt"
+rg -q 'run child env: ASTRO_TELEMETRY_DISABLED=1' "$TMP/dry-run.txt"
+rg -q -- '-o <final>' "$TMP/dry-run.txt"
 rg -q 'model=gpt-5.6-sol, reasoning=high' "$TMP/dry-run.txt"
 rg -q 'zenn-search-topic.*published:false publication queue' "$TMP/dry-run.txt"
 rg -q -- '--review-style codex --pr-only' scripts/auto-publish-codex.sh
+rg -Fq 'ASTRO_TELEMETRY_DISABLED=1 "$TIMEOUT_BIN"' scripts/auto-publish-codex.sh
+rg -Fq '"-o" "$final"' scripts/auto-publish-codex.sh
+rg -Fq '"$final" "$result"' scripts/auto-publish-codex.sh
+rg -Fq 'cleanup_merged_pr_branch' scripts/auto-publish-codex.sh
+rg -Fq 'git push origin --delete "$head"' scripts/auto-publish-codex.sh
+rg -q 'run-article-pipeline-worktree.sh' scripts/auto-publish-codex.sh
+rg -q -- '--shared-root' scripts/auto-publish-codex.sh
+rg -q 'astro preview status.*astro preview logs.*astro preview stop' .agents/skills/zenn-plan-practice/SKILL.md
 
 CODEX_SANDBOX_MODE=workspace-write bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-workspace.txt"
 rg -q 'approval=never, sandbox=workspace-write' "$TMP/dry-run-workspace.txt"
 
-if CODEX_SANDBOX_MODE=invalid bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-invalid.txt" 2>&1; then
-  echo "invalid CODEX_SANDBOX_MODE unexpectedly succeeded" >&2
+if CODEX_SANDBOX_MODE=danger-full-access bash scripts/auto-publish-codex.sh --dry-run >"$TMP/dry-run-invalid.txt" 2>&1; then
+  echo "danger-full-access unexpectedly succeeded" >&2
   exit 1
 fi
-rg -q 'CODEX_SANDBOX_MODE must be workspace-write or danger-full-access' "$TMP/dry-run-invalid.txt"
+rg -q 'CODEX_SANDBOX_MODE must be workspace-write' "$TMP/dry-run-invalid.txt"
 
 echo "Codex pipeline tests passed"

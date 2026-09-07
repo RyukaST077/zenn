@@ -5,10 +5,20 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ALLOWED_ROOTS = new Set([
-  "articles", "fixtures", "images", "knowledge", "logs", "practice", "research",
+  // `analytics` and `strategy` carry the topic-improvement loop's memory. Without
+  // them a contract registered inside an isolated worktree is lost on the way
+  // back, and the published article silently degrades to a heuristic label.
+  "analytics", "articles", "experiments", "fixtures", "images", "knowledge",
+  "logs", "practice", "research", "strategy",
 ]);
 const EXCLUDED_COMPONENTS = new Set(["node_modules", "npm-cache", "work", "workspace"]);
-const EXCLUDED_PREFIXES = ["logs/agent/launchd/", "logs/launchd/", "logs/daily-status/", "logs/agent/daily-status/"];
+const EXCLUDED_PREFIXES = [
+  "logs/agent/launchd/", "logs/launchd/", "logs/daily-status/", "logs/agent/daily-status/",
+  "analytics/raw/",
+  // GA4-derived per-article traffic. Never synced out of the shared tree, so it
+  // cannot ride a worktree branch into a PR on a public repository.
+  "analytics/private/",
+];
 
 const die = (message) => {
   console.error(`[isolated-artifacts] ERROR: ${message}`);
@@ -59,6 +69,36 @@ const copyFile = (sourceRoot, destinationRoot, relative, mode) => {
   fs.chmodSync(destination, mode);
 };
 
+const changesSince = (sourceRoot, snapshotFile) => {
+  const before = JSON.parse(fs.readFileSync(snapshotFile, "utf8"));
+  const after = inventory(sourceRoot);
+  const changed = Object.entries(after)
+    .filter(([relative, metadata]) => before[relative]?.hash !== metadata.hash);
+  return { before, changed };
+};
+
+const findCollisions = (destinationRoot, before, changed) => {
+  const collisions = [];
+  for (const [relative, metadata] of changed) {
+    const destinationFile = path.join(destinationRoot, relative);
+    if (!fs.existsSync(destinationFile) && before[relative]) {
+      collisions.push(relative);
+    } else if (fs.existsSync(destinationFile)) {
+      const stat = fs.lstatSync(destinationFile);
+      const destinationHash = stat.isFile() && !stat.isSymbolicLink() ? hashFile(destinationFile) : null;
+      const unchangedSinceSnapshot = before[relative]?.hash === destinationHash;
+      if (!unchangedSinceSnapshot && destinationHash !== metadata.hash) {
+        collisions.push(relative);
+      }
+    }
+  }
+  return collisions;
+};
+
+const reportCollisions = (collisions) => {
+  for (const relative of collisions) console.error(`[isolated-artifacts] COLLISION: ${relative}`);
+};
+
 const [command, ...args] = process.argv.slice(2);
 if (command === "snapshot") {
   const [root, output] = args;
@@ -72,36 +112,25 @@ if (command === "snapshot") {
     copyFile(path.resolve(sourceRoot), path.resolve(destinationRoot), relative, metadata.mode);
   }
   console.error(`[isolated-artifacts] imported ${Object.keys(files).length} artifact files for resume`);
-} else if (command === "sync") {
+} else if (command === "check-sync" || command === "sync") {
   const [sourceRoot, destinationRoot, snapshotFile] = args;
   if (!sourceRoot || !destinationRoot || !snapshotFile) {
-    die("usage: sync <source-root> <destination-root> <snapshot.json>");
+    die(`usage: ${command} <source-root> <destination-root> <snapshot.json>`);
   }
   const source = path.resolve(sourceRoot);
   const destination = path.resolve(destinationRoot);
-  const before = JSON.parse(fs.readFileSync(snapshotFile, "utf8"));
-  const after = inventory(source);
-  const changed = Object.entries(after).filter(([relative, metadata]) => before[relative]?.hash !== metadata.hash);
-  const collisions = [];
-  for (const [relative, metadata] of changed) {
-    const destinationFile = path.join(destination, relative);
-    if (!fs.existsSync(destinationFile) && before[relative]) {
-      collisions.push(relative);
-    } else if (fs.existsSync(destinationFile)) {
-      const stat = fs.lstatSync(destinationFile);
-      const destinationHash = stat.isFile() && !stat.isSymbolicLink() ? hashFile(destinationFile) : null;
-      const unchangedSinceSnapshot = before[relative]?.hash === destinationHash;
-      if (!unchangedSinceSnapshot && destinationHash !== metadata.hash) {
-        collisions.push(relative);
-      }
-    }
-  }
+  const { before, changed } = changesSince(source, snapshotFile);
+  const collisions = findCollisions(destination, before, changed);
   if (collisions.length > 0) {
-    for (const relative of collisions) console.error(`[isolated-artifacts] COLLISION: ${relative}`);
+    reportCollisions(collisions);
     process.exit(3);
+  }
+  if (command === "check-sync") {
+    console.error(`[isolated-artifacts] export precheck passed for ${changed.length} changed artifact files`);
+    process.exit(0);
   }
   for (const [relative, metadata] of changed) copyFile(source, destination, relative, metadata.mode);
   console.error(`[isolated-artifacts] exported ${changed.length} changed artifact files`);
 } else {
-  die("usage: isolated-artifacts.mjs <snapshot|import|sync> ...");
+  die("usage: isolated-artifacts.mjs <snapshot|import|check-sync|sync> ...");
 }
