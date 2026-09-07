@@ -1,10 +1,34 @@
 {
   "version": 1,
   "zennUsername": "clopy",
-  "maxPublicationsPer24Hours": 4,
-  "retryAfterHours": 6,
-  "maxAttempts": 3,
+  "maxPublicationsPer24Hours": 2,
+  "retryAfterHours": 12,
+  "maxAttempts": 14,
   "entries": [
+    {
+      "article": "articles/css-tree-counting-sandbox-gate.md",
+      "enqueuedAt": "2026-08-26T00:14:36.448Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-settings-doctor-bash-wildcard-rule-check.md",
+      "enqueuedAt": "2026-08-30T01:43:00.201Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-toolsearch-disabled-tool-boundary.md",
+      "enqueuedAt": "2026-08-30T20:19:23.864Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-subagent-model-force-precedence-gap.md",
+      "enqueuedAt": "2026-09-02T07:03:55.569Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
     {
       "article": "articles/claude-read-deny-redirect-boundary.md",
       "enqueuedAt": "2026-09-02T20:25:53.005Z",
@@ -18,62 +42,5 @@
       "lastAttemptAt": null
     }
   ],
-  "blocked": [
-    {
-      "article": "articles/bun-markdown-marked-sanitize-boundary.md",
-      "enqueuedAt": "2026-08-24T11:01:32.273Z",
-      "attempts": 4,
-      "lastAttemptAt": "2026-08-26T04:28:33.173Z",
-      "blockedAt": "2026-08-26T07:07:05.707Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/codex-agents-shared-byte-budget.md",
-      "enqueuedAt": "2026-08-24T14:12:05.947Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-08-26T19:30:59.226Z",
-      "blockedAt": "2026-08-26T20:31:18.313Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/css-tree-counting-sandbox-gate.md",
-      "enqueuedAt": "2026-08-26T00:14:36.448Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-08-28T07:35:25.258Z",
-      "blockedAt": "2026-08-28T08:35:44.901Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/claude-model-flag-overrides-settings-json.md",
-      "enqueuedAt": "2026-08-29T20:46:14.010Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-04T09:57:02.728Z",
-      "blockedAt": "2026-09-04T10:57:20.109Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/claude-settings-doctor-bash-wildcard-rule-check.md",
-      "enqueuedAt": "2026-08-30T01:43:00.201Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-05T11:59:02.807Z",
-      "blockedAt": "2026-09-05T12:59:17.757Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/claude-toolsearch-disabled-tool-boundary.md",
-      "enqueuedAt": "2026-08-30T20:19:23.864Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-06T02:00:37.232Z",
-      "blockedAt": "2026-09-06T03:00:50.678Z",
-      "reason": "article never became public within the attempt limit"
-    },
-    {
-      "article": "articles/claude-subagent-model-force-precedence-gap.md",
-      "enqueuedAt": "2026-09-02T07:03:55.569Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-07T06:03:52.304Z",
-      "blockedAt": "2026-09-07T07:04:06.787Z",
-      "reason": "article never became public within the attempt limit"
-    }
-  ]
+  "blocked": []
 }

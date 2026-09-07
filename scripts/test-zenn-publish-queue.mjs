@@ -344,6 +344,31 @@ Test body.
 
   testBlockFlow();
   testWorkerFlow();
+  // The shipped queue must stay patient enough for Zenn's real latency. Measured
+  // on 2026-09-07 from `source_repo_updated_at` on 37 published articles: the lag
+  // between the publish commit landing on main and Zenn reading the file had a
+  // median of 12h, a 75th percentile of 27h and a 90th percentile of 168h. The
+  // original 6h x 3 attempts gave up after 18h -- below the 75th percentile --
+  // and moved four still-pending articles to `blocked` with the reason "article
+  // never became public within the attempt limit". Three of those seven blocked
+  // articles were public by the time this was checked, one of them 167h after
+  // its commit. Giving up early is therefore a false negative, not a safeguard.
+  const shipped = JSON.parse(fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "..", queueRelative), "utf8",
+  ));
+  const giveUpHours = shipped.retryAfterHours * (shipped.maxAttempts ?? Infinity);
+  assert.ok(
+    giveUpHours >= 168,
+    `the queue gives up after ${giveUpHours}h, inside Zenn's observed p90 of 168h`,
+  );
+  assert.ok(
+    shipped.maxPublicationsPer24Hours <= 2,
+    "flipping more articles per day than Zenn absorbs only grows the backlog",
+  );
+  for (const entry of shipped.blocked ?? []) {
+    assert.fail(`${entry.article} is blocked; verify it against the public API before shipping that`);
+  }
+
   console.log("zenn publication queue tests: ok");
 } finally {
   fs.rmSync(fixture, { recursive: true, force: true });
