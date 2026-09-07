@@ -18,6 +18,16 @@ const EXCLUDED_PREFIXES = [
   // GA4-derived per-article traffic. Never synced out of the shared tree, so it
   // cannot ride a worktree branch into a PR on a public repository.
   "analytics/private/",
+  // Derived state owned by the daily improvement loop, which rewrites all three
+  // in the shared checkout every morning. A pipeline run can outlive that hour
+  // -- a usage-limit wait alone is five hours -- and a whole-file export of a
+  // file both sides edited is a collision, which discards the entire run's
+  // artifacts. The registrations themselves ride back in analytics/contracts/,
+  // one immutable file per slug, and `collect-zenn-metrics.mjs` rebuilds these
+  // three from those files plus the API.
+  "analytics/article-ledger.jsonl",
+  "analytics/market-index.json",
+  "analytics/topic-feedback.md",
 ];
 
 const die = (message) => {

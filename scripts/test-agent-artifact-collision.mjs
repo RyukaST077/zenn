@@ -114,6 +114,33 @@ try {
   expectStatus(run(checkout, "node", [artifactTool, "check-sync", checkout, shared, baseline]), 0,
     "check-sync without collision");
 
+  // The daily improvement loop rewrites the ledger, the market index and the
+  // observation report in the shared checkout every morning, and a pipeline run
+  // can outlive that hour. If those files were exported, both sides editing them
+  // would be a collision and the whole run's artifacts would be discarded. The
+  // registrations ride back in analytics/contracts/ instead, one file per slug.
+  fs.mkdirSync(path.join(checkout, "analytics/contracts"), { recursive: true });
+  fs.mkdirSync(path.join(shared, "analytics"), { recursive: true });
+  expectStatus(run(checkout, "node", [artifactTool, "snapshot", checkout, baseline]), 0,
+    "snapshot analytics baseline");
+  for (const derived of ["article-ledger.jsonl", "market-index.json", "topic-feedback.md"]) {
+    fs.writeFileSync(path.join(checkout, "analytics", derived), "isolated\n");
+    fs.writeFileSync(path.join(shared, "analytics", derived), "shared\n");
+  }
+  fs.writeFileSync(path.join(checkout, "analytics/contracts/registered.json"), "{}\n");
+  expectStatus(run(checkout, "node", [artifactTool, "sync", checkout, shared, baseline]), 0,
+    "derived analytics files must not collide");
+  for (const derived of ["article-ledger.jsonl", "market-index.json", "topic-feedback.md"]) {
+    assert.equal(
+      fs.readFileSync(path.join(shared, "analytics", derived), "utf8"), "shared\n",
+      `the shared ${derived} must be left to the daily loop`,
+    );
+  }
+  assert.equal(
+    fs.readFileSync(path.join(shared, "analytics/contracts/registered.json"), "utf8"), "{}\n",
+    "a registration must still reach the shared checkout",
+  );
+
   console.log("agent artifact collision tests passed");
 } finally {
   fs.rmSync(testRoot, { recursive: true, force: true });

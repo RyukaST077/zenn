@@ -20,6 +20,7 @@
 //
 // Exit codes: 0 ok / 2 misconfiguration
 
+import fs from "node:fs";
 import path from "node:path";
 
 import { fail, parseArgs, readJson, readLedger } from "./zenn-metrics-lib.mjs";
@@ -28,6 +29,7 @@ const { options } = parseArgs(process.argv.slice(2));
 const root = path.resolve(options.root || process.cwd());
 const policyPath = path.resolve(root, options.policy || "strategy/topic-selection-policy.json");
 const ledgerPath = path.resolve(root, options.ledger || "analytics/article-ledger.jsonl");
+const contractsDir = path.resolve(root, options.contracts || "analytics/contracts");
 
 const policy = readJson(policyPath, "policy");
 const ledger = readLedger(ledgerPath);
@@ -39,7 +41,29 @@ if (typeof share !== "number" || share < 0 || share >= 1) {
 
 // Only contract-registered entries count. The 57 heuristic historical-control
 // rows were classified after the fact and were never allocated to anything.
-const registered = ledger.filter((entry) => entry.classification?.source === "contract");
+//
+// The per-slug files under analytics/contracts/ are the authoritative record and
+// the ledger is derived from them, so read both and let a contract file win. A
+// pipeline running in an isolated worktree cannot write its ledger line back --
+// the daily loop owns that file -- but its contract file does ride back, so
+// counting contracts keeps the next run from re-allocating a filled slot.
+const registeredBySlug = new Map();
+for (const entry of ledger) {
+  if (entry.slug && entry.classification?.source === "contract") {
+    registeredBySlug.set(entry.slug, { classification: entry.classification });
+  }
+}
+if (fs.existsSync(contractsDir)) {
+  for (const name of fs.readdirSync(contractsDir).sort()) {
+    if (!name.endsWith(".json")) continue;
+    const contract = readJson(path.join(contractsDir, name), `contract ${name}`);
+    if (!contract?.slug || !contract.classification) {
+      fail(`contract ${name} must carry a slug and a classification`);
+    }
+    registeredBySlug.set(contract.slug, { classification: contract.classification });
+  }
+}
+const registered = [...registeredBySlug.values()];
 
 const experimentId = policy.activeExperiment ?? null;
 let experiment = null;

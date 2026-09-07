@@ -855,6 +855,23 @@ test("a full or closed experiment stops taking articles instead of overfilling",
   assert.match(closed.why, /concluded/);
 });
 
+test("a registration the ledger lost still counts, because the contract file carries it", (dir) => {
+  // The pipeline registers inside an isolated worktree, and the ledger is owned
+  // by the daily loop in the shared checkout, so the worktree's ledger line does
+  // not travel back. Only analytics/contracts/<slug>.json does. If the allocator
+  // counted the ledger alone it would hand the same slot out twice.
+  registerContract(dir, "b-1", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  const ledgerPath = path.join(dir, "analytics/article-ledger.jsonl");
+  assert.ok(fs.existsSync(ledgerPath), "register should have written a ledger line");
+  fs.rmSync(ledgerPath);
+
+  const assignment = nextArm(dir);
+  assert.equal(assignment.state.treatmentFilled, 1, "the contract file must still be counted");
+  assert.equal(assignment.state.registered, 1);
+  assert.equal(assignment.arm, "B-payload", "11 of 12 still to fill");
+  assert.match(assignment.why, /11 more/);
+});
+
 test("the allocator never offers a deprecated archetype to the exploration arm", (dir) => {
   const experimentPath = path.join(dir, "experiments/EXP-001.json");
   const experiment = JSON.parse(fs.readFileSync(experimentPath, "utf8"));
