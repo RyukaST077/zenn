@@ -162,6 +162,14 @@ if (checkOnly) {
 
 const ledger = readLedger(ledgerPath);
 const existing = ledger.find((entry) => entry.slug === contract.slug);
+// The contract file is the authoritative registration and the ledger line is
+// derived, so a worktree that synced only the contract back leaves a slug
+// registered with no ledger line at all. Guarding on the ledger alone would let
+// that registration be silently re-armed.
+const contractFile = path.join(contractsDir, `${contract.slug}.json`);
+if (fs.existsSync(contractFile) && !options.force) {
+  fail(`${contract.slug} is already registered in ${path.relative(root, contractFile)}; pass --force to overwrite the contract`);
+}
 const classification = {
   source: "contract",
   valueArchetype: contract.valueArchetype,

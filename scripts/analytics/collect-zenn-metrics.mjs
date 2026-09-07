@@ -186,9 +186,12 @@ for (const article of selfArticles) {
   }
 
   // A contract outranks whatever the ledger happened to hold, and is restored
-  // before anything reads primaryTopic.
+  // before anything reads primaryTopic. It wins over an existing contract line
+  // too: only the per-slug file survives a worktree run, so a ledger line that
+  // disagrees with it is the stale copy, and leaving it would let next-arm and
+  // evaluate-policy read different arms for the same article.
   const contract = contracts.get(article.slug);
-  if (contract && entry.classification?.source !== "contract") {
+  if (contract) {
     entry.classification = contract.classification;
     entry.topics = contract.topics ?? entry.topics;
     entry.primaryTopic = contract.primaryTopic ?? entry.primaryTopic;
