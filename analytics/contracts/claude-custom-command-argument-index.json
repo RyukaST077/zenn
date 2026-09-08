@@ -1,0 +1,37 @@
+{
+  "slug": "claude-custom-command-argument-index",
+  "topics": [
+    "claudecode",
+    "cli",
+    "ai",
+    "productivity"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 43,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-08T20:49:51.537Z",
+    "contract": {
+      "targetReader": "JavaScriptの変数・関数とターミナルでのコマンド実行は知っている。Claude Codeは日常的に使っているが、.claude/commands配下に独自のMarkdownコマンドを作ったことはなく、複数の引数を受け取るコマンドの書き方は初めて学ぶ人",
+      "readerDecision": "複数の引数を受け取る独自スラッシュコマンドを書くとき、$ARGUMENTSと$0/$1のどちらをどう使えば意図した引数を受け取れるかを自分の手元で確認してから選べる",
+      "takeaway": "2つの引数を受け取るコマンドファイルのテンプレート（frontmatter+本文）と、$ARGUMENTS/$0/$1/$nameの対応表。transcriptログで実際の置換結果を自分で確認する手順つき",
+      "verificationItems": [
+        "$0が1番目の引数に展開されることをtranscriptログで確認する: 公式仕様の0始まりインデックスが実機でも成立するかを理解し、テンプレートの数え方を信頼できる根拠にする",
+        "ブログでよく見る『$1が1番目』という書き方で同じ呼び出しをすると、$1が2番目の引数に展開されることを確認する: 古い情報のまま書くと意図と違う引数が渡る具体的な理由を理解する",
+        "同じ呼び出しで$ARGUMENTS（引数全体の文字列）と$1（個別の2番目の引数）が別々の値に展開されることを確認する: 全体をまとめて渡したい場面と個別の引数を使い分ける場面の違いを理解する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.md の市場の勝ち型集計でasset型は20本・平均66.1いいね・最大693いいね（202608個人的claude code設定）と、claudecodeトピックの上位層に最も濃縮している価値型。加えてclaudecodeはd30-45コホートn=240で「昇格根拠まで測れる」primaryTopicの条件を満たす。読者の実在する困りごとは、2025-11-22公開のalexop.devの解説記事が現行の公式仕様（$0始まり）と食い違う$1=1番目という説明を掲載している事実で裏づけられる"
+    }
+  }
+}

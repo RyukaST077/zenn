@@ -52,6 +52,12 @@
       "enqueuedAt": "2026-09-08T07:55:41.506Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-custom-command-argument-index.md",
+      "enqueuedAt": "2026-09-08T21:03:55.293Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
