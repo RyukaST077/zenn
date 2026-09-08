@@ -1,5 +1,5 @@
 ---
-title: "GPT-6 Astraの新機能・料金・API移行で確認したい変更点"
+title: "GPT-6 Astraの性能・新機能・料金とAPI移行のチェック表"
 emoji: "🔭"
 type: "tech"
 topics: ["openai", "gpt", "aiagent", "api"]
@@ -36,7 +36,23 @@ OpenAI APIでエージェントを作っているなら、GPT-6 Astraへの移�
 
 コンテキストウィンドウの数値と最大入力は異なります。また、画像入力への対応と画像の直接出力は別です。仕様上の出力モダリティはテキストで、画像生成は利用可能なツールに含まれています。[GPT-6 Astraモデル仕様](https://developers.openai.com/api/docs/models/gpt-6-astra)
 
-OpenAIは、複雑な推論、コーディング、コンピューター操作、調査、文書作成を用途として挙げています。ただし、この位置づけだけでは、自分の業務での成功率や処理時間は決まりません。本記事では、従来モデルより何％優れるといった性能比較は行いません。[GPT-6 Astraモデル仕様](https://developers.openai.com/api/docs/models/gpt-6-astra)
+OpenAIは、複雑な推論、コーディング、コンピューター操作、調査、文書作成を用途として挙げています。ただし、この位置づけだけでは、自分の業務での成功率や処理時間は決まりません。以下では、公式の評価値を比較し、独立した実測とは区別します。[GPT-6 Astraモデル仕様](https://developers.openai.com/api/docs/models/gpt-6-astra)
+
+## 公式評価で見る性能差
+
+OpenAIの発表に掲載された数値をグラフ化しました。**OpenAI公表値の再作図であり、本記事での実測ではありません。**
+
+![AstraとSolの公式スコア比較。Terminal-Bench 4.0は57.9対37.3、DeepSWEは74.1対72.7、AutomationBenchは41.4対18.1、BrowseCompは91.5対90.4。単位は％。](/images/gpt-6-astra-api-migration-guide/official-benchmarks.png)
+
+*出典：[OpenAIのGPT-6 Astra発表・評価表](https://openai.com/index/gpt-6-astra/)（2026年9月8日確認）。各モデルの推論量設定の中での最高スコアで、同一の推論量・費用に固定した比較ではありません。*
+
+Terminal-BenchやAutomationBenchでは差が大きく、DeepSWEやBrowseCompでは小さくなっています。評価ごとに課題が異なるため、棒の高さを評価間で比べて「総合性能」として扱うことはできません。
+
+![OSWorld 2.0の公式シミュレーション。スコアはAstra72.6％、Sol65.7％。所要時間はAstra約40分、Sol約75分。](/images/gpt-6-astra-api-migration-guide/osworld-score-and-latency.png)
+
+*出典：[同発表のOSWorld比較](https://openai.com/index/gpt-6-astra/)。OSWorld 2.0 v2026.08.08のoffline set・partial score。時間はレイテンシ・シミュレーションの概数です。*
+
+この比較ではAstraが高いスコアと短い時間を両立しています。ただし、研究環境・APIでの評価には、製品版ChatGPTと異なるシステムプロンプトやツールが使われる場合があります。自分の業務でも同じ短縮率になるとは限りません。[評価条件](https://openai.com/index/gpt-6-astra/)
 
 ## 非同期ツール呼び出しで、待ち時間中にも作業を進められる
 
