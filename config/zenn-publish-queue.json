@@ -46,6 +46,12 @@
       "enqueuedAt": "2026-09-03T20:17:17.994Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-statusline-field-reliability-verification.md",
+      "enqueuedAt": "2026-09-08T07:55:41.506Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
