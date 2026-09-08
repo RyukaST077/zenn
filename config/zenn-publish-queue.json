@@ -6,6 +6,12 @@
   "maxAttempts": 15,
   "entries": [
     {
+      "article": "articles/gpt-6-astra-api-migration-guide.md",
+      "enqueuedAt": "2026-09-08T04:15:41.461Z",
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-08T04:00:36.000Z"
+    },
+    {
       "article": "articles/css-tree-counting-sandbox-gate.md",
       "enqueuedAt": "2026-08-26T00:14:36.448Z",
       "attempts": 1,
