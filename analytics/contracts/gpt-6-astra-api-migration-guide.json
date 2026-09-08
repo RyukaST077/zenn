@@ -1,0 +1,38 @@
+{
+  "slug": "gpt-6-astra-api-migration-guide",
+  "topics": [
+    "openai",
+    "gpt",
+    "aiagent",
+    "api"
+  ],
+  "primaryTopic": "aiagent",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 33,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-08T03:59:44.474Z",
+    "contract": {
+      "targetReader": "OpenAI APIでツール付きエージェントを運用し、GPT-6 Astraへの切替範囲を決めたい開発者",
+      "readerDecision": "既存エージェントをAstraへ移す前に必要なコード変更と評価項目を決められる",
+      "takeaway": "既存コードの条件と必要な変更を対応させた移行チェック表",
+      "verificationItems": [
+        "公式モデル仕様と移行ガイドでeffort・非対応パラメータ・エンドポイントを照合",
+        "非同期ツールとsteeringの責務・制約を専用ガイドで照合",
+        "推論設定更新とキャッシュの互換性を専用ガイドで照合",
+        "短文・長文・キャッシュ料金をモデル仕様と料金表で照合"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "ユーザーから当該モデルの調査・公開を明示依頼。公式モデルガイドに移行手順があり、既存APIの互換性を判断する需要を想定。市場人気や検索量は測定していない。analytics/topic-feedback.mdではaiagentのd30-45コホート253本を確認。"
+    }
+  }
+}
