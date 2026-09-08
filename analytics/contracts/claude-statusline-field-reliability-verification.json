@@ -1,0 +1,38 @@
+{
+  "slug": "claude-statusline-field-reliability-verification",
+  "topics": [
+    "claudecode",
+    "cli",
+    "aiagent",
+    "observability"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 92,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": true
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-08T07:26:36.452Z",
+    "contract": {
+      "targetReader": "Claude CodeのstatusLineドキュメントを読んで自作スクリプトを書こうとしているが、自分の実行環境がTeamプラン・-pのヘッドレス実行・git worktree addで手動管理したworktreeという、ドキュメントが明言していない条件の組み合わせに当てはまる開発者",
+      "readerDecision": "自分の実行環境(プラン種別・対話か-pか・worktreeの作り方)で、statusLineのどのフィールドに安全に依存できるか、依存できない場合は何を代わりに読むべきかを、ドキュメントの記述を鵜呑みにせず自分のマシンで検証した結果にもとづいて決められる",
+      "takeaway": "依存なしのstatusLine JSONキャプチャスクリプトと、そのまま.claude/settings.jsonに貼れる設定全文、および4項目の実測(Teamプランでのrate_limits有無/`-p`ヘッドレス実行でstatusLineが発火するか+代替データ源/`git worktree add`手動作成時のworkspace.git_worktree vs worktree.*/session_nameがAI生成タイトルで埋まるタイミング)をまとめたフィールド信頼性決定表",
+      "verificationItems": [
+        "Team契約(subscriptionType: team)で認証したセッションのstatusLine JSONに、初回API応答後もrate_limits(five_hour/seven_day)が出現するか(ドキュメントはPro/Maxのみと記載)",
+        "claude -pによる非対話実行でstatusLineコマンドがそもそも発火するか。発火しない場合、--output-format jsonのresultオブジェクトが同等のコスト/使用量データを代替できるか",
+        "git worktree addで手動作成し--worktreeを使わずに入ったディレクトリで、workspace.git_worktreeは埋まるがworktree.name/path/branchは空のままか(ドキュメントの記述を実際のJSONで裏づけ)",
+        "session_nameがAI生成タイトルで埋まるタイミング(何ターン目か、非対話-p実行では最後まで出現しないか)"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.mdの市場勝ち型集計でasset型はclaudecode系上位記事の平均いいねが最も高い区分(provisional, 上位記事平均72.2・最大693)で、代表例『202608個人的claude code設定』(693いいね)はまさに『コピーして使える設定』型。statusLine自体の需要は、WebSearchで見つかった複数の独立した第三者ガイド(ccusage.com, dandoescode.com, felipeelias.github.io, claudedirectory.org, gordonbeeming.com)が2026年に入ってから公開されていることからも確認できるが、Team/-p/手動worktreeの条件別検証を行った記事は本リポジトリ内にも検索結果にも見つからなかった。claudecodeはanalytics/topic-feedback.mdのprimaryTopic選定表で『昇格根拠まで測れる』(d30-45 n=240)に区分されている。"
+    }
+  }
+}
