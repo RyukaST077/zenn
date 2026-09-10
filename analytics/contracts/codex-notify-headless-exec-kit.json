@@ -1,0 +1,38 @@
+{
+  "slug": "codex-notify-headless-exec-kit",
+  "topics": [
+    "cli",
+    "aiagent",
+    "ai",
+    "automation"
+  ],
+  "primaryTopic": "cli",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 46,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-10T02:29:17.408Z",
+    "contract": {
+      "targetReader": "JavaScriptの関数・ファイル編集・ターミナル操作は知っていて、Codex CLIを対話的に使ったことはあるが、config.tomlのnotify設定や、codex execのような非対話実行時に通知が飛ぶかどうかは初めて扱う人",
+      "readerDecision": "自分のCI/自動実行スクリプトでcodex execを使うとき、有効なnotify設定(実行コマンドとペイロードの読み方)を書いて完了時に外部コマンドを確実に起動できるようにする",
+      "takeaway": "コピペで使えるconfig.tomlのnotifyエントリと、完了ペイロードをファイルに記録するnotifyスクリプト(bash)、対話実行・codex exec実行それぞれで発火を確認する手順",
+      "verificationItems": [
+        "対話モードで1ターン実行後、notifyスクリプトが受け取るargv[1]のJSONにtype/thread-id/turn-id/cwd/last-assistant-messageが含まれるかを確認する",
+        "同じユーザーレベル設定のままcodex exec(非対話)を実行し、notifyスクリプトが起動されペイロードが書き出されるかを確認する(公式ドキュメント未記載の挙動を埋める)",
+        "プロジェクトの.codex/config.tomlにのみnotifyを書いた状態でcodex execを実行し、公式の『User-level only』という記述どおりに無効化されるかを確認する",
+        "notifyを外し[tui]のnotifications/notification_methodのみを設定した場合はnotifyスクリプトが起動されないことを確認し、両者が独立した仕組みであることを理解する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.md 節2: cliトピックはd30-45コホートn=59で『続行判断まで測れる』水準。節1: asset型は上位記事20本で平均58.7いいねと市場上位記事に濃縮している価値型。既存のZenn記事(ml0_1337, digeon, engineer117)はnotifyの対話的なデスクトップ通知・音を主題にしており、codex exec(非対話/CI)での発火可否とプロジェクトスコープの有効性を検証した記事は見つからなかった(検索日2026-09-10)。GitHub公式issue https://github.com/openai/codex/issues/8189 はnotifyフックの発火条件で読者が実際に詰まっていることを示す一次情報。"
+    }
+  }
+}

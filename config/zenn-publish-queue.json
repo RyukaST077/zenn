@@ -58,6 +58,12 @@
       "enqueuedAt": "2026-09-08T21:03:55.293Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-notify-headless-exec-kit.md",
+      "enqueuedAt": "2026-09-10T02:55:46.124Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
