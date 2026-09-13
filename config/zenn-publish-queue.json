@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-settings-doctor-bash-wildcard-rule-check.md",
-      "enqueuedAt": "2026-08-30T01:43:00.201Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
       "article": "articles/claude-toolsearch-disabled-tool-boundary.md",
       "enqueuedAt": "2026-08-30T20:19:23.864Z",
       "attempts": 0,
