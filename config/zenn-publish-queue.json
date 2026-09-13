@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/css-tree-counting-sandbox-gate.md",
-      "enqueuedAt": "2026-08-26T00:14:36.448Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-13T06:19:13.764Z"
-    },
-    {
       "article": "articles/claude-settings-doctor-bash-wildcard-rule-check.md",
       "enqueuedAt": "2026-08-30T01:43:00.201Z",
       "attempts": 0,
