@@ -1,0 +1,38 @@
+{
+  "slug": "claude-code-session-resume-decision",
+  "topics": [
+    "claudecode",
+    "cli",
+    "aiagent",
+    "tutorial"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 69,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-14T20:04:06.576Z",
+    "contract": {
+      "targetReader": "JavaScript/TypeScriptの基本とターミナル操作、cdでのディレクトリ移動は知っているが、Claude Codeのセッションを終了後に続きから再開する際、--continueと--resume、--fork-sessionの違いを知らず、別ディレクトリからの--continueで続きが見えなくなって困った経験がある人",
+      "readerDecision": "作業を中断したあとに再開する場面で、今いるディレクトリの続きでよいか・特定の会話にどこからでも戻りたいか・元の会話を壊さず枝分かれしたいか・記録を残したくないかに応じて、--continue / --resume <id> / --fork-session / --no-session-persistence のどれを使うべきかを判断できる",
+      "takeaway": "状況→使うフラグの決定表と、一時ディレクトリと claude -p --output-format json のsession_id・~/.claude/projects/配下の.jsonlファイル数で自分の手元で確認できる最小の検証手順",
+      "verificationItems": [
+        "別ディレクトリからの--continueが元の会話を拾わないことを確認し、ディレクトリ紐づけを理解する",
+        "--resume <session-id>が別ディレクトリからでも同じ会話を再開できることを確認し、ID指定の到達範囲を理解する",
+        "--fork-sessionが新しいsession_idと新しい.jsonlを作り、元の.jsonlが変化しないことをファイル一覧で確認し、複製時に元データが保護される仕組みを理解する",
+        "--no-session-persistenceを付けた実行では.jsonlファイルが増えないことを確認し、保存そのものを止める分岐を理解する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "公式ドキュメント（code.claude.com/docs/en/sessions）が--continue/--resume/--fork-session/transcript保存場所を専用ページで詳細に扱っているほど頻出の操作であり、WebSearchでも同テーマを扱う三次情報記事（pasqualepillitteri.it、continuumcode.ai、explainx.ai、aiopsschool.comなど）が複数見つかる。一方でこのリポジトリの74記事・研究レポート・並行作業中の契約群（analytics/contracts/）のいずれにも同テーマは無く、差別化は取れている。"
+    }
+  }
+}
