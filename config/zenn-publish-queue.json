@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-toolsearch-disabled-tool-boundary.md",
-      "enqueuedAt": "2026-08-30T20:19:23.864Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-09-14T08:21:10.432Z"
-    },
-    {
       "article": "articles/claude-subagent-model-force-precedence-gap.md",
       "enqueuedAt": "2026-09-02T07:03:55.569Z",
       "attempts": 0,
