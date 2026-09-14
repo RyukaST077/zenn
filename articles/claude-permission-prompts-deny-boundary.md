@@ -3,7 +3,7 @@ title: "Claude Codeの--permission-prompts noneは「何を拒否するか」で
 emoji: "🚧"
 type: tech
 topics: ["claudecode", "cli", "ci", "automation"]
-published: false
+published: true
 ---
 
 `claude -p` をCIや無人のエージェントランナーに組み込もうとすると、権限プロンプトが必要なツール呼び出しでヘッドレスセッションがハングする、あるいは黙って失敗するという問題に当たります。これまでの回避策は `--permission-mode dontAsk` や `--allowedTools` によるアローリストでした。Claude Code 2.1.259で追加された `--permission-prompts none` はこの問題への新しい答えですが、既存のドキュメントには `--permission-mode` と組み合わせた具体例がありません。
