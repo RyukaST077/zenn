@@ -3,7 +3,7 @@ title: "claude -p のヘッドレス実行でstatusLineは一度も発火しな�
 emoji: "🔇"
 type: "tech"
 topics: ["claudecode", "cli", "cicd", "observability", "aiagent"]
-published: false
+published: true
 ---
 
 Claude Codeの `statusLine` ドキュメントを読んで、CI/CDの `claude -p` パイプラインにコスト表示やworktree判定用のカスタムスクリプトを組み込もうとしていないだろうか。ドキュメントのトリガー一覧（セッション開始/再開、新しいアシスタントメッセージ、`/compact`、権限モード変更、vimモード切り替え、`refreshInterval`、レート制限/キャッシュ失効のティック）はすべて対話型TUIの語彙で書かれており、`-p` には一切触れていない。手元のTeamプラン認証セッション（`claude 2.1.263`）で2026-09-08に検証したところ、`claude -p` 実行では **`statusLine` コマンドは一度も発火しなかった** ——元の作業ディレクトリでも、`git worktree add`（Claude Code自身の `--worktree` ではなく）で手動作成したディレクトリの中でも同じ結果だった。したがって、ヘッドレスパイプラインでコスト・レート制限・worktree識別情報を `statusLine` に依存させてはならず、代わりに `--output-format json` の `result` オブジェクトを読むべきである。
