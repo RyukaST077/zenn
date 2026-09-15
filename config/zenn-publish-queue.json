@@ -28,6 +28,12 @@
       "enqueuedAt": "2026-09-14T20:29:42.558Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-print-output-format-decision.md",
+      "enqueuedAt": "2026-09-15T20:59:04.184Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []

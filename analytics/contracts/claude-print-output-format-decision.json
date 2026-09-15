@@ -1,0 +1,39 @@
+{
+  "slug": "claude-print-output-format-decision",
+  "topics": [
+    "claudecode",
+    "cli",
+    "automation",
+    "bash",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 50,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-15T20:27:57.433Z",
+    "contract": {
+      "targetReader": "JavaScriptの変数・関数・ファイル編集・ターミナルでのコマンド実行は知っているが、claude -p の出力をnpm scriptsやCIスクリプトから安全にパースする方法は初めて学ぶ新人エンジニア",
+      "readerDecision": "npm scriptsやCIからclaude -pを呼ぶとき、欲しい情報（最終テキストだけ／コストとセッションIDも／進行中のイベントも）に応じてtext・json・stream-jsonのどれを選び、stream-jsonには--verboseが要ることを踏まえてフラグを組み立てられる",
+      "takeaway": "同一プロンプトをtext/json/stream-json(+--verbose)の3通りで実行した実際の出力例と、目的別にどのフラグを付けるかの判断表、jqで必要フィールドを抜き出す実行可能なワンライナー",
+      "verificationItems": [
+        "--output-format text（既定）を実行し、出力がプレーン文字列のみでセッションIDやコストを含まないことを確認する: スクリプトが最終テキストしか要らない場合はデフォルトのままでよいと分かる",
+        "--output-format json を実行し、単一JSONオブジェクトにsession_id・total_cost_usd・usage・resultが含まれることを確認する: コストやセッションIDをログ・resumeに使いたい場合の選択肢だと分かる",
+        "--output-format stream-json を--verboseなしで実行し、「requires --verbose」という決定的なエラーメッセージが返ることを確認する: stream-jsonは単独指定では動かず、スクリプトが事前にこのエラーを回避する必要があると分かる",
+        "--output-format stream-json --verbose を実行し、system/init→assistant→resultの複数行NDJSONが返ることを確認する: 進行中のイベントを段階的に処理したい場合にどのフラグの組み合わせが要るかが分かる"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.md の「primaryTopicに選べるトピック」でclaudecodeはd30-45コホートn=400で昇格根拠まで測れる。同レポート1節の市場勝ち型でdecision archetypeは自分の過去最高帯（Codexモデル選びの記事）を生んだ型であり、boundary-verification（deprecated、57本で5いいね以上0本）から資産化する方針に合致する。stream-jsonが単独では--verboseなしで動かないという運用上の落とし穴は、npm scripts/CI統合という頻出場面で実際に踏まれうる具体的な決定である。"
+    }
+  }
+}
