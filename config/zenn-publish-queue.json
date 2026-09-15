@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-permission-prompts-deny-boundary.md",
       "enqueuedAt": "2026-09-03T20:17:17.994Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-09-14T17:22:14.298Z"
+      "attempts": 2,
+      "lastAttemptAt": "2026-09-15T05:23:09.866Z"
     },
     {
       "article": "articles/claude-statusline-field-reliability-verification.md",
