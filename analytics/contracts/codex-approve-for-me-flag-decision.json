@@ -1,0 +1,38 @@
+{
+  "slug": "codex-approve-for-me-flag-decision",
+  "topics": [
+    "cli",
+    "aiagent",
+    "ai",
+    "codex"
+  ],
+  "primaryTopic": "cli",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 39,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-17T08:42:46.391Z",
+    "contract": {
+      "targetReader": "codex CLIをインストールしてcodex loginでの認証は済み、対話モードで承認プロンプトを見たことはあるが、非対話実行のcodex execや、承認まわりの新しいフラグ(--approve-for-me)、--full-autoが現行バージョンで無くなっていることは初めて知る人",
+      "readerDecision": "手元の1回限りのcodex execタスクについて、何も付けない・--approve-for-meで自動レビューに任せる・--dangerously-bypass-approvals-and-sandboxで全部スキップする、のどれを選ぶかを、タスクがワークスペース境界を越えるかどうかとサンドボックス範囲(--add-dir)の組み合わせから選べる",
+      "takeaway": "フラグ×サンドボックス範囲×境界越え時の挙動をまとめた決定表と、bounded fixtureで4パターンを試すためのコピー可能なcodex execコマンド。境界外ファイルの有無で各パターンの結果を自分で確認できる",
+      "verificationItems": [
+        "ワークスペース内だけへの書き込みをフラグ無しで実行し、境界を越えないタスクはフラグが無くても完了することを確認する: フラグが関係するのは境界を越える操作だけという前提を固定する",
+        "ワークスペース外への書き込みをフラグ無しで実行し、対象ファイルが作られないことを確認する: 非対話execで何もしない場合の基準点を手元のバージョンで把握する",
+        "同じ境界外書き込みを--approve-for-me -s workspace-write --add-dir <一時ディレクトリ>で実行し、ファイルが作られ出力にレビュー関連の記述が現れることを確認する: --approve-for-meが承認省略ではなく承認主体の委譲であることを、スキップ系フラグと区別して理解する",
+        "同じ書き込みを--approve-for-meを付けず-s workspace-write --add-dir <一時ディレクトリ>だけで実行し、境界越え自体が発生せずファイルが作られることを確認する: サンドボックス範囲を広げることと承認をエージェントに任せることが独立したレバーであることを理解し、必要なのはどちらかを取り違えないようにする"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "--approve-for-meは2026-07-31マージ・v0.147.0(2026-08-07)公開の現行機能で、OpenAI公式ドキュメント(auto-review, agent-approvals-security)が説明を割いている一方、リポジトリ内の既存記事・登録済み契約(codex-approval-policy-untrusted-retirement-migration=移行、codex-sandbox-permission-profile-precedence=設定優先順位)はどちらもこの承認フラグの使い分け自体を扱っていない。analytics/topic-feedback.mdではcliのd30-45市場コホートがn=77で「続行判断に使える」primaryTopicの条件を満たす。"
+    }
+  }
+}
