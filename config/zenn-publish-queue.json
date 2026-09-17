@@ -34,6 +34,12 @@
       "enqueuedAt": "2026-09-15T20:59:04.184Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-approve-for-me-flag-decision.md",
+      "enqueuedAt": "2026-09-17T09:08:56.753Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
