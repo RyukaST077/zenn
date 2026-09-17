@@ -3,7 +3,7 @@ title: "Claude Codeの独自コマンドで複数の引数を正しく受け取�
 emoji: "🔢"
 type: "tech"
 topics: ["claudecode", "cli", "ai", "productivity"]
-published: false
+published: true
 ---
 
 Claude Codeでは `.claude/commands/` にMarkdownファイルを置くと、`/コマンド名 引数1 引数2` のように呼び出せる独自スラッシュコマンドを作れます。このとき、複数の引数を「全体の文字列」として使うのか、「1番目」「2番目」と個別に使い分けたいのか迷うことがあります。
