@@ -3,7 +3,7 @@ title: "codex execの完了をnotifyで検知する: 効く設定・効かない
 emoji: "🔔"
 type: "tech"
 topics: ["cli", "aiagent", "ai", "automation"]
-published: false
+published: true
 ---
 
 ## この記事でできるようになること
