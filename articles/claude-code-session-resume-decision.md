@@ -3,7 +3,7 @@ title: "Claude Codeのセッション再開: --continueが効かない時に何�
 emoji: "🔀"
 type: "tech"
 topics: ["claudecode", "cli", "aiagent", "tutorial"]
-published: false
+published: true
 ---
 
 Claude Codeを`claude -p`（非対話モード）で使っていて、こういう経験はないでしょうか。

@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-code-session-resume-decision.md",
       "enqueuedAt": "2026-09-14T20:29:42.558Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-19T02:31:09.634Z"
     },
     {
       "article": "articles/claude-print-output-format-decision.md",
