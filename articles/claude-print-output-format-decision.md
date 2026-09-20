@@ -3,7 +3,7 @@ title: "claude -p を自動化に組み込むとき、text・json・stream-json�
 emoji: "🔀"
 type: tech
 topics: ["claudecode", "cli", "automation", "bash", "aiagent"]
-published: false
+published: true
 ---
 
 ## この記事でできるようになること
