@@ -1,0 +1,38 @@
+{
+  "slug": "claude-skill-claudemd-command-placement-decision",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "cli",
+    "tutorial"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 52,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-21T02:15:45.733Z",
+    "contract": {
+      "targetReader": "Claude Codeでチャットに毎回同じ手順を貼り付けている、または.claude/commands/にコマンドを作ったことがある新人。CLAUDE.mdにルールを書いた経験はあるが、Skill（.claude/skills/）が何のためにあるのか、CLAUDE.mdやサブエージェントと何が違うのかは初めて学ぶ人",
+      "readerDecision": "『常に使ってほしい知識』『繰り返す手順』『会話から切り離して実行したい作業』のどれに当てはまるかを見て、CLAUDE.md・Skill・context: forkのどれに書くかを自分で選べる",
+      "takeaway": "状況別にCLAUDE.md/Skill/context: forkを選ぶ決定表と、旧.claude/commands/形式から新.claude/skills/形式への最小移行手順。CLAUDE.mdは常時読み込み・Skillは呼び出し時のみ読み込みという挙動を、自分の手元のログ出力で確認する手順つき",
+      "verificationItems": [
+        "旧形式.claude/commands/hello.mdでできた/helloコマンドが一覧に出ることを確認する: 既存のcommandsファイルが引き続き動くという公式説明を手元で確認し、移行を急がなくてよいことを理解する",
+        "新形式.claude/skills/world/SKILL.mdでできた/worldコマンドが同じように一覧に出ることを確認する: 新旧の書き方が同じ結果を生むという公式の等価性主張を確認し、どちらの形式で書いてもよいと判断できるようにする",
+        "Skillを一度も呼び出していない状態でCLAUDE.mdのマーカー文字列は起動ログに現れ、Skill本文のマーカー文字列は現れないことを確認する: 『CLAUDE.mdは毎ターン読み込まれ、Skillは呼ばれるまで読み込まれない』という判断基準の核心を、自分の環境で再現する",
+        "Skillを明示的に呼び出した後は同じログにSkill本文のマーカー文字列が現れることを確認する: 呼び出し前後の差分を見て、Skillが『必要な時だけ読み込まれる』ことを体感し、CLAUDE.mdに書くべきか・Skillに書くべきかを使用頻度とコンテキストコストで判断できるようにする"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.mdの市場ベースラインでclaudecodeはd30-45までn=400を確保し『昇格根拠まで測れる』水準。市場の勝ち型集計ではdecisionアーキタイプ（stage: candidate）の代表例として『Codexの新モデルGPT-5.6を調べて分かった、Sol・Terra・Lunaとmax・ultraの選び方』が自記事最高帯に入っており、実在の選択に条件付きの答えを出す記事は通用する型であることが確認できる。加えて公式ドキュメント（code.claude.com/docs/en/slash-commands、2026-09-21時点）が『custom commands have been merged into skills』と明記し、既存の.claude/commands/資産を持つ既存ユーザーと、これから書き始める新人の両方に今まさに配置判断が必要な現在進行形の論点である。"
+    }
+  }
+}
