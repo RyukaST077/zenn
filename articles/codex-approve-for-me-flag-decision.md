@@ -3,7 +3,7 @@ title: "codex execで境界外に書き込むには--add-dirだけでいい(--ap
 emoji: "🧭"
 type: tech
 topics: [cli, aiagent, ai, codex]
-published: false
+published: true
 ---
 
 `codex login`で認証済みで、対話モードの`codex exec`を何度か使い、黄色い承認プロンプトを見たことがある人が、次に一回限りのタスクを非対話で流したいとします。たとえば「生成したファイルをリポジトリの外にある共有ディレクトリへ書き込む」ようなタスクです。
