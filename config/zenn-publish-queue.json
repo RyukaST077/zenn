@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-print-output-format-decision.md",
-      "enqueuedAt": "2026-09-15T20:59:04.184Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-09-20T16:34:23.512Z"
-    },
-    {
       "article": "articles/codex-approve-for-me-flag-decision.md",
       "enqueuedAt": "2026-09-17T09:08:56.753Z",
       "attempts": 0,
