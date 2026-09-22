@@ -1,0 +1,40 @@
+{
+  "slug": "claude-hooks-layered-automation-bundle",
+  "topics": [
+    "claudecode",
+    "hooks",
+    "automation",
+    "cli",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 67,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-22T20:55:32.059Z",
+    "contract": {
+      "targetReader": "Claude Codeを使っていて、危険コマンドのブロック・編集後の自動整形・完了通知・セッション開始時のコンテキスト注入のようなフックを1つずつ場当たり的に足しているが、複数のフックを同じプロジェクトに重ねても互いを壊さないかを確認していない人",
+      "readerDecision": "自分のプロジェクトに、複数の目的が異なるフックを同一イベントへ重ねて設定しても、ブロック伝播・発火順序・マッチャー重複の面で意図通りに動く設定として書けるかを決められる",
+      "takeaway": "危険コマンドブロック・監査ログ・自動整形・完了通知・SessionStartコンテキスト注入を統合した .claude/settings.json の hooks セクション全文と、対応するシェルスクリプト5本、および『どちらを先に書くべきか』の判断表",
+      "verificationItems": [
+        "同一PreToolUseイベントでブロック用エントリと監査ログ用エントリを重ねたときのブロック伝播",
+        "同一イベント配下の複数エントリの記述順と実際の発火順の一致",
+        "PostToolUse(Edit|Write)による自動整形スクリプトの起動と反映",
+        "SessionStartのstartup/resumeマッチャーによる出し分け",
+        "同一matcherを持つ独立2エントリの多重発火"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "claudecode トピックは taggings 13545 規模で継続的に流通。市場の勝ち型集計(analytics/topic-feedback.md 節1)では asset 型が21本・平均70.3いいね・最大693いいねで最多濃縮。上位記事「202608個人的claude code設定」693いいねはまさに『設定ファイルをそのまま配る』型で、hooksという具体テーマでの同型記事は日本語圏でまだ手薄(既存記事は単発境界検証3本のみ)。"
+    }
+  }
+}
