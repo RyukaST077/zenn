@@ -367,12 +367,33 @@ bash scripts/auto-agent-practice.sh --topic "Claude Code hooksでformatを強制
 
 前提は、ログイン済みの `claude`、`codex`、`gh`、`node`、`git`、`rg`、`timeout` または `gtimeout`。
 run段から両方の認証済みCLIを起動するため、選択した外側のオーケストレーターは制限なしの権限で動く。
-専用のローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上を満たした
+専用のローカル環境でのみ使うこと。レビューが `pass`、`blockers: 0`、`warnings: 0`、80点以上、各編集カテゴリで半分以上の得点を満たした
 場合だけ、`queue/<slug>` ブランチで `published: false` の記事とキュー更新のPRを作成する。通常実行はPRを
 自動マージし、`--pr-only` を付けた場合は人間の確認・マージを待つ。既存の未追跡ファイルはキュー
 コミットに含めず、記事と同じslugの画像だけを明示的にstageする。公開準備からpushまでは一時Git
 worktree内で行うため、途中で失敗しても呼び出し元の`main` checkoutと下書き記事は変更されない。
 実際の`published: true`への変更と再試行は、上記のAI非依存ワーカーが担当する。
+
+初回レビューは執筆・修正から独立した専用セッションを作り、同じ記事の再レビューでは
+Codexの`exec resume <id>`／Claudeの`--resume <id>`で継続する。レビューだけセッションを保存し、
+修正は毎回別セッションで実行する。`pipeline.log`にセッションID、継続・代替開始、修正回数を記録する。
+再開に失敗した場合は1回だけ代替セッションを開始し、記事・分析・実行証拠と全レビュー履歴を渡す。
+代替開始も失敗した場合は既存の失敗・再試行処理へ進む。
+
+`logs/agent/pipeline-*/review-history/round-N/`にレビュー時点の記事、レビュー報告、
+指摘台帳（`findings.json`）、修正ログ、前回からの記事差分を保存する。再レビューには前回の報告・
+修正ログ・差分を明示して渡す。指摘には固定IDと未解決／解決済みの状態を付け、解決確認を中心にする。
+新規指摘は「重大な見落とし」か「修正による問題」に限定し、区分・理由・根拠を記録する。
+解決済み指摘の再オープンにも新しい根拠が必要で、単なる好みの変更は合格を妨げない。
+台帳の欠落、理由の欠落、報告の件数との不一致は検証エラーになる。
+詳細は[レビュー履歴の契約](docs/agent-review-continuity.md)を参照。
+
+`--max-rounds 5`は最大5回の修正を意味し、通常のレビューは初回と各修正後の最大6回になる。
+最後の修正にも必ず確認レビューを行い、合格なら公開キュー処理へ進む。未解決事項が残れば、
+理由と指摘IDをログに残して停止し、定期実行では既存の別テーマ再試行へ進む。上限到達による
+自動合格や追加修正は行わない。ステージ出力形式の修復は既存の別上限で管理する。
+`node scripts/test-agent-review-continuity.mjs`で両CLIを模擬し、セッション継続、最終確認の合否、
+代替開始、契約検証とClaude利用上限後の復帰を外部サービスに接続せず検証できる。
 
 初回の実運用や公開設定を変更した直後は `--pr-only` でPR内容を確認し、問題がなければ通常実行へ
 切り替える。統合テストでは隔離した実Gitリポジトリとfake Codex / GitHub CLIを使い、`--pr-only`、
@@ -384,10 +405,10 @@ worktree内で行うため、途中で失敗しても呼び出し元の`main` ch
 | `AGENT_PIPELINE_MODEL` | オーケストレーターのモデル。空なら選択したCLIの既定 | 空 |
 | `AGENT_PIPELINE_EFFORT` | オーケストレーターのreasoning effort | `high` |
 | `AGENT_PIPELINE_SEARCH` | search段のWeb検索 | `1` |
-| `AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT` | Claude利用上限後に待機して自動再起動する | `1` |
-| `AGENT_PIPELINE_MAX_USAGE_RESUMES` | 1回のパイプラインで許可する自動再起動回数 | `8` |
+| `AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT` | Claude利用上限後に待機して自動再開する | `1` |
+| `AGENT_PIPELINE_MAX_USAGE_RESUMES` | 1回のパイプラインで許可する自動再開回数 | `8` |
 | `AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS` | 表示されたリセット時刻の後に追加で待つ秒数 | `30` |
-| `MAX_AGENT_REVIEW_ROUNDS` | review ⇄ revise上限 | `5` |
+| `MAX_AGENT_REVIEW_ROUNDS` | 記事の修正回数の上限（`--max-rounds`でも指定可能）。初回・修正後の確認レビューは別枠 | `5` |
 | `AGENT_PIPELINE_BASE_BRANCH` | 公開PRのbaseブランチ | `main` |
 | `AGENT_PIPELINE_MERGE_METHOD` | `gh pr merge`方式 | `--squash` |
 | `TIMEOUT_AGENT_<STAGE>` | 専用段ごとのtimeout秒 | 段ごと |
@@ -415,7 +436,8 @@ AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
 実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
 
 Claudeオーケストレーターがusage/session limitで終了した場合、表示されたリセット時刻まで待って
-自動再起動する。run段以降ではmanifestに一致する`logs/agent/run-*/execution-log.md`を検出し、
+自動再開する。review・revise段では同じ工程を再試行し、レビューセッション・指摘履歴・修正回数を保持する。
+それ以外のrun段以降ではmanifestに一致する`logs/agent/run-*/execution-log.md`を検出し、
 `--resume-after-run`付きで分析段から続行する。実行ログがまだ無いsearch・plan段では、待機後に
 researchから安全に再始動する。リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
 調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、

@@ -46,7 +46,7 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 case "$MAX_AGENT_REVIEW_ROUNDS" in
-  *[!0-9]*|0) echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
+  *[!0-9]*|0|'') echo "MAX_AGENT_REVIEW_ROUNDS must be a positive integer" >&2; exit 2 ;;
 esac
 case "$MAX_AGENT_PREFLIGHT_REPAIRS" in
   *[!0-9]*|'') echo "MAX_AGENT_PREFLIGHT_REPAIRS must be a non-negative integer" >&2; exit 2 ;;
@@ -94,6 +94,8 @@ GENERATED_PATH_TOOL="scripts/validate-agent-generated-paths.mjs"
 ARTIFACT_TOOL="scripts/isolated-artifacts.mjs"
 CLAUDE_LIMIT_TOOL="scripts/claude-usage-limit.mjs"
 RUN_LOG_FINDER="scripts/find-agent-run-log.mjs"
+REVIEW_HISTORY_TOOL="scripts/agent-review-history.mjs"
+REVIEW_SESSION_ID=""
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 stage_timeout() {
@@ -116,10 +118,10 @@ if [ "$DRY_RUN" = 1 ]; then
   pipeline: $PIPE_DIR
   orchestrator: $AGENT_PIPELINE_ORCHESTRATOR ($([ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ] && printf '%s' "$CODEX_BIN" || printf '%s' "$CLAUDE_BIN"), model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
   experiment CLIs: $CLAUDE_BIN, $CODEX_BIN
-  policy: non-interactive, outer permissions=unrestricted, ephemeral=true
+  policy: non-interactive, outer permissions=unrestricted, review sessions persisted; other stages ephemeral
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
-  review rounds: $MAX_AGENT_REVIEW_ROUNDS
+  maximum revisions: $MAX_AGENT_REVIEW_ROUNDS (plus initial review and final confirmation)
   preflight repairs: $MAX_AGENT_PREFLIGHT_REPAIRS
   stage contract repairs: $MAX_AGENT_STAGE_CONTRACT_REPAIRS
   base branch: $AGENT_PIPELINE_BASE_BRANCH
@@ -173,6 +175,7 @@ command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$ARTIFACT_TOOL" ] || die "isolated artifact helper is missing"
 [ -f "$CLAUDE_LIMIT_TOOL" ] || die "Claude usage limit parser is missing"
 [ -f "$RUN_LOG_FINDER" ] || die "agent execution log finder is missing"
+[ -f "$REVIEW_HISTORY_TOOL" ] || die "agent review history helper is missing"
 [ -f "$AGENT_EXPERIMENT_RUNNER" ] || die "agent experiment runner is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
 "$CODEX_BIN" login status >/dev/null 2>&1 || die "Codex is not authenticated"
@@ -248,6 +251,12 @@ restart_after_usage_limit() {
     fi
   done
 
+  if [ "$stage" = review ] || [ "$stage" = revise ]; then
+    export AGENT_PIPELINE_USAGE_RESUME_COUNT="$next_count"
+    log "RESUME: retrying $stage in place; preserving review session, history and revision budget (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+    return 0
+  fi
+
   if [ -n "$resume_log" ]; then
     log "RESTART: resuming from $resume_log (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
   else
@@ -282,9 +291,13 @@ run_stage() {
   local stage="$1" idx="$2" skill="$3" allowed="$4" search="$5" prompt="$6"
   local reuse_after="${7:-}"
   local contract_repair="${8:-0}"
+  local session_fallback="${9:-0}"
+  local resume_session=""
+  [ "$stage" != review ] || resume_session="$REVIEW_SESSION_ID"
   local marker="$PIPE_DIR/.$idx-$stage.marker"
   local events="$PIPE_DIR/$idx-$stage.events.jsonl"
   local result="$PIPE_DIR/$idx-$stage.result.json"
+  local stderr_file="$PIPE_DIR/$idx-$stage.stderr"
   local schema="$PIPE_DIR/$idx-$stage.schema.json"
   local validation_error="$PIPE_DIR/$idx-$stage.validation.stderr"
   local seconds contract rc stage_prompt schema_json
@@ -299,35 +312,69 @@ run_stage() {
   if [ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ]; then
     cmd=("$CODEX_BIN" "-a" "never")
     [ "$search" = 1 ] && cmd+=("--search")
-    cmd+=("exec" "--ephemeral" "--ignore-user-config" "--sandbox" "danger-full-access")
+    cmd+=("exec" "--ignore-user-config" "--sandbox" "danger-full-access" "-C" "$ROOT")
+    if [ -n "$resume_session" ]; then
+      cmd+=("resume")
+    elif [ "$stage" != review ]; then
+      cmd+=("--ephemeral")
+    fi
     cmd+=("-c" "model_reasoning_effort=\"$AGENT_PIPELINE_EFFORT\"")
     [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
-    cmd+=("-C" "$ROOT" "--json" "--output-schema" "$schema" "-o" "$result" "$stage_prompt")
+    cmd+=("--json" "--output-schema" "$schema" "-o" "$result")
+    [ -z "$resume_session" ] || cmd+=("$resume_session")
+    cmd+=("$stage_prompt")
   else
     schema_json="$(tr -d '\n' <"$schema")"
     stage_prompt="Read .agents/skills/$skill/SKILL.md completely, resolve its relative references from that skill directory, and follow it as the stage workflow. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", artifact must be one existing safe repository-relative regular file under $allowed and reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
     cmd=("$CLAUDE_BIN" "-p" "$stage_prompt" "--output-format" "json" "--json-schema" "$schema_json")
-    cmd+=("--no-session-persistence" "--safe-mode" "--permission-mode" "bypassPermissions")
+    cmd+=("--safe-mode" "--permission-mode" "bypassPermissions")
+    if [ -n "$resume_session" ]; then
+      cmd+=("--resume" "$resume_session")
+    elif [ "$stage" != review ]; then
+      cmd+=("--no-session-persistence")
+    fi
     [ "$search" = 1 ] || cmd+=("--disallowedTools" "WebSearch,WebFetch")
     [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
     [ -z "$AGENT_PIPELINE_EFFORT" ] || cmd+=("--effort" "$AGENT_PIPELINE_EFFORT")
   fi
 
   log "$stage start (timeout=${seconds}s, skill=$skill, orchestrator=$AGENT_PIPELINE_ORCHESTRATOR)"
+  if [ "$stage" = review ]; then
+    log "review session: $([ -n "$resume_session" ] && echo resume || echo new) id=${resume_session:-pending} history=$REVIEW_HISTORY"
+  fi
   set +e
-  "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>>"$PLOG"
+  "$TIMEOUT_BIN" "$seconds" "${cmd[@]}" >"$events" 2>"$stderr_file"
   rc=$?
   set -e
+  [ ! -s "$stderr_file" ] || cat "$stderr_file" >>"$PLOG"
   if [ "$rc" = 124 ]; then
     if [ "$SCHEDULED" = 1 ]; then
       retry_pipeline system "stage-timeout-$stage" "$stage timed out; another scheduled topic may be tried"
     fi
     die "$stage timed out; events: $events"
   fi
-  if [ "$rc" != 0 ]; then
-    if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
-      restart_after_usage_limit "$stage" "$events" "$marker" || true
+  # Inspect error envelopes, not successful article text mentioning usage limits.
+  local provider_error=0
+  if node "$REVIEW_HISTORY_TOOL" has-error "$AGENT_PIPELINE_ORCHESTRATOR" "$events" 2>/dev/null; then
+    provider_error=1
+  fi
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ] \
+      && { [ "$rc" != 0 ] || [ "$provider_error" = 1 ]; }; then
+    if restart_after_usage_limit "$stage" "$events" "$marker"; then
+      run_stage "$stage" "$idx-usage-$AGENT_PIPELINE_USAGE_RESUME_COUNT" "$skill" "$allowed" "$search" \
+        "$prompt" "$reuse_after" "$contract_repair" "$session_fallback"
+      return
     fi
+  fi
+  if [ -n "$resume_session" ] && [ "$session_fallback" = 0 ] \
+      && { [ "$rc" != 0 ] || { [ "$provider_error" = 1 ] && rg -qi '(session|thread|conversation).*(not found|does not exist|cannot|failed|invalid|corrupt)|no (conversation|session).*found|failed to (load|resume)' "$events" "$stderr_file"; }; }; then
+    log "review session fallback: failed to resume $resume_session; starting replacement with article, evidence and full history=$REVIEW_HISTORY; events=$events stderr=$stderr_file"
+    REVIEW_SESSION_ID=""
+    run_stage "$stage" "$idx-session-fallback" "$skill" "$allowed" "$search" \
+      "$prompt" "$reuse_after" "$contract_repair" 1
+    return
+  fi
+  if [ "$rc" != 0 ] || [ "$provider_error" = 1 ]; then
     if [ "$SCHEDULED" = 1 ]; then
       retry_pipeline system "stage-exit-$stage-$rc" "$stage failed with exit $rc; another scheduled topic may be tried"
     fi
@@ -340,6 +387,16 @@ run_stage() {
       fi
       die "$stage Claude output extraction failed; output: $events"
     fi
+  fi
+  if [ "$stage" = review ]; then
+    local returned_session
+    returned_session="$(node "$REVIEW_HISTORY_TOOL" session "$AGENT_PIPELINE_ORCHESTRATOR" "$events")" \
+      || system_failure "review-session-contract" "review did not return a usable session ID: $events"
+    if [ -n "$resume_session" ] && [ "$returned_session" != "$resume_session" ]; then
+      log "review session fallback: CLI replaced $resume_session with $returned_session; full history supplied: $REVIEW_HISTORY"
+    fi
+    REVIEW_SESSION_ID="$returned_session"
+    log "review session active: $REVIEW_SESSION_ID (events=$events)"
   fi
   set +e
   local validation_args=("$result" "$allowed" "$marker" "$stage")
@@ -357,7 +414,7 @@ run_stage() {
     local repair_prompt="$prompt The previous $stage attempt returned an invalid stage-result contract. Inspect $result and $validation_error. Repair only this stage: create or update the required primary artifact as a real regular file under $allowed, verify it exists before answering, and then return its exact repository-relative path in schema-conforming JSON. Do not claim an artifact that was not written."
     log "$stage contract repair start ($next_repair/$MAX_AGENT_STAGE_CONTRACT_REPAIRS)"
     run_stage "$stage" "$idx-contract-repair-$next_repair" "$skill" "$allowed" "$search" \
-      "$repair_prompt" "$reuse_after" "$next_repair"
+      "$repair_prompt" "$reuse_after" "$next_repair" "$session_fallback"
     return
   fi
   if [ "$result_rc" != 0 ] && [ "$SCHEDULED" = 1 ]; then
@@ -556,12 +613,26 @@ if ! bash scripts/check-article.sh "$ARTICLE" --expect-published false; then
   die "draft article check failed"
 fi
 
+REVIEW_HISTORY="$PIPE_DIR/review-history"
 round=1
-while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
-  REVIEW_PROMPT="Article: $ARTICLE. Analysis: $ANALYSIS. Execution log: $RUN_LOG. Review the exact draft against source and run evidence, apply the 100-point editorial rubric, and create exactly one review report."
+revisions=0
+while :; do
+  ROUND_DIR="$(node "$REVIEW_HISTORY_TOOL" prepare "$REVIEW_HISTORY" "$round" "$ARTICLE")" \
+    || system_failure "review-history-prepare" "could not snapshot review input"
+  REVIEW_CONTEXT="Read docs/agent-review-continuity.md and follow its finding ledger and re-review rules. Review history: $REVIEW_HISTORY. Write this round's report to $ROUND_DIR/report.md."
+  if [ "$round" -gt 1 ]; then
+    PREVIOUS_DIR="$REVIEW_HISTORY/round-$((round - 1))"
+    REVIEW_CONTEXT="$REVIEW_CONTEXT This is re-review $round. Previous report: $PREVIOUS_DIR/review.md. Previous findings: $PREVIOUS_DIR/findings.json. Revision log: $PREVIOUS_DIR/revision.md. Diff since the previous review: $ROUND_DIR/article.diff. Explicitly read all these files and the full history. Focus on existing finding resolution; justify every new finding or reopening as required by the continuity contract."
+  fi
+  log "review round=$round revisions=$revisions/$MAX_AGENT_REVIEW_ROUNDS"
+  REVIEW_PROMPT="Article: $ARTICLE. Analysis: $ANALYSIS. Execution log: $RUN_LOG. Review the exact draft against source and run evidence, apply the 100-point editorial rubric, and create exactly one review report. $REVIEW_CONTEXT"
   run_stage review "6-$round" zenn-agent-review-article logs/agent 0 "$REVIEW_PROMPT"
   REVIEW="$STAGE_ARTIFACT"
   VERDICT="$(node -e 'const fs=require("node:fs"); const r=JSON.parse(fs.readFileSync(process.argv[1],"utf8")); process.stdout.write(r.metadata.verdict)' "$STAGE_RESULT")"
+  UNRESOLVED="$(node "$REVIEW_HISTORY_TOOL" accept "$REVIEW_HISTORY" "$round" "$REVIEW" "$VERDICT" "$ARTICLE")" \
+    || system_failure "review-history-contract" "review finding history is invalid: $REVIEW"
+  REVIEW="$ROUND_DIR/review.md"
+  log "review findings unresolved: $UNRESOLVED"
   case "$VERDICT" in
     pass)
       [ "$(rg -c '^blockers: 0$' "$REVIEW" || true)" = 1 ] \
@@ -576,9 +647,19 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
       break
       ;;
     fix)
-      REVISION_PROMPT="Article: $ARTICLE. Review: $REVIEW. Analysis: $ANALYSIS. Execution log: $RUN_LOG. Apply every evidence-resolvable integrity and editorial finding, including structural changes needed by the weakest rubric categories. Keep the article unpublished, run deterministic checks, and create the revision log required by the skill. Return the revised article as the primary artifact."
+      if [ "$revisions" -ge "$MAX_AGENT_REVIEW_ROUNDS" ]; then
+        if [ "$SCHEDULED" = 1 ]; then
+          retry_pipeline content "review-rounds-exhausted" "final confirmation did not pass after $revisions revisions; unresolved: $UNRESOLVED; review: $REVIEW"
+        fi
+        die "final confirmation did not pass after $revisions revisions; unresolved: $UNRESOLVED; review: $REVIEW"
+      fi
+      touch "$ROUND_DIR/revision.marker"
+      REVISION_PROMPT="Article: $ARTICLE. Review: $REVIEW. Analysis: $ANALYSIS. Execution log: $RUN_LOG. Apply every evidence-resolvable integrity and editorial finding, including structural changes needed by the weakest rubric categories. Keep the article unpublished, run deterministic checks, and create the revision log required by the skill at $ROUND_DIR/revision.md. Read docs/agent-review-continuity.md and $ROUND_DIR/findings.json; address every unresolved finding ID in the revision log with edits, evidence, checks and remaining issues. Return the revised article as the primary artifact."
       run_stage revise "7-$round" zenn-agent-revise-article articles 0 "$REVISION_PROMPT"
       ARTICLE="$STAGE_ARTIFACT"
+      node "$REVIEW_HISTORY_TOOL" revision "$ROUND_DIR/revision.md" "$ROUND_DIR/revision.marker" "$ROUND_DIR/findings.json" \
+        || system_failure "revision-history-contract" "revision log is missing or incomplete"
+      revisions=$((revisions + 1))
       if ! bash scripts/check-article.sh "$ARTICLE" --expect-published false; then
         if [ "$SCHEDULED" = 1 ]; then
           retry_pipeline system "revised-article-check" "revised article check failed; another scheduled topic may be tried"
@@ -596,12 +677,6 @@ while [ "$round" -le "$MAX_AGENT_REVIEW_ROUNDS" ]; do
   esac
   round=$((round + 1))
 done
-if [ "${VERDICT:-}" != pass ]; then
-  if [ "$SCHEDULED" = 1 ]; then
-    retry_pipeline content "review-rounds-exhausted" "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds; another scheduled topic may be tried"
-  fi
-  die "review did not pass within $MAX_AGENT_REVIEW_ROUNDS rounds"
-fi
 
 if [ -n "${ARTICLE_PIPELINE_SHARED_ROOT:-}" ] && [ -n "${ARTICLE_PIPELINE_ARTIFACT_BASELINE:-}" ] \
     && [ "$ROOT" != "$ARTICLE_PIPELINE_SHARED_ROOT" ]; then
