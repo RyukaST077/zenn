@@ -3,7 +3,7 @@ title: "Claude Codeの指示、CLAUDE.mdとSkillどちらに書く？手元の�
 emoji: "🗂️"
 type: tech
 topics: ["claudecode", "aiagent", "cli", "tutorial"]
-published: false
+published: true
 ---
 
 ## この記事でできるようになること
