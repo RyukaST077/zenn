@@ -1,5 +1,26 @@
 # zenn
 
+## 実行コードと成果物の分離
+
+通常実行はfetchした基準ブランチの1つのコミットSHAから、パイプライン・スキル・検証ヘルパーをまとめて実行します。共有checkoutの未コミット制御コードは対象パスを表示して拒否します。下書き・検証証拠・レビュー履歴は共有ソースツリーへ戻さず、既定で `<git-common-dir>/article-runtime/runs/<run-id>/` に保存します。
+
+```bash
+# 通常実行（定期実行もコミット済みbootstrapから起動）
+git show HEAD:scripts/run-article-pipeline-worktree.sh |
+  bash -s -- -- scripts/auto-agent-practice.sh --orchestrator claude
+
+# 開発ブランチのコミットを試す。公開は行わず最終レビューで終了
+bash scripts/run-article-pipeline-worktree.sh --dev-ref HEAD -- scripts/auto-agent-practice.sh
+
+# 失敗runを指定して再開。相対パスはmanifest.jsonのresume.commandsを参照
+bash scripts/run-article-pipeline-worktree.sh --resume-run <run-id> -- \
+  scripts/auto-publish.sh --resume logs/pipeline-YYYYMMDD-HHMMSS
+```
+
+未コミットの試行には `--dev-file <path>` をファイルごとに指定します。開発モードの `--auto-merge` / `--pr-only` / `--pr` は拒否されます。恒久改修は開発ブランチで検証し、PR・マージ後に通常運用へ採用します。保存先、台帳、分析データの日次更新、旧保存先からの移行、衝突時の復旧、launchd切り替えは [実行基盤の運用手順](docs/article-runtime.md) を参照してください。
+
+以下の `logs/` 等のパスは実行worktree内の相対パスです。終了後は当該runの `files/` 配下で確認します。`--dry-run` / `--help` は設定表示専用です。
+
 Zenn の記事を **AIエージェントだけで** 調査 → 実践 → 執筆 → レビュー → 公開準備まで行うリポジトリ。
 投稿上限で保留された記事とAI coding-agent記事は公開キューへ入り、AIを使わないワーカーが
 投稿上限を見ながら1件ずつ`published: true`にする。GitHub 連携により、その変更が`main`へ
@@ -146,10 +167,10 @@ resume は `state.json` を読み、**完了済みの段をスキップして失
 
 ```bash
 # 毎週月曜 9:00 に1サイクル（完全自律）
-0 9 * * 1 cd /path/to/024_zenn && bash scripts/auto-publish.sh --auto-merge >> logs/cron.log 2>&1
+0 9 * * 1 cd /path/to/024_zenn && /bin/bash -o pipefail -c 'git show HEAD:scripts/run-article-pipeline-worktree.sh | bash -s -- -- scripts/auto-publish.sh --auto-merge' >> /path/to/runtime-cron.log 2>&1
 ```
 
-多重起動はロック（`.auto-publish.lock`）で防止されるため、前回が長引いていても安全。
+多重起動は共通保存先の `run.lock` で防止する。競合時は理由を表示して停止し、実行中の処理や成果物を変更しない。
 
 ### launchd実行時のClaude利用率ゲート
 
@@ -272,7 +293,7 @@ bash scripts/auto-publish-codex.sh --resume logs/codex-pipeline-20260710-232528 
 ```
 
 resume は `state.json` を読み、完了済みの段をスキップして失敗した段からやり直す。
-`--auto-merge` は resume 時にも付け直す必要がある（エラー表示の resume コマンドをそのまま使えば付いてくる）。
+`--auto-merge` は resume 時にも付け直す必要がある（新保存先の場合は共通入口の `--resume-run <run-id>` も指定する）。
 既存stage resultを再利用する場合も、対応するJSONLと`-o`がcompletion gateを通ることが必要。
 安全停止後に実践計画を修正した場合は、証拠の意味を変えないため旧runをresumeせず、新しい計画・runとして実行する。
 

@@ -134,7 +134,9 @@ if (command === "snapshot") {
   // commit of analytics/, while the shared checkout is refreshed every morning.
   const [sourceRoot, destinationRoot] = args;
   if (!sourceRoot || !destinationRoot) die("usage: import-analytics <source-root> <destination-root>");
-  const files = inventory(path.resolve(sourceRoot), "import", new Set(["analytics"]));
+  const files = Object.fromEntries(Object.entries(inventory(path.resolve(sourceRoot), "import", new Set(["analytics"])))
+    .filter(([relative]) => ["analytics/article-ledger.jsonl", "analytics/market-index.json", "analytics/topic-feedback.md"].includes(relative)
+      || /^analytics\/contracts\/[a-z0-9_-]+\.json$/.test(relative)));
   for (const [relative, metadata] of Object.entries(files)) {
     copyFile(path.resolve(sourceRoot), path.resolve(destinationRoot), relative, metadata.mode);
   }

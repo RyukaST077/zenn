@@ -23,3 +23,6 @@ analytics/private/
 # GA4 のサービスアカウント鍵（秘密情報。絶対にコミットしない）
 config/ga4-service-account.json
 config/ga4.json
+
+# Runtime exports must never be staged if recovered into the checkout for inspection.
+/.article-runtime/

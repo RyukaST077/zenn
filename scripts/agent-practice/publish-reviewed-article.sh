@@ -2,6 +2,20 @@
 # Publish one reviewed agent-practice article from an isolated Git worktree.
 set -euo pipefail
 
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+  git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+    bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/agent-practice/publish-reviewed-article.sh "$@"
+  exit $?
+fi
+
+[ "${ARTICLE_PIPELINE_MODE:-normal}" != development ] || {
+  echo 'publication prohibited in development mode' >&2; exit 2;
+}
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" assert-controls "$(git rev-parse --show-toplevel)" "$ARTICLE_PIPELINE_CONTROL_BASELINE" || exit 2
+fi
+
 : "${CODEX_BIN:=codex}"
 : "${AGENT_PIPELINE_MODEL:=}"
 : "${AGENT_PIPELINE_EFFORT:=high}"

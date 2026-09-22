@@ -33,7 +33,7 @@ const readQueue = () => JSON.parse(fs.readFileSync(queuePath, "utf8"));
 const runAt = (cwd, command, args, options = {}) => spawnSync(command, args, {
   cwd,
   encoding: "utf8",
-  env: { ...process.env, ...options.env },
+  env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ...options.env },
 });
 const assertRun = (result, label) => {
   assert.equal(result.status, 0, `${label}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);

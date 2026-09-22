@@ -19,6 +19,20 @@
 # the PR this script opens -- the same gate the repo uses for publishing.
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-improve-topics.sh "$@"
+    exit $?
+  fi
+fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -42,7 +56,7 @@ done
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "plan:"
   echo "  1. bash scripts/analytics/fetch-zenn-metrics.sh$([ "$DEEP" -eq 1 ] && echo ' --deep')"
-  [ -f config/ga4.json ] && echo "  1b. node scripts/analytics/fetch-ga4-metrics.mjs -> collect-ga4-metrics.mjs"
+  [ -f "${GA4_CONFIG_PATH:-config/ga4.json}" ] && echo "  1b. node scripts/analytics/fetch-ga4-metrics.mjs -> collect-ga4-metrics.mjs"
   echo "  2. node scripts/analytics/build-topic-feedback.mjs"
   [ "$EVALUATE" -eq 1 ] && echo "  3. node scripts/analytics/evaluate-policy.mjs$([ "$OPEN_PR" -eq 1 ] && echo ' --apply')"
   [ "$OPEN_PR" -eq 1 ] && echo "  4. open a policy-proposal PR against $BASE_BRANCH (human merge is the gate)"
@@ -58,7 +72,7 @@ fi
 
 # GA4 is optional: without it the loop still runs on Zenn's public API, it just
 # cannot separate reach from response. Never fail the run over a missing key.
-if [ -f config/ga4.json ]; then
+if [ -f "${GA4_CONFIG_PATH:-config/ga4.json}" ]; then
   echo "== 1b/3 GA4 =="
   GA4_LOG="$(mktemp "${TMPDIR:-/tmp}/ga4-fetch.XXXXXX")"
   set +e

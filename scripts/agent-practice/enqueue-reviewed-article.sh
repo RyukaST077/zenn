@@ -2,6 +2,20 @@
 # Add one reviewed article to the deterministic Zenn publication queue.
 set -euo pipefail
 
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+  git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+    bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/agent-practice/enqueue-reviewed-article.sh "$@"
+  exit $?
+fi
+
+[ "${ARTICLE_PIPELINE_MODE:-normal}" != development ] || {
+  echo 'publication prohibited in development mode' >&2; exit 2;
+}
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" assert-controls "$(git rev-parse --show-toplevel)" "$ARTICLE_PIPELINE_CONTROL_BASELINE" || exit 2
+fi
+
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${PUBLISH_QUEUE_FILE:=config/zenn-publish-queue.json}"
@@ -124,6 +138,12 @@ if [ "$REVIEW_STYLE" = agent ]; then
     || die "passing review editorial score must be 80-100"
 fi
 
+ARTIFACT_SOURCE="$ROOT"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  ARTIFACT_SOURCE="$(node "$ARTICLE_PIPELINE_RUNTIME" prepare-publication "$ROOT" "$ARTICLE" "$REVIEW")" \
+    || die "could not save reviewed publication bundle"
+fi
+
 SLUG="$(basename "$ARTICLE" .md)"
 TS="$(date +%Y%m%d-%H%M%S)"
 BRANCH="queue/$SLUG"
@@ -147,17 +167,22 @@ trap cleanup_worktree EXIT
 
 GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$AGENT_PIPELINE_BASE_BRANCH" \
   || die "failed to fetch origin/$AGENT_PIPELINE_BASE_BRANCH"
-PUBLICATION_BASE="$AGENT_PIPELINE_BASE_BRANCH"
-[ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ] \
-  || PUBLICATION_BASE="origin/$AGENT_PIPELINE_BASE_BRANCH"
+PUBLICATION_BASE="$(git rev-parse --verify FETCH_HEAD)"
 git worktree add -b "$BRANCH" "$WORKTREE" "$PUBLICATION_BASE" >/dev/null \
   || die "failed to create isolated queue worktree"
 WORKTREE_ACTIVE=1
-mkdir -p "$WORKTREE/$(dirname "$ARTICLE")"
-cp "$ROOT/$ARTICLE" "$WORKTREE/$ARTICLE"
-if [ -d "$ROOT/images/$SLUG" ]; then
-  mkdir -p "$WORKTREE/images"
-  cp -R "$ROOT/images/$SLUG" "$WORKTREE/images/$SLUG"
+[ ! -e "$WORKTREE/$ARTICLE" ] || cmp -s "$WORKTREE/$ARTICLE" "$ARTIFACT_SOURCE/$ARTICLE" \
+  || die "article differs on latest publication base; refusing to overwrite: $ARTICLE"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" install-publication "$ARTIFACT_SOURCE" "$WORKTREE" \
+    || die "publication bundle differs from latest base or failed hash verification"
+else
+  mkdir -p "$WORKTREE/$(dirname "$ARTICLE")"
+  cp "$ARTIFACT_SOURCE/$ARTICLE" "$WORKTREE/$ARTICLE"
+  if [ -d "$ARTIFACT_SOURCE/images/$SLUG" ]; then
+    mkdir -p "$WORKTREE/images/$SLUG"
+    cp -R "$ARTIFACT_SOURCE/images/$SLUG/." "$WORKTREE/images/$SLUG/"
+  fi
 fi
 # The arm allocator counts registrations from analytics/contracts/, and every
 # run reads them out of a fresh worktree built from origin. A contract that is
@@ -171,7 +196,7 @@ CONTRACT="analytics/contracts/$SLUG.json"
 # pass --expect-arm and turn a missing or mismatched contract into a failure
 # here, before the push. auto-publish.sh and auto-publish-codex.sh never
 # register a contract, so the requirement stays opt-in rather than global.
-if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ROOT/$CONTRACT" ]; then
+if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
   die "no registered contract for the final article: $CONTRACT (the arm allocated for this run would go uncounted)"
 fi
 if [ -n "$EXPECT_ARM" ]; then
@@ -179,13 +204,13 @@ if [ -n "$EXPECT_ARM" ]; then
     const fs = require("node:fs");
     const contract = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
     process.stdout.write(String(contract?.classification?.arm ?? ""));
-  ' "$ROOT/$CONTRACT")" || die "could not read the arm out of $CONTRACT"
+  ' "$ARTIFACT_SOURCE/$CONTRACT")" || die "could not read the arm out of $CONTRACT"
   [ "$CONTRACT_ARM" = "$EXPECT_ARM" ] \
     || die "contract arm mismatch for $SLUG: allocated $EXPECT_ARM but the contract records ${CONTRACT_ARM:-<empty>}"
 fi
-if [ -f "$ROOT/$CONTRACT" ]; then
+if [ -z "${ARTICLE_PIPELINE_RUNTIME:-}" ] && [ -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
   mkdir -p "$WORKTREE/$(dirname "$CONTRACT")"
-  cp "$ROOT/$CONTRACT" "$WORKTREE/$CONTRACT"
+  cp "$ARTIFACT_SOURCE/$CONTRACT" "$WORKTREE/$CONTRACT"
 fi
 
 ENQUEUE_ARGS=(enqueue --queue "$PUBLISH_QUEUE_FILE" --article "$ARTICLE")
@@ -206,9 +231,15 @@ git -C "$WORKTREE" diff --cached --check || die "staged queue diff failed whites
 git -C "$WORKTREE" commit -m "queue: $SLUG for Zenn publication" >/dev/null \
   || die "queue commit failed"
 COMMIT="$(git -C "$WORKTREE" rev-parse HEAD)"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" commit "$COMMIT" || die "publication audit failed"
+fi
 GIT_TERMINAL_PROMPT=0 git -C "$WORKTREE" push --set-upstream origin "$BRANCH" >/dev/null \
   || die "queue push failed"
 
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" pushed "$COMMIT" || die "publication audit failed"
+fi
 cleanup_worktree
 PR_BODY="$ROOT/$PIPE_DIR/queue-pr-body.md"
 printf 'レビュー合格済みの記事をZenn公開キューへ追加します。公開はAI非依存ワーカーが1件ずつ行います。\n\n- article: `%s`\n- review: `%s`\n' \
@@ -216,6 +247,9 @@ printf 'レビュー合格済みの記事をZenn公開キューへ追加しま�
 PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$AGENT_PIPELINE_BASE_BRANCH" --head "$BRANCH" \
   --title "queue: $SLUG for Zenn publication" --body-file "$PR_BODY")" \
   || die "PR creation failed"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" pr "$PR_URL" || die "publication audit failed"
+fi
 if [ "$AUTO_MERGE" = 1 ]; then
   if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --delete-branch; then
     MERGE_RESULT="merged immediately"

@@ -1,8 +1,23 @@
 #!/bin/bash
 set -uo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish-codex-launchd.sh "$@"
+    exit $?
+  fi
+fi
+
 export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
+REPO="${ARTICLE_PIPELINE_RUN_DIR:+$(git rev-parse --show-toplevel)}"
+: "${REPO:=/Users/katayamaryuunosuke/workspace/024_zenn}"
 cd "$REPO" || exit 1
 mkdir -p "$REPO/logs/launchd"
 find "$REPO/logs/launchd" -type f -name 'auto-publish-codex-*.log' -mtime +30 -delete 2>/dev/null || true
@@ -10,7 +25,7 @@ LOG="$REPO/logs/launchd/auto-publish-codex-$(date +%Y%m%d-%H%M%S).log"
 # Scheduled Codex runs should merge the publication PR automatically after
 # GitHub checks pass. Set CODEX_AP_ARGS=--pr-only for an explicit review gate.
 ARGS="${CODEX_AP_ARGS:---auto-merge}"
-PIPELINE_SCRIPT="${AUTO_PUBLISH_CODEX_SCRIPT:-}"
+PIPELINE_SCRIPT="${AUTO_PUBLISH_CODEX_SCRIPT:-$REPO/scripts/auto-publish-codex.sh}"
 WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 {
   echo "===== Codex auto-publish start: $(date) ====="

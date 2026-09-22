@@ -81,6 +81,33 @@ function assign(state, key, value) {
 }
 
 switch (command) {
+  case "migrate-legacy": {
+    const [source, baseBranch = "main"] = args;
+    if (!file || !source || fs.existsSync(file)) fail("migration requires a legacy source and a new state file");
+    const state = baseState(baseBranch);
+    const artifacts = { REPORT: "report", TASK: "task", RUNLOG: "run_log", ARTICLE: "article", REVIEW: "review" };
+    const stages = { DONE_gitreset: "preflight", DONE_search: "search", DONE_plan: "plan", DONE_run: "run", DONE_draft: "draft", DONE_review: "review", DONE_publish: "pr", DONE_merge: "merge" };
+    for (const [index, raw] of fs.readFileSync(source, "utf8").split(/\r?\n/).entries()) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+      // Parse data only. Never source shell from a saved run or shared checkout.
+      const match = line.match(/^([A-Za-z_][A-Za-z_0-9]*)=(?:'([^']*)'|"([^"$`\\]*)"|([A-Za-z0-9_./:@%+,=-]*))$/);
+      if (!match) fail(`unsafe legacy state syntax at line ${index + 1}; expected a literal assignment`);
+      const key = match[1], value = match[2] ?? match[3] ?? match[4];
+      if (key in artifacts) {
+        if (value.startsWith("/") || value.split("/").includes("..")) fail(`unsafe legacy artifact path: ${key}`);
+        state.artifacts[artifacts[key]] = value || null;
+        if (key === "REVIEW") state.review.rounds++;
+      } else if (key in stages) {
+        if (!["", "0", "1", "true", "false"].includes(value)) fail(`invalid legacy completion flag: ${key}`);
+        state.completed[stages[key]] = ["1", "true"].includes(value);
+      } else if (key === "PR_URL") state.publish.pr_url = value || null;
+      else fail(`unsupported legacy state key: ${key}`);
+    }
+    if (state.completed.review) state.review.last_verdict = "pass";
+    write(state);
+    break;
+  }
   case "init": {
     if (!file) fail("state file is required");
     if (fs.existsSync(file)) fail(`state already exists: ${file}`);

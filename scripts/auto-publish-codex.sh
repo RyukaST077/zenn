@@ -4,6 +4,20 @@
 # only where the pipeline contract requires it.
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish-codex.sh "$@"
+    exit $?
+  fi
+fi
+
 : "${CODEX_BIN:=codex}"
 : "${CODEX_MODEL:=gpt-5.6-sol}"
 : "${CODEX_REASONING_EFFORT:=high}"
@@ -31,6 +45,7 @@ RESUME_DIR=""
 SEARCH_ARGS=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --pr-only) AUTO_MERGE=0 ;;
     --auto-merge) AUTO_MERGE=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --resume) RESUME_DIR="${2:?--resume requires a pipeline directory}"; shift ;;
@@ -48,16 +63,6 @@ case "$MAX_REVIEW_ROUNDS" in *[!0-9]*|0) echo "MAX_REVIEW_ROUNDS must be a posit
   || { echo "CODEX_SANDBOX_MODE must be workspace-write" >&2; exit 2; }
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
-
-# Keep direct Codex invocations equivalent to the scheduled Claude path: run
-# the real pipeline in a detached worktree and export only isolated artifacts
-# back to the shared checkout. The worktree runner sets this flag for the
-# inner invocation, preventing recursion. Dry-runs remain local and do not
-# need a worktree.
-if [ "$DRY_RUN" = 0 ] && [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
-  exec bash scripts/run-article-pipeline-worktree.sh \
-    --shared-root "$ROOT" -- scripts/auto-publish-codex.sh "$@"
-fi
 
 TS="$(date +%Y%m%d-%H%M%S)"
 if [ -n "$RESUME_DIR" ]; then
@@ -380,6 +385,11 @@ while ! is_done review; do
     [ "$verdict" != "blocker" ] || die "review found a blocker requiring new evidence: $REVIEW"
   fi
 done
+
+if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  log "development complete: final review passed; article held locally"
+  exit 0
+fi
 
 ARTICLE="$(state_get artifacts.article)"
 SLUG="$(basename "$ARTICLE" .md)"

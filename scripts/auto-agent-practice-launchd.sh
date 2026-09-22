@@ -2,11 +2,26 @@
 # launchd wrapper for the separate daily AI coding-agent article pipeline.
 set -uo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-agent-practice-launchd.sh "$@"
+    exit $?
+  fi
+fi
+
 export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
+REPO="${ARTICLE_PIPELINE_RUN_DIR:+$(git rev-parse --show-toplevel)}"
+: "${REPO:=/Users/katayamaryuunosuke/workspace/024_zenn}"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
-PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-}"
+PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-$REPO/scripts/auto-agent-practice.sh}"
 WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 
 LOG_DIR="$REPO/logs/agent/launchd"

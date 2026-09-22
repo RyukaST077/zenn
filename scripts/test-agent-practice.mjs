@@ -29,13 +29,13 @@ const generatedRunIds = [];
 const run = (command, args, options = {}) => spawnSync(command, args, {
   cwd: root,
   encoding: "utf8",
-  env: { ...process.env, ...options.env },
+  env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ...options.env },
 });
 
 const runAt = (cwd, command, args, options = {}) => spawnSync(command, args, {
   cwd,
   encoding: "utf8",
-  env: { ...process.env, ...options.env },
+  env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: args[0]?.endsWith("safe-sync-main.sh") ? "0" : "1", ...options.env },
 });
 
 const assertRun = (result, label) => {

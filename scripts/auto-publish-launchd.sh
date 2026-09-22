@@ -11,10 +11,25 @@
 
 set -uo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish-launchd.sh "$@"
+    exit $?
+  fi
+fi
+
 # --- 必要なコマンドが入っている場所を PATH に明示（launchd の最小環境対策） ---
 export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
+REPO="${ARTICLE_PIPELINE_RUN_DIR:+$(git rev-parse --show-toplevel)}"
+: "${REPO:=/Users/katayamaryuunosuke/workspace/024_zenn}"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
 LOG_DIR="$REPO/logs/launchd"
@@ -26,7 +41,7 @@ LOG="$LOG_DIR/auto-publish-$TS.log"
 
 # 既定は本番運用（--auto-merge）。上限などで一時停止したstateがあれば先に再開する。
 PENDING_RESUME_FILE="$REPO/logs/.auto-publish-resume"
-PIPELINE_SCRIPT="${AUTO_PUBLISH_SCRIPT:-}"
+PIPELINE_SCRIPT="${AUTO_PUBLISH_SCRIPT:-$REPO/scripts/auto-publish.sh}"
 WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AUTO_PUBLISH_STATUS_DIR:=$REPO/logs/daily-status}"

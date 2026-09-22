@@ -1,153 +1,87 @@
 #!/usr/bin/env bash
-# Run an article pipeline in a detached worktree based on origin/main.
-set -uo pipefail
-
-BASE_BRANCH="${ARTICLE_PIPELINE_BASE_BRANCH:-main}"
-SHARED_ROOT=""
-while [ "$#" -gt 0 ]; do
-  case "$1" in
-    --base) BASE_BRANCH="${2:?--base requires a branch}"; shift 2 ;;
-    --shared-root) SHARED_ROOT="${2:?--shared-root requires a path}"; shift 2 ;;
-    --) shift; break ;;
-    -h|--help)
-      echo "usage: $0 [--base branch] [--shared-root path] -- scripts/pipeline.sh [args...]"
-      exit 0
+# Trusted bootstrap: schedules load this file with `git show HEAD:... | bash`.
+# Select the commit before loading any runtime JavaScript; never load checkout code.
+set -euo pipefail
+umask 077
+ROOT="$(git rev-parse --show-toplevel)"
+BASE="${ARTICLE_PIPELINE_BASE_BRANCH:-main}"
+DEV_REF=""
+MIGRATE=0
+STORE="${ARTICLE_PIPELINE_STORE:-}"
+MODE=normal
+ARGS=("$@")
+for ((i=0; i<${#ARGS[@]}; i++)); do
+  case "${ARGS[$i]}" in
+    --) break ;;
+    --shared-root|--base|--dev-ref|--dev-file|--store|--resume-run|--migrate-legacy)
+      OPTION="${ARGS[$i]}"
+      i=$((i+1))
+      [ "$i" -lt "${#ARGS[@]}" ] || { echo "$OPTION requires a value" >&2; exit 2; }
+      case "$OPTION" in
+        --shared-root) ROOT="${ARGS[$i]}" ;;
+        --base) BASE="${ARGS[$i]}" ;;
+        --dev-ref) DEV_REF="${ARGS[$i]}"; MODE=development ;;
+        --dev-file) MODE=development ;;
+        --store) STORE="${ARGS[$i]}" ;;
+        --migrate-legacy) MIGRATE=1 ;;
+      esac
       ;;
-    *) echo "unknown argument: $1" >&2; exit 2 ;;
+    --apply) ;;
+    -h|--help)
+      echo 'usage: [--base main] [--store directory] [--dev-ref ref] [--dev-file path] [--resume-run id] -- scripts/pipeline.sh [args...]'
+      echo 'migration: --migrate-legacy source-directory [--apply]'
+      exit 0 ;;
+    *) echo "unknown runtime option: ${ARGS[$i]}" >&2; exit 2 ;;
   esac
 done
-[ "$#" -gt 0 ] || { echo "pipeline command is required" >&2; exit 2; }
-
-if [ -z "$SHARED_ROOT" ]; then
-  SHARED_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" \
-    || { echo "not inside a Git worktree" >&2; exit 1; }
-fi
-SHARED_ROOT="$(cd "$SHARED_ROOT" && pwd)"
-PIPELINE_SCRIPT="$1"
-shift
-case "$PIPELINE_SCRIPT" in
-  scripts/*.sh)
-    case "$PIPELINE_SCRIPT" in */../*|*/..|../*|..) echo "pipeline path traversal is not allowed" >&2; exit 2 ;; esac
-    ;;
-  *) echo "pipeline must be a repository-relative scripts/*.sh path" >&2; exit 2 ;;
-esac
-[ -f "$SHARED_ROOT/$PIPELINE_SCRIPT" ] && [ ! -L "$SHARED_ROOT/$PIPELINE_SCRIPT" ] \
-  || { echo "pipeline must be a regular file in the shared checkout: $PIPELINE_SCRIPT" >&2; exit 2; }
-git -C "$SHARED_ROOT" check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 \
-  || { echo "invalid base branch: $BASE_BRANCH" >&2; exit 2; }
-git -C "$SHARED_ROOT" remote get-url origin >/dev/null 2>&1 \
-  || { echo "origin remote is required" >&2; exit 1; }
-
-echo "[pipeline-worktree] fetching origin/$BASE_BRANCH; shared checkout will not be updated"
-GIT_TERMINAL_PROMPT=0 git -C "$SHARED_ROOT" fetch --quiet origin "$BASE_BRANCH" \
-  || { echo "failed to fetch origin/$BASE_BRANCH" >&2; exit 1; }
-
-TMP_BASE="${TMPDIR:-/tmp}"
-RUN_PARENT="$(mktemp -d "$TMP_BASE/zenn-article-pipeline.XXXXXX")" || exit 1
-RUN_WORKTREE="$RUN_PARENT/worktree"
-SNAPSHOT="$RUN_PARENT/artifacts-before.json"
-SHARED_SNAPSHOT="$RUN_PARENT/shared-artifacts-before.json"
-WORKTREE_ACTIVE=0
-PRESERVE_WORKTREE=0
-cleanup() {
-  if [ "$WORKTREE_ACTIVE" = 1 ] && [ "$PRESERVE_WORKTREE" = 0 ]; then
-    git -C "$SHARED_ROOT" worktree remove --force "$RUN_WORKTREE" >/dev/null 2>&1 || true
-    WORKTREE_ACTIVE=0
-  fi
-  if [ "$PRESERVE_WORKTREE" = 0 ]; then
-    rm -f "$SNAPSHOT" "$SHARED_SNAPSHOT"
-    rmdir "$RUN_PARENT" 2>/dev/null || true
-  else
-    echo "[pipeline-worktree] preserved after artifact collision: $RUN_WORKTREE" >&2
-  fi
+BOOT="$(mktemp -d "${TMPDIR:-/tmp}/zenn-bootstrap.XXXXXX")"
+FETCH_REF="refs/article-runtime/bootstrap-$$-$(basename "$BOOT")"
+cleanup_bootstrap() {
+  git -C "$ROOT" update-ref -d "$FETCH_REF" >/dev/null 2>&1 || true
+  rm -rf "$BOOT"
 }
-trap cleanup EXIT
-
-git -C "$SHARED_ROOT" worktree add --detach "$RUN_WORKTREE" "origin/$BASE_BRANCH" >/dev/null \
-  || { echo "failed to create detached pipeline worktree" >&2; exit 1; }
-WORKTREE_ACTIVE=1
-
-# The scheduler controller is local configuration. Overlay its bounded control
-# scripts and the Codex pipeline's directly coupled completion/safety contracts
-# so an uncommitted controller is never paired with stale origin/base behavior.
-for controller in \
-  "$PIPELINE_SCRIPT" \
-  scripts/safe-sync-main.sh \
-  scripts/agent-practice/enqueue-reviewed-article.sh \
-  scripts/agent-practice/publish-reviewed-article.sh \
-  scripts/agent-practice/run-experiment.mjs \
-  scripts/analytics/next-arm.mjs \
-  scripts/analytics/zenn-metrics-lib.mjs \
-  scripts/isolated-artifacts.mjs \
-  scripts/validate-agent-generated-paths.mjs \
-  scripts/validate-agent-run-result.mjs \
-  scripts/validate-codex-completion.mjs \
-  .agents/skills/zenn-plan-practice/SKILL.md \
-  .agents/skills/zenn-plan-practice/references/plan-template.md \
-  .agents/skills/zenn-run-practice/SKILL.md \
-  .agents/skills/zenn-run-practice/references/execution-log-template.md
-do
-  if [ -f "$SHARED_ROOT/$controller" ]; then
-    mkdir -p "$RUN_WORKTREE/$(dirname "$controller")"
-    cp "$SHARED_ROOT/$controller" "$RUN_WORKTREE/$controller"
-    git -C "$RUN_WORKTREE" ls-files --error-unmatch -- "$controller" >/dev/null 2>&1 \
-      && git -C "$RUN_WORKTREE" update-index --assume-unchanged -- "$controller"
+trap cleanup_bootstrap EXIT
+record_bootstrap_failure() {
+  local code="$1" reason="$2" common
+  common="$(git -C "$ROOT" rev-parse --git-common-dir)" || return 0
+  node - "$ROOT" "$common" "$STORE" "$MODE" "${SHA:-}" "$code" "$reason" <<'JS'
+const fs = require('node:fs'), path = require('node:path'), crypto = require('node:crypto');
+const [root, gitDir, requested, mode, sha, code, reason] = process.argv.slice(2);
+const common = path.resolve(root, gitDir), store = path.resolve(requested || path.join(common, 'article-runtime'));
+if ((store === root || store.startsWith(root + '/')) && !store.startsWith(common + '/')) process.exit(0);
+const id = 'bootstrap-' + Date.now() + '-' + crypto.randomBytes(5).toString('hex');
+const dir = path.join(store, 'runs', id), now = new Date().toISOString();
+fs.mkdirSync(dir, {recursive: true, mode: 0o700});
+const manifest = {version: 1, run_id: id, started_at: now, ended_at: now, status: 'failed', reason,
+  mode, base_sha: sha || null, exit_code: Number(code), pipeline_exit_code: null,
+  development: {files: [], diff: null}, operational_snapshot: null, files: {}, changes: [],
+  articles: [], publication: [], control_changes: [], resume: {worktree: null}};
+fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+fs.writeFileSync(path.join(dir, 'summary.md'), `# Bootstrap failure ${id}\n\n${reason} (exit ${code}). No pipeline was started.\n`);
+console.error('[article-runtime] manifest: ' + path.join(dir, 'manifest.json'));
+JS
+}
+trap 'BOOT_RC=$?; record_bootstrap_failure "$BOOT_RC" "bootstrap failed before pipeline execution (line $LINENO)"; exit "$BOOT_RC"' ERR
+if [ "$MIGRATE" = 1 ]; then
+  SHA="$(git -C "$ROOT" rev-parse --verify HEAD)"
+  ORIGIN_SHA="$SHA"
+else
+  git -C "$ROOT" check-ref-format --branch "$BASE" >/dev/null
+  GIT_TERMINAL_PROMPT=0 git -C "$ROOT" fetch --quiet origin "+refs/heads/$BASE:$FETCH_REF"
+  ORIGIN_SHA="$(git -C "$ROOT" rev-parse --verify "$FETCH_REF^{commit}")"
+  SHA="$ORIGIN_SHA"
+  [ -z "$DEV_REF" ] || SHA="$(git -C "$ROOT" rev-parse --verify "$DEV_REF^{commit}")"
+  # An outdated installed entry must be explicitly synchronized, not silently
+  # mixed with a new runtime. Local working-file changes are checked by runtime.
+  if [ -z "$DEV_REF" ] && [ "$(git -C "$ROOT" rev-parse HEAD:scripts/run-article-pipeline-worktree.sh)" != "$(git -C "$ROOT" rev-parse "$SHA:scripts/run-article-pipeline-worktree.sh")" ]; then
+    echo 'committed bootstrap differs from origin; safely synchronize the entry checkout or use --dev-ref' >&2
+    record_bootstrap_failure 2 'committed bootstrap differs from selected code'
+    exit 2
   fi
-done
-
-IMPORT_ARTIFACTS=0
-previous=""
-for argument in "$@"; do
-  case "$previous" in --resume|--resume-after-run) IMPORT_ARTIFACTS=1 ;; esac
-  previous="$argument"
-done
-if [ "$IMPORT_ARTIFACTS" = 1 ]; then
-  node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" import "$SHARED_ROOT" "$RUN_WORKTREE" \
-    || { echo "failed to import resume artifacts" >&2; exit 1; }
 fi
-# The improvement loop's inputs are refreshed in the shared checkout every
-# morning and are never exported back out of a worktree, so hand them in on
-# every run -- not only a resumed one. Without this the run would allocate its
-# arm from whatever copy of the ledger was last committed.
-node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" import-analytics "$SHARED_ROOT" "$RUN_WORKTREE" \
-  || { echo "failed to import improvement-loop inputs" >&2; exit 1; }
-
-node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$SHARED_ROOT" "$SHARED_SNAPSHOT" \
-  || { echo "failed to snapshot shared artifacts" >&2; exit 1; }
-node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" snapshot "$RUN_WORKTREE" "$SNAPSHOT" \
-  || { echo "failed to snapshot pipeline artifacts" >&2; exit 1; }
-
-echo "[pipeline-worktree] running $PIPELINE_SCRIPT at detached $(git -C "$RUN_WORKTREE" rev-parse --short HEAD)"
-set +e
-(
-  cd "$RUN_WORKTREE" || exit 1
-  export ARTICLE_PIPELINE_ISOLATED_WORKTREE=1
-  export ARTICLE_PIPELINE_SHARED_ROOT="$SHARED_ROOT"
-  export ARTICLE_PIPELINE_LOCK_ROOT="$SHARED_ROOT"
-  export ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT="$SHARED_SNAPSHOT"
-  export ARTICLE_PIPELINE_ARTIFACT_BASELINE="$SNAPSHOT"
-  bash "$RUN_WORKTREE/$PIPELINE_SCRIPT" "$@"
-)
-PIPELINE_RC=$?
-set -e
-
-set +e
-node "$SHARED_ROOT/scripts/isolated-artifacts.mjs" sync "$RUN_WORKTREE" "$SHARED_ROOT" "$SNAPSHOT"
-SYNC_RC=$?
-set -e
-if [ "$SYNC_RC" != 0 ]; then
-  if [ "$SYNC_RC" = 3 ] && [ "$PIPELINE_RC" = "${AGENT_PIPELINE_RETRYABLE_EXIT:-20}" ]; then
-    echo "[pipeline-worktree] retryable attempt had an artifact collision; isolated artifacts were discarded" >&2
-    exit "$PIPELINE_RC"
-  fi
-  PRESERVE_WORKTREE=1
-  echo "[pipeline-worktree] artifact export failed; shared files were not overwritten" >&2
-  exit "$SYNC_RC"
-fi
-
-# The pending-resume marker is the one allowed deletion propagated back to the
-# shared scheduler state. It is recreated by artifact sync whenever still needed.
-if [ ! -f "$RUN_WORKTREE/logs/.auto-publish-resume" ] && [ "$IMPORT_ARTIFACTS" = 1 ]; then
-  rm -f "$SHARED_ROOT/logs/.auto-publish-resume"
-fi
-exit "$PIPELINE_RC"
+git -C "$ROOT" show "$SHA:scripts/article-runtime.mjs" >"$BOOT/runtime.mjs" || {
+  echo 'Runtime missing from selected commit. Commit the implementation on a development branch and use --dev-ref HEAD.' >&2
+  record_bootstrap_failure 2 'runtime missing from selected commit'; exit 2;
+}
+trap - ERR
+node "$BOOT/runtime.mjs" --selected-code "$SHA" "$ORIGIN_SHA" "${ARGS[@]}"

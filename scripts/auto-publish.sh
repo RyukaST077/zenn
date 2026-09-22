@@ -36,6 +36,20 @@
 
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish.sh "$@"
+    exit $?
+  fi
+fi
+
 # ---------- 設定（環境変数で上書き可能） ----------
 : "${CLAUDE_BIN:=claude}"
 : "${CLAUDE_FLAGS:=--permission-mode bypassPermissions}"
@@ -104,6 +118,7 @@ RESUME_DIR=""
 SEARCH_ARGS=""
 while [ $# -gt 0 ]; do
   case "$1" in
+    --pr-only) AUTO_MERGE=0 ;;
     --auto-merge)  AUTO_MERGE=1 ;;
     --dry-run)     DRY_RUN=1 ;;
     --resume)      RESUME_DIR="${2:?--resume にはパイプラインディレクトリを渡す}"; shift ;;
@@ -411,34 +426,8 @@ mkdir -p "$PIPE_DIR"
 touch "$PLOG"
 
 migrate_legacy_state() {
-  local legacy_rounds
-  # state.sh は旧版オーケストレーター自身が生成した代入文だけを含む。
-  # shellcheck disable=SC1090
-  . "$LEGACY_STATE"
-  node "$STATE_TOOL" init "$STATE" "$BASE_BRANCH"
-  [ -z "${DONE_gitreset:-}" ] || state_set completed.preflight true
-  if [ -n "${REPORT:-}" ]; then state_set artifacts.report "$(json_string "$REPORT")"; fi
-  if [ -n "${TASK:-}" ]; then state_set artifacts.task "$(json_string "$TASK")"; fi
-  if [ -n "${RUNLOG:-}" ]; then state_set artifacts.run_log "$(json_string "$RUNLOG")"; fi
-  if [ -n "${ARTICLE:-}" ]; then state_set artifacts.article "$(json_string "$ARTICLE")"; fi
-  if [ -n "${REVIEW:-}" ]; then state_set artifacts.review "$(json_string "$REVIEW")"; fi
-  [ -z "${DONE_search:-}" ] || state_set completed.search true
-  [ -z "${DONE_plan:-}" ] || state_set completed.plan true
-  [ -z "${DONE_run:-}" ] || state_set completed.run true
-  [ -z "${DONE_draft:-}" ] || state_set completed.draft true
-  legacy_rounds="$(grep -c '^REVIEW=' "$LEGACY_STATE" || true)"
-  state_set review.rounds "${legacy_rounds:-0}"
-  state_set review.history '[]'
-  state_set review.next_stage '"review"'
-  if [ -n "${DONE_review:-}" ]; then
-    state_set completed.review true
-    state_set review.last_verdict '"pass"'
-  fi
-  if [ -n "${DONE_publish:-}" ]; then
-    state_set completed.pr true
-    [ -z "${PR_URL:-}" ] || state_set publish.pr_url "$(json_string "$PR_URL")"
-  fi
-  [ -z "${DONE_merge:-}" ] || state_set completed.merge true
+  node "$STATE_TOOL" migrate-legacy "$STATE" "$LEGACY_STATE" "$BASE_BRANCH" \
+    || die "legacy state contains unsupported or executable syntax; inspect it as data before migration"
   log "旧 state.sh を state.json へ移行した"
 }
 
@@ -563,6 +552,11 @@ while ! is_done review; do
 done
 REVIEW="$(state_get artifacts.review)"
 ARTICLE="$(state_get artifacts.article)"
+
+if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  log "development complete: final review passed; article held locally"
+  exit 0
+fi
 
 # ---------- 6. publication queue PR ----------
 SLUG="$(basename "$ARTICLE" .md)"
