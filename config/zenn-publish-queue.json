@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-skill-claudemd-command-placement-decision.md",
       "enqueuedAt": "2026-09-21T02:37:13.495Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-22T12:36:45.784Z"
     }
   ],
   "blocked": []
