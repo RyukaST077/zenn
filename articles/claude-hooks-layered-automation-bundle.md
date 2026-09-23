@@ -3,7 +3,7 @@ title: "Claude Codeのフックを4つ重ねても動く設定、ただし発火
 emoji: "🪝"
 type: "tech"
 topics: ["claudecode", "hooks", "automation", "cli", "aiagent"]
-published: false
+published: true
 ---
 
 ## 結論から: 重ねてよい、ただし2つの前提は捨てる
