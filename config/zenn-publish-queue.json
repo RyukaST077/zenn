@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-skill-claudemd-command-placement-decision.md",
-      "enqueuedAt": "2026-09-21T02:37:13.495Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-09-23T12:43:31.756Z"
-    },
-    {
       "article": "articles/claude-hooks-layered-automation-bundle.md",
       "enqueuedAt": "2026-09-22T21:16:33.179Z",
       "attempts": 0,
