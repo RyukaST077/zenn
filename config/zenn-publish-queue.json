@@ -6,10 +6,22 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-skill-claudemd-command-placement-decision.md",
-      "enqueuedAt": "2026-09-21T02:37:13.495Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-09-22T12:36:45.784Z"
+      "article": "articles/claude-hooks-layered-automation-bundle.md",
+      "enqueuedAt": "2026-09-22T21:16:33.179Z",
+      "attempts": 2,
+      "lastAttemptAt": "2026-09-24T04:47:10.541Z"
+    },
+    {
+      "article": "articles/claude-code-fast-mode-gate-precedence-decision.md",
+      "enqueuedAt": "2026-09-24T03:48:43.052Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/unsnooze-rate-limit-auto-resume-guide.md",
+      "enqueuedAt": "2026-09-24T01:12:36.328Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
