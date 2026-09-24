@@ -72,6 +72,19 @@ const fetchRef = ref => {
   return git('rev-parse', 'FETCH_HEAD');
 };
 const remoteHead = ref => git('ls-remote', '--exit-code', 'origin', `refs/heads/${ref}`).split(/\s/)[0];
+const frontMatter = content => content.match(/^---\n([\s\S]*?)\n---\n/)?.[1] || '';
+const isPublished = content => /^published:\s*true\s*$/m.test(frontMatter(content));
+const publishedVersion = content => content.replace(/^---\n([\s\S]*?)\n---\n/, (_, front) =>
+  `---\n${front.replace(/^published:\s*false\s*$/m, 'published: true')}\n---\n`);
+const requireStrictBase = () => {
+  // GitHub's head SHA condition alone does not constrain the base. A strict,
+  // admin-enforced branch rule makes a stale base fail at the server-side merge.
+  const result = run('gh', ['api', `repos/{owner}/{repo}/branches/${encodeURIComponent(state.base)}/protection`], process.cwd(), false);
+  let protection;
+  try { protection = JSON.parse(result.stdout); } catch { /* unavailable or malformed */ }
+  if (result.status !== 0 || protection?.required_status_checks?.strict !== true || protection?.enforce_admins?.enabled !== true)
+    fail(`cannot guarantee validated ${state.base} at merge: strict, admin-enforced branch protection is required`);
+};
 const verifyPr = () => {
   const current = pr();
   if (current.headRefOid !== state.expected_head || current.headRefName !== state.branch || current.baseRefName !== state.base || current.isCrossRepository)
@@ -157,7 +170,7 @@ try {
         if (history.some(commit => { const q = queue(commit); return q.entries.some(e => e.article === article) || q.blocked?.some(e => e.article === article); })) disposition = 'removed';
       }
       const currentArticle = blob(base, article);
-      if (currentArticle && /^published:\s*true\s*$/m.test(git('show', currentArticle))) disposition = 'published';
+      if (currentArticle && isPublished(git('show', currentArticle))) disposition = 'published';
       run('git', ['read-tree', '--reset', '-u', base], worktree);
       for (const asset of state.operation.assets) {
         const current = blob(base, asset.path);
@@ -165,7 +178,7 @@ try {
         if (current === null && ['removed', 'held', 'published'].includes(disposition)) continue;
         if (current !== asset.before) {
           const onlyPublished = asset.path === article && current &&
-            git('show', current) === git('show', asset.after).replace(/^published:\s*false\s*$/m, 'published: true');
+            isPublished(git('show', current)) && git('show', current) === publishedVersion(git('show', asset.after));
           if (onlyPublished) continue;
           fail(`non-queue conflict: ${asset.path}`);
         }
@@ -213,6 +226,7 @@ try {
       if (remoteHead(state.base) !== base) { save('retrying', 'base advanced after recovery'); continue; }
       if (!options.merge) { save('awaiting-approval', 'no merge authorization supplied'); finished = true; break; }
       assertControls();
+      requireStrictBase();
       const merged = run('gh', ['pr', 'merge', options.pr, `--${method}`, '--match-head-commit', state.expected_head], process.cwd(), false);
       const observed = verifyPr();
       if (observed.state === 'MERGED') {

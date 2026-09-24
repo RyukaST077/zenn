@@ -201,7 +201,7 @@ async function supervise(o) {
     }
     writeJSON(codeBefore, inventory(worktree, control));
     // Resume only the explicitly selected immutable run. Legacy roots remain read-only.
-    let resumeSource;
+    let resumeSource, resumeManifest;
     const pendingPointer = path.join(store, 'pending-claude.json');
     if (!o.resumeRun && o.command[0]?.endsWith('auto-publish-launchd.sh') && fs.existsSync(pendingPointer)) o.resumeRun = json(pendingPointer).run_id;
     m.resume.from = o.resumeRun || null;
@@ -212,6 +212,7 @@ async function supervise(o) {
       if (!['success', 'failed', 'migrated'].includes(oldManifest.status) || oldManifest.artifacts_verified === false) fail('resume run has no verified artifact save');
       if (oldManifest.mode === 'development' && o.mode !== 'development') fail('development artifacts may only resume in development mode');
       resumeSource = path.join(old, 'files');
+      resumeManifest = oldManifest;
       importArtifacts(resumeSource, worktree, oldManifest);
     } else if (o.command.some(x => ['--resume', '--resume-after-run'].includes(x)) || (o.command[0]?.endsWith('auto-publish-launchd.sh') && fs.existsSync(path.join(o.root, 'logs/.auto-publish-resume')))) {
       resumeSource = o.root; m.resume.legacy = true;
@@ -289,6 +290,13 @@ async function supervise(o) {
     }
     const after = inventory(worktree, artifact);
     m.changes = changes(before, after, 'artifact');
+    const changedPaths = new Set(m.changes.map(item => item.path));
+    for (const item of resumeManifest?.changes ?? []) {
+      if (item.action === 'deleted' && artifact(item.path) && !after[item.path] && !changedPaths.has(item.path)) {
+        m.changes.push({ ...item });
+      }
+    }
+    m.changes.sort((a, b) => a.path.localeCompare(b.path));
     m.files = after;
     for (const item of m.changes) item.destination = item.hash ? `files/${item.path}` : null;
     copyInventory(worktree, path.join(dir, 'files'), after);

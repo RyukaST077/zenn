@@ -108,20 +108,23 @@ const readQueue = () => {
   return queue;
 };
 
-function readPublished(article) {
+function publishedField(article) {
   const articlePath = path.resolve(root, article);
   const text = fs.readFileSync(articlePath, "utf8");
-  const matches = [...text.matchAll(/^published:\s*(true|false)\s*$/gm)];
+  const front = text.match(/^---\n([\s\S]*?)\n---\n/);
+  const matches = [...(front?.[1] || "").matchAll(/^published:\s*(true|false)\s*$/gm)];
   if (matches.length !== 1) fail(`${article} must contain exactly one published field`);
-  return matches[0][1] === "true";
+  return { text, value: matches[0][1], articlePath };
+}
+
+function readPublished(article) {
+  return publishedField(article).value === "true";
 }
 
 const writePublished = (article, published) => {
-  const articlePath = path.resolve(root, article);
-  const text = fs.readFileSync(articlePath, "utf8");
-  const matches = [...text.matchAll(/^published:\s*(true|false)\s*$/gm)];
-  if (matches.length !== 1) fail(`${article} must contain exactly one published field`);
-  const next = text.replace(/^published:\s*(true|false)\s*$/m, `published: ${published}`);
+  const { text, articlePath } = publishedField(article);
+  const next = text.replace(/^---\n([\s\S]*?)\n---\n/, (_, front) =>
+    `---\n${front.replace(/^published:\s*(true|false)\s*$/m, `published: ${published}`)}\n---\n`);
   fs.writeFileSync(articlePath, next);
 };
 

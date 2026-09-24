@@ -54,12 +54,27 @@ const args = process.argv.slice(2);
 const git = (...a) => cp.execFileSync('git', ['--git-dir', remote, ...a], {encoding:'utf8'}).trim();
 const save = () => fs.writeFileSync(file, JSON.stringify(p));
 const head = () => git('rev-parse', 'refs/heads/' + p.branch);
-function bumpMain() {
+function bumpMain(article) {
   const old = git('rev-parse', 'main');
-  const next = git('commit-tree', git('rev-parse', 'main^{tree}'), '-p', old, '-m', 'concurrent main update ' + Date.now());
+  let tree = git('rev-parse', 'main^{tree}');
+  if (article) {
+    const index = process.env.TEST_ROOT + '/late-main-' + process.pid + '.index';
+    const env = {...process.env, GIT_INDEX_FILE:index};
+    const g = (...a) => cp.execFileSync('git', ['--git-dir', remote, ...a], {encoding:'utf8', env}).trim();
+    g('read-tree', old);
+    const body = g('show', 'main:' + article) + '\\nLate, unreviewed body edit.\\n';
+    const blob = cp.execFileSync('git', ['--git-dir', remote, 'hash-object', '-w', '--stdin'], {input:body, encoding:'utf8'}).trim();
+    g('update-index', '--add', '--cacheinfo', '100644,' + blob + ',' + article);
+    tree = g('write-tree');
+    fs.rmSync(index, {force:true});
+  }
+  const next = git('commit-tree', tree, '-p', old, '-m', 'concurrent main update ' + Date.now());
   git('update-ref', 'refs/heads/main', next, old);
 }
-if (args[0] === 'pr' && args[1] === 'view') {
+if (args[0] === 'api' && args[1].endsWith('/protection')) {
+  const strict = process.env.TEST_PROTECTION !== 'off';
+  console.log(JSON.stringify({required_status_checks:{strict},enforce_admins:{enabled:strict}}));
+} else if (args[0] === 'pr' && args[1] === 'view') {
   p.views = (p.views || 0) + 1;
   if (process.env.TEST_RACE === 'main-always' && p.views >= 3) bumpMain();
   if (process.env.TEST_RACE === 'head' && p.views === 3) {
@@ -72,10 +87,11 @@ if (args[0] === 'pr' && args[1] === 'view') {
   p.merges = (p.merges || 0) + 1; save();
   const expected = args[args.indexOf('--match-head-commit') + 1];
   if (!args.includes('--match-head-commit') || expected !== head()) process.exit(3);
-  if (process.env.TEST_RACE === 'merge-once' && p.merges === 1) { bumpMain(); process.exit(1); }
+  if (process.env.TEST_RACE === 'merge-once' && p.merges === 1) bumpMain();
+  if (process.env.TEST_RACE === 'merge-body-once' && p.merges === 1) bumpMain('articles/' + p.name + '.md');
   if (process.env.TEST_RACE === 'checks') process.exit(0); // Request accepted is NOT a merge.
   const old = git('rev-parse', 'main');
-  if (git('merge-base', old, expected) !== old) process.exit(1);
+  if (process.env.TEST_PROTECTION !== 'off' && git('merge-base', old, expected) !== old) process.exit(1);
   const merged = git('commit-tree', git('rev-parse', expected + '^{tree}'), '-p', old, '-m', 'squash approved queue PR');
   git('update-ref', 'refs/heads/main', merged, old);
   p.state = 'MERGED'; p.mergeCommit = {oid:merged}; save();
@@ -185,6 +201,21 @@ process.exit(result.status ?? 1);
   advance(() => write('articles/preexisting-article.md', draft('preexisting-article') + 'Later edit\n'));
   assertFailure(recover(existing, ['--merge']), /non-queue conflict: articles\/preexisting-article/);
   assert.equal(json(existing.metaFile).merges, undefined);
+
+  const bodyFlagBase = advance(() => write('articles/body-flag-article.md', draft('body-flag-article') + '\n```yaml\npublished: true\n```\n'));
+  const bodyFlag = makePr('body-flag-article', bodyFlagBase, () => write('articles/body-flag-article.md', draft('body-flag-article') + '\n```yaml\npublished: true\n```\n'));
+  ok(recover(bodyFlag, ['--merge']));
+  assert.ok(mainQueue().entries.some(e => e.article === 'articles/body-flag-article.md'));
+  assert.equal(json(bodyFlag.state).disposition, 'added');
+
+  const lateBase = advance(() => write('articles/late-body-article.md', draft('late-body-article')));
+  const late = makePr('late-body-article', lateBase);
+  assertFailure(recover(late, ['--merge'], { TEST_RACE: 'merge-body-once' }), /non-queue conflict: articles\/late-body-article/);
+  assert.equal(json(late.metaFile).state, 'OPEN');
+
+  const unprotected = makePr('unprotected-article', base);
+  assertFailure(recover(unprotected, ['--merge'], { TEST_PROTECTION: 'off' }), /strict, admin-enforced branch protection is required/);
+  assert.equal(json(unprotected.metaFile).merges, undefined);
 
   const deletedBase = advance(() => write('articles/removed-existing-article.md', draft('removed-existing-article')));
   const deleted = makePr('removed-existing-article', deletedBase);

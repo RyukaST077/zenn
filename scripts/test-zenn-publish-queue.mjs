@@ -347,7 +347,7 @@ published: false
 
 Test body.
 `;
-  fs.writeFileSync(path.join(fixture, article), frontmatter("Queue fixture"));
+  fs.writeFileSync(path.join(fixture, article), frontmatter("Queue fixture").replace("Test body.\n", "```yaml\npublished: true\n```\n"));
   fs.writeFileSync(path.join(fixture, secondArticle), frontmatter("Second queue fixture"));
   fs.writeFileSync(queuePath, `${JSON.stringify({
     version: 1,
@@ -378,6 +378,7 @@ Test body.
   assert.equal(publish.action, "publish");
   mustRun(["apply", "--action", "publish", "--slug", "queue-fixture", "--now", now]);
   assert.match(fs.readFileSync(path.join(fixture, article), "utf8"), /^published: true$/m);
+  assert.match(fs.readFileSync(path.join(fixture, article), "utf8"), /```yaml\npublished: true\n```/);
   assert.equal(readQueue().entries[0].attempts, 1);
 
   const backoff = JSON.parse(mustRun([

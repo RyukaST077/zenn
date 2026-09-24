@@ -60,6 +60,7 @@ case "\${1:-success}" in
   resume) test -f research/generated.md; test -f logs/pipeline-fixture/state.json; printf 'resumed\\n' > logs/pipeline-fixture/state.json ;;
   legacy) test -f research/legacy.md ;;
   delete) rm articles/baseline.md ;;
+  resume-deleted) test ! -e articles/baseline.md ;;
   concurrent-analytics)
     cat analytics/article-ledger.jsonl > logs/ledger-before.txt
     (cd "$ARTICLE_PIPELINE_SHARED_ROOT"; bash scripts/run-article-pipeline-worktree.sh --store "$ARTICLE_PIPELINE_STORE" -- scripts/auto-improve-topics.sh)
@@ -196,6 +197,13 @@ fi
   const changed = manifest(execute(['controls'])); assert.equal(changed.status, 'failed'); assert.equal(changed.control_changes.length, 2);
   assert.equal(fs.readFileSync(path.join(changed.dir, 'control-changes/scripts/helper.sh'), 'utf8'), 'changed\n');
   const deleted = manifest(ok(execute(['delete']))); assert.ok(deleted.changes.some(p => p.path === 'articles/baseline.md' && p.action === 'deleted'));
+  const deletedResume1 = manifest(ok(execute(['resume-deleted'], ['--resume-run', deleted.run_id])));
+  const deletedResume2 = manifest(ok(execute(['resume-deleted'], ['--resume-run', deletedResume1.run_id])));
+  const deletedResume3 = manifest(ok(execute(['resume-deleted'], ['--resume-run', deletedResume2.run_id])));
+  for (const run of [deletedResume1, deletedResume2, deletedResume3]) {
+    assert.ok(run.changes.some(p => p.path === 'articles/baseline.md' && p.action === 'deleted'));
+    assert.equal(fs.existsSync(path.join(run.dir, 'files/articles/baseline.md')), false);
+  }
   write('analytics/article-ledger.jsonl', '{"latest":true}\n'); write('analytics/private/secret.json', '{"private":true}\n'); write('analytics/evil.sh', 'echo MUST_NOT_IMPORT\n');
   const analytic = manifest(ok(execute(['analytics']))); checkFile(analytic, 'logs/ledger.txt', '{"latest":true}\n');
   assert.equal(Object.keys(analytic.operational_snapshot.files).length, 1);

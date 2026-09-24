@@ -509,7 +509,9 @@ const args = process.argv.slice(2), remote = process.env.FAKE_REMOTE, branch = p
 fs.appendFileSync(process.env.FAKE_GH_LOG, args.join(' ') + '\\n');
 const git = (...a) => cp.execFileSync('git', ['--git-dir', remote, ...a], {encoding:'utf8'}).trim();
 if (args[0] === 'auth' && args[1] === 'status') process.exit(0);
-if (args[0] === 'pr' && args[1] === 'create') {
+if (args[0] === 'api' && args[1].endsWith('/protection')) {
+  console.log(JSON.stringify({required_status_checks:{strict:true},enforce_admins:{enabled:true}}));
+} else if (args[0] === 'pr' && args[1] === 'create') {
   if (process.env.FAKE_PR_CREATE_FAILURE === '1') process.exit(7);
   console.log('https://example.invalid/pull/2');
 } else if (args[0] === 'pr' && args[1] === 'view') {
