@@ -19,7 +19,7 @@ bash scripts/run-article-pipeline-worktree.sh --resume-run <run-id> -- \
 
 未コミットの試行には `--dev-file <path>` をファイルごとに指定します。開発モードの `--auto-merge` / `--pr-only` / `--pr` は拒否されます。恒久改修は開発ブランチで検証し、PR・マージ後に通常運用へ採用します。保存先、台帳、分析データの日次更新、旧保存先からの移行、衝突時の復旧、launchd切り替えは [実行基盤の運用手順](docs/article-runtime.md) を参照してください。
 
-公開キューPRは作成後の競合も復旧します。最新mainのキューへ対象記事の追加だけを適用し直し、他記事・再試行情報・公開／保留状態を保持します。検証したheadのマージ完了を確認するまで完了扱いにしません。既存の承認待ちPRは `recover-queue-pr.sh --pr <番号> --article articles/<slug>.md --expected-head <確認済みSHA> --state logs/queue-recovery-<番号>.json` で復旧でき、明示的な `--merge` がある場合だけマージします。`--merge` にはmainの厳格な最新base必須チェックと管理者へのbranch protection適用が必要で、確認できない場合は停止します。再試行は既定3回（`--attempts` は1〜10回）。失敗時はrun内の `publication.jsonl` と指定したstate JSONを確認し、`--resume-run` で再開します。詳しい[承認・復旧・マージ手順](docs/article-runtime.md#公開キューprの競合復旧承認マージ)を参照してください。
+公開キューPRは作成後の競合も復旧します。最新mainのキューへ対象記事の追加だけを適用し直し、他記事・再試行情報・公開／保留状態を保持します。検証したheadのマージ完了を確認するまで完了扱いにしません。既存の承認待ちPRは `recover-queue-pr.sh --pr <番号> --article articles/<slug>.md --expected-head <確認済みSHA> --state logs/queue-recovery-<番号>.json` で復旧でき、明示的な `--merge` がある場合だけマージします。`--merge` にはmainの厳格な最新base必須チェック、1件以上の名前付き必須ステータスチェック、管理者へのbranch protection適用が必要で、確認できない場合は停止します。再試行は既定3回（`--attempts` は1〜10回）。失敗時はrun内の `publication.jsonl` と指定したstate JSONを確認し、`--resume-run` で再開します。詳しい[承認・復旧・マージ手順](docs/article-runtime.md#公開キューprの競合復旧承認マージ)を参照してください。
 
 以下の `logs/` 等のパスは実行worktree内の相対パスです。終了後は当該runの `files/` 配下で確認します。`--dry-run` / `--help` は設定表示専用です。
 

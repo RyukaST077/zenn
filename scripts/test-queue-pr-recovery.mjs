@@ -73,7 +73,16 @@ function bumpMain(article) {
 }
 if (args[0] === 'api' && args[1].endsWith('/protection')) {
   const strict = process.env.TEST_PROTECTION !== 'off';
-  console.log(JSON.stringify({required_status_checks:{strict},enforce_admins:{enabled:strict}}));
+  const configurations = {
+    empty: {contexts:[], checks:[]},
+    missing: {},
+    blank: {contexts:[''], checks:[{context:' '}]},
+    malformed: {contexts:'ci', checks:[{context:null}]},
+    'contexts-only': {contexts:['ci']},
+    'checks-only': {checks:[{context:'ci', app_id:123}]},
+  };
+  const checks = configurations[process.env.TEST_PROTECTION] || {contexts:['ci'], checks:[{context:'ci', app_id:123}]};
+  console.log(JSON.stringify({required_status_checks:{strict,...checks},enforce_admins:{enabled:strict}}));
 } else if (args[0] === 'pr' && args[1] === 'view') {
   p.views = (p.views || 0) + 1;
   if (process.env.TEST_RACE === 'main-always' && p.views >= 3) bumpMain();
@@ -91,8 +100,12 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
   if (process.env.TEST_RACE === 'merge-body-once' && p.merges === 1) bumpMain('articles/' + p.name + '.md');
   if (process.env.TEST_RACE === 'checks') process.exit(0); // Request accepted is NOT a merge.
   const old = git('rev-parse', 'main');
-  if (process.env.TEST_PROTECTION !== 'off' && git('merge-base', old, expected) !== old) process.exit(1);
-  const merged = git('commit-tree', git('rev-parse', expected + '^{tree}'), '-p', old, '-m', 'squash approved queue PR');
+  const enforcesBase = !['off', 'empty', 'missing', 'blank', 'malformed'].includes(process.env.TEST_PROTECTION);
+  if (enforcesBase && git('merge-base', old, expected) !== old) process.exit(1);
+  // Without effective strict protection, GitHub can merge a stale but
+  // non-conflicting PR. Preserve concurrent base changes in that case.
+  const tree = git('merge-tree', '--write-tree', old, expected).split('\\n')[0];
+  const merged = git('commit-tree', tree, '-p', old, '-m', 'squash approved queue PR');
   git('update-ref', 'refs/heads/main', merged, old);
   p.state = 'MERGED'; p.mergeCommit = {oid:merged}; save();
 } else process.exit(2);
@@ -216,6 +229,19 @@ process.exit(result.status ?? 1);
   const unprotected = makePr('unprotected-article', base);
   assertFailure(recover(unprotected, ['--merge'], { TEST_PROTECTION: 'off' }), /strict, admin-enforced branch protection is required/);
   assert.equal(json(unprotected.metaFile).merges, undefined);
+
+  const noChecksBase = advance(() => write('articles/no-required-checks.md', draft('no-required-checks')));
+  const noChecks = makePr('no-required-checks', noChecksBase);
+  const protectedMain = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+  for (const protection of ['empty', 'missing', 'blank', 'malformed']) {
+    assertFailure(recover(noChecks, ['--merge'], { TEST_PROTECTION: protection, TEST_RACE: 'merge-body-once' }), /at least one named required status check/);
+    assert.equal(json(noChecks.metaFile).merges, undefined);
+    assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), protectedMain);
+  }
+  // Both REST representations of a named required check are supported.
+  ok(recover(noChecks, ['--merge'], { TEST_PROTECTION: 'contexts-only' }));
+  const appCheck = makePr('app-required-check', base);
+  ok(recover(appCheck, ['--merge'], { TEST_PROTECTION: 'checks-only' }));
 
   const deletedBase = advance(() => write('articles/removed-existing-article.md', draft('removed-existing-article')));
   const deleted = makePr('removed-existing-article', deletedBase);

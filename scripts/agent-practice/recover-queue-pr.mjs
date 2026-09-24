@@ -84,6 +84,14 @@ const requireStrictBase = () => {
   try { protection = JSON.parse(result.stdout); } catch { /* unavailable or malformed */ }
   if (result.status !== 0 || protection?.required_status_checks?.strict !== true || protection?.enforce_admins?.enabled !== true)
     fail(`cannot guarantee validated ${state.base} at merge: strict, admin-enforced branch protection is required`);
+  // Strict base enforcement is ineffective without a required status check.
+  // Support both the legacy contexts and the app-aware checks REST fields.
+  const required = protection.required_status_checks;
+  const named = value => typeof value === 'string' && value.trim().length > 0;
+  const hasContext = Array.isArray(required.contexts) && required.contexts.some(named);
+  const hasCheck = Array.isArray(required.checks) && required.checks.some(check => named(check?.context));
+  if (!hasContext && !hasCheck)
+    fail(`cannot guarantee validated ${state.base} at merge: at least one named required status check is required`);
 };
 const verifyPr = () => {
   const current = pr();
