@@ -10,6 +10,12 @@
       "enqueuedAt": "2026-09-22T21:16:33.179Z",
       "attempts": 1,
       "lastAttemptAt": "2026-09-23T14:45:07.255Z"
+    },
+    {
+      "article": "articles/claude-code-fast-mode-gate-precedence-decision.md",
+      "enqueuedAt": "2026-09-24T03:48:43.052Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []

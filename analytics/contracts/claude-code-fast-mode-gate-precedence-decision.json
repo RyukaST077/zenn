@@ -1,0 +1,39 @@
+{
+  "slug": "claude-code-fast-mode-gate-precedence-decision",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "cli",
+    "automation"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 92,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-24T03:21:00.270Z",
+    "contract": {
+      "targetReader": "Claude Codeをヘッドレスモード（-p）やAgent SDK、CI/自動化スクリプトから使っていて、fast modeを有効化しようとしているが、/fastのUI文言だけでは複数ある阻害要因（環境変数・--settingsの指定漏れ・モデル許可リスト・usage credits未有効化）のどれが効いているか区別できない開発者",
+      "readerDecision": "自分の claude -p 呼び出しで fast mode が有効にならないとき、fast_mode_disabled_reason の値と優先順位表から、次に直すべき設定を1つに絞れる",
+      "takeaway": "CLAUDE_CODE_DISABLE_FAST_MODE > --settingsのfastMode未指定(-p専用) > availableModelsのモデル許可 > usage credits、という実測した優先順位つきの決定表と、各状態を課金なしで再現する claude -p --settings 呼び出しのコピペ用コマンド集",
+      "verificationItems": [
+        "-p でsettingsにfastMode:trueを指定しないと、保存済みfastMode設定に関わらずsdk_opt_in_requiredになりusage creditsの状態は評価されないことを確認する",
+        "CLAUDE_CODE_DISABLE_FAST_MODE=1がusage credits不足やモデル許可リストより優先してdisabled_by_envを報告し、他の理由が隠れることを確認する",
+        "availableModelsでOpusを除外するとmodel_not_allowedがusage credits不足より優先して報告されることを確認する",
+        "fastModePerSessionOptIn:trueを指定してもfastMode:trueが同時にあればusage credits不足の理由がそのまま表示され、per-session opt-in固有の理由は-pのJSON出力からは区別できないことを確認する",
+        "CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK=1を付けてもsettingsにfastMode:trueが無ければsdk_opt_in_requiredのままで変化しないことを確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "claudecodeトピックはtaggings規模が大きく、上位記事は設定・スクリプトを配布するasset型が最も伸びている（『202608個人的claude code設定』693いいね等）。fast modeはv2.1.274（2026-09-17）のOpusデフォルト化、v2.1.280（2026-09-22）のOpus 5.5デフォルト化と同時期にクラウドセッションのcomposerにも追加された直近の変更で、ヘッドレス/SDK運用者からの設定判断の需要が今まさに立ち上がっている領域。"
+    }
+  }
+}
