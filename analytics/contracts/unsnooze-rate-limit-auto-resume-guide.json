@@ -1,0 +1,38 @@
+{
+  "slug": "unsnooze-rate-limit-auto-resume-guide",
+  "topics": [
+    "claudecode",
+    "codex",
+    "cli",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 44,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-23T15:21:03.570Z",
+    "contract": {
+      "targetReader": "Claude CodeまたはCodex CLIで長い開発タスクを実行し、利用上限解除後の手動再開を減らしたい人",
+      "readerDecision": "自分のClaude CodeまたはCodex CLIにunsnoozeを導入して利用上限解除後の自動再開を有効にする手順と条件を判断できる",
+      "takeaway": "版を固定した導入・設定・通常起動・状態確認・停止のコマンド集と、再開されない場合の確認表",
+      "verificationItems": [
+        "固定版の導入要件と設定を確認し、隔離した設定・install関数のテストでautoResumeとwrapperの働きを確かめる",
+        "合成したClaudeとCodexの利用上限停止を認識し、reset前は待機してreset後に再開候補となることを確かめる",
+        "previewが送信しないことと、模擬セッションIDを保持してlive paneまたはheadlessの再開コマンドに引き継ぐことを確かめる",
+        "autoResume off、cancel、workspaceGuard pauseによる停止条件を確かめ、状態確認と再開されない場合の確認表に対応付ける"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "ユーザーがunsnoozeによる自動再開の導入方法を指定。公式リポジトリと作者の公開議論[S1][I1]が同じ停止・手動再開の課題を扱う。2026-09-22生成のanalytics/topic-feedback.mdではclaudecodeのD30比較コホートは240件。unsnooze自体の検索量は計測していない。"
+    }
+  }
+}
