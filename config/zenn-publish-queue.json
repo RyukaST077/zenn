@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-code-fast-mode-gate-precedence-decision.md",
       "enqueuedAt": "2026-09-24T03:48:43.052Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-24T17:52:21.176Z"
     },
     {
       "article": "articles/unsnooze-rate-limit-auto-resume-guide.md",
