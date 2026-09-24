@@ -2,11 +2,26 @@
 # launchd wrapper for the separate daily AI coding-agent article pipeline.
 set -uo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-agent-practice-launchd.sh "$@"
+    exit $?
+  fi
+fi
+
 export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
-REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
+REPO="${ARTICLE_PIPELINE_RUN_DIR:+$(git rev-parse --show-toplevel)}"
+: "${REPO:=/Users/katayamaryuunosuke/workspace/024_zenn}"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
-PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-}"
+PIPELINE_SCRIPT="${AGENT_PRACTICE_SCRIPT:-$REPO/scripts/auto-agent-practice.sh}"
 WORKTREE_RUNNER="$REPO/scripts/run-article-pipeline-worktree.sh"
 
 LOG_DIR="$REPO/logs/agent/launchd"
@@ -129,14 +144,16 @@ esac
     case " ${AGENT_ARGS[*]} " in
       *" --dry-run "*) ;;
       *)
-        if ! grep -q 'complete: publication queued for ' "$LOG"; then
+        if ! grep -Eq 'complete: publication PR (merged|awaiting approval) for ' "$LOG"; then
           echo "RESULT: failed (pipeline exited 0 without the success contract)"
           rc=1
         else
           mkdir -p "$AGENT_PRACTICE_STATUS_DIR"
           status_file="$AGENT_PRACTICE_STATUS_DIR/$(date +%F)-agent.json"
-          node -e 'const fs=require("node:fs"); const [file,log]=process.argv.slice(1); fs.writeFileSync(file, JSON.stringify({version:1,pipeline:"agent-practice",status:"success",completed_at:new Date().toISOString(),log},null,2)+"\n")' \
-            "$status_file" "$LOG"
+          publication_status=merged
+          grep -q 'complete: publication PR awaiting approval for ' "$LOG" && publication_status=awaiting-approval
+          node -e 'const fs=require("node:fs"); const [file,log,publication_status]=process.argv.slice(1); fs.writeFileSync(file, JSON.stringify({version:1,pipeline:"agent-practice",status:"success",publication_status,completed_at:new Date().toISOString(),log},null,2)+"\n")' \
+            "$status_file" "$LOG" "$publication_status"
           echo "SUCCESS: recorded $status_file"
         fi
         ;;

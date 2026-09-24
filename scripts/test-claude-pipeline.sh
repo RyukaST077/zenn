@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Unit tests exercise the inner pipeline with fake CLIs; runtime boundaries have a separate Git fixture suite.
+export ARTICLE_PIPELINE_ISOLATED_WORKTREE=1
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -207,5 +209,15 @@ if rg -q 'unbound variable' "$TMP/runtime.stderr"; then
   echo "Bash 3.2 empty-array regression detected" >&2
   exit 1
 fi
+
+# Saved data must never become an executable control-code overlay.
+printf 'REPORT=$(touch "%s")\n' "$TMP/legacy-executed" >"$TMP/unsafe-state.sh"
+if node scripts/pipeline-state.mjs migrate-legacy "$TMP/unsafe-state.json" "$TMP/unsafe-state.sh" main >"$TMP/unsafe.out" 2>&1; then
+  echo "executable legacy state was accepted" >&2
+  exit 1
+fi
+[ ! -e "$TMP/legacy-executed" ]
+[ ! -e "$TMP/unsafe-state.json" ]
+rg -q 'unsafe legacy state syntax' "$TMP/unsafe.out"
 
 echo "Claude pipeline tests passed"

@@ -4,6 +4,20 @@
 # only where the pipeline contract requires it.
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish-codex.sh "$@"
+    exit $?
+  fi
+fi
+
 : "${CODEX_BIN:=codex}"
 : "${CODEX_MODEL:=gpt-5.6-sol}"
 : "${CODEX_REASONING_EFFORT:=high}"
@@ -31,6 +45,7 @@ RESUME_DIR=""
 SEARCH_ARGS=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --pr-only) AUTO_MERGE=0 ;;
     --auto-merge) AUTO_MERGE=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --resume) RESUME_DIR="${2:?--resume requires a pipeline directory}"; shift ;;
@@ -48,16 +63,6 @@ case "$MAX_REVIEW_ROUNDS" in *[!0-9]*|0) echo "MAX_REVIEW_ROUNDS must be a posit
   || { echo "CODEX_SANDBOX_MODE must be workspace-write" >&2; exit 2; }
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
-
-# Keep direct Codex invocations equivalent to the scheduled Claude path: run
-# the real pipeline in a detached worktree and export only isolated artifacts
-# back to the shared checkout. The worktree runner sets this flag for the
-# inner invocation, preventing recursion. Dry-runs remain local and do not
-# need a worktree.
-if [ "$DRY_RUN" = 0 ] && [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
-  exec bash scripts/run-article-pipeline-worktree.sh \
-    --shared-root "$ROOT" -- scripts/auto-publish-codex.sh "$@"
-fi
 
 TS="$(date +%Y%m%d-%H%M%S)"
 if [ -n "$RESUME_DIR" ]; then
@@ -86,42 +91,6 @@ die() {
 state_get() { node "$STATE_TOOL" get "$STATE" "$1"; }
 state_set() { node "$STATE_TOOL" set "$STATE" "$1" "$2"; }
 is_done() { [ "$(state_get "completed.$1")" = "true" ]; }
-pr_is_merged() {
-  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
-}
-cleanup_merged_pr_branch() {
-  local head remote_ref remote_rc
-  head="$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state,headRefName \
-    --jq 'select(.state == "MERGED") | .headRefName')" \
-    || die "failed to inspect merged PR branch"
-  case "$head" in
-    queue/*) ;;
-    *) die "refusing to delete unexpected merged PR branch: ${head:-<empty>}" ;;
-  esac
-  git check-ref-format --branch "$head" >/dev/null \
-    || die "merged PR returned an invalid branch name: $head"
-
-  set +e
-  remote_ref="$(GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code --heads origin "refs/heads/$head" 2>>"$PLOG")"
-  remote_rc=$?
-  set -e
-  case "$remote_rc" in
-    0)
-      [ -n "$remote_ref" ] || die "remote branch lookup returned no ref for $head"
-      GIT_TERMINAL_PROMPT=0 git push origin --delete "$head" \
-        || die "failed to delete merged remote branch: $head"
-      ;;
-    2) ;;
-    *) die "failed to inspect merged remote branch: $head" ;;
-  esac
-
-  if git show-ref --verify --quiet "refs/heads/$head"; then
-    if git worktree list --porcelain | rg -Fxq "branch refs/heads/$head"; then
-      die "merged local branch is still checked out in a worktree: $head"
-    fi
-    git branch -D "$head" >/dev/null || die "failed to delete merged local branch: $head"
-  fi
-}
 require_artifact() { local value; value="$(state_get "artifacts.$1")"; [ -n "$value" ] && [ -f "$value" ]; }
 invalidate_from() {
   local stage="$1" seen=0 name
@@ -381,6 +350,11 @@ while ! is_done review; do
   fi
 done
 
+if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  log "development complete: final review passed; article held locally"
+  exit 0
+fi
+
 ARTICLE="$(state_get artifacts.article)"
 SLUG="$(basename "$ARTICLE" .md)"
 if ! is_done pr; then
@@ -400,19 +374,13 @@ else
 fi
 
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
-  # PRのマージは公開ではなく、published:falseの記事を公開キューへ追加する。
-  if pr_is_merged; then
-    log "PRはすでにマージ済み。マージ成功として処理を継続する"
-  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch; then
-    log "auto-merge scheduled (adds the unpublished article to the queue after checks)"
-  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch; then
-    log "PR merged immediately; unpublished article added to the queue"
-  elif pr_is_merged; then
-    log "マージコマンドは失敗したが、GitHub上ではマージ済み。成功として処理を継続する"
-  else
-    die "auto-merge setup failed"
-  fi
-  cleanup_merged_pr_branch
+  COMMIT="$(state_get publish.commit)"
+  [ -n "$COMMIT" ] && [ "$COMMIT" != null ] || die "resume requires an approved PR head; use recover-queue-pr.sh --expected-head after reviewing the PR"
+  node scripts/agent-practice/recover-queue-pr.mjs \
+    --pr "$PR_URL" --article "$ARTICLE" --expected-head "$COMMIT" \
+    --state "$PIPE_DIR/queue-recovery.json" --base "$BASE_BRANCH" \
+    --method "${MERGE_METHOD#--}" --merge \
+    || die "queue PR remains incomplete; inspect $PIPE_DIR/queue-recovery.json"
   state_set completed.merge true
 fi
 

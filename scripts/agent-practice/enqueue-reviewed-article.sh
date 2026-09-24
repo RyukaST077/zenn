@@ -2,9 +2,26 @@
 # Add one reviewed article to the deterministic Zenn publication queue.
 set -euo pipefail
 
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+  git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+    bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/agent-practice/enqueue-reviewed-article.sh "$@"
+  exit $?
+fi
+
+[ "${ARTICLE_PIPELINE_MODE:-normal}" != development ] || {
+  echo 'publication prohibited in development mode' >&2; exit 2;
+}
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" assert-controls "$(git rev-parse --show-toplevel)" "$ARTICLE_PIPELINE_CONTROL_BASELINE" || exit 2
+fi
+
 : "${AGENT_PIPELINE_BASE_BRANCH:=main}"
 : "${AGENT_PIPELINE_MERGE_METHOD:=--squash}"
 : "${PUBLISH_QUEUE_FILE:=config/zenn-publish-queue.json}"
+[ "$PUBLISH_QUEUE_FILE" = config/zenn-publish-queue.json ] || {
+  echo 'only the canonical publication queue supports reviewed enqueue/recovery' >&2; exit 2;
+}
 
 ARTICLE=""
 REVIEW=""
@@ -64,9 +81,6 @@ mkdir -p "$ROOT/$PIPE_DIR"
 touch "$PLOG"
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*" | tee -a "$PLOG" >&2; }
 die() { log "ERROR: $*"; exit 1; }
-pr_is_merged() {
-  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
-}
 
 has_blocking_tracked_changes() {
   # knowledge/ is local troubleshooting evidence. Some baseline files remain
@@ -96,10 +110,8 @@ GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || die "GitHub CLI is not au
 
 ARTICLE_CHECK_TOOL="$SOURCE_ROOT/scripts/check-article.mjs"
 QUEUE_TOOL="$SOURCE_ROOT/scripts/zenn-publish-queue.mjs"
-SAFE_SYNC_TOOL="$SOURCE_ROOT/scripts/safe-sync-main.sh"
 [ -f "$ARTICLE_CHECK_TOOL" ] || die "article checker is missing"
 [ -f "$QUEUE_TOOL" ] || die "publication queue tool is missing"
-[ -x "$SAFE_SYNC_TOOL" ] || die "safe sync helper is missing or not executable"
 (cd "$ROOT" && node "$ARTICLE_CHECK_TOOL" "$ARTICLE" --expect-published false) \
   || die "draft article check failed"
 case "$REVIEW_STYLE" in
@@ -122,6 +134,12 @@ if [ "$REVIEW_STYLE" = agent ]; then
   EDITORIAL_SCORE="$(sed -nE 's/^editorial_score: ([0-9]{1,3})\/100$/\1/p' "$ROOT/$REVIEW")"
   [ -n "$EDITORIAL_SCORE" ] && [ "$EDITORIAL_SCORE" -ge 80 ] && [ "$EDITORIAL_SCORE" -le 100 ] \
     || die "passing review editorial score must be 80-100"
+fi
+
+ARTIFACT_SOURCE="$ROOT"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  ARTIFACT_SOURCE="$(node "$ARTICLE_PIPELINE_RUNTIME" prepare-publication "$ROOT" "$ARTICLE" "$REVIEW")" \
+    || die "could not save reviewed publication bundle"
 fi
 
 SLUG="$(basename "$ARTICLE" .md)"
@@ -147,17 +165,22 @@ trap cleanup_worktree EXIT
 
 GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$AGENT_PIPELINE_BASE_BRANCH" \
   || die "failed to fetch origin/$AGENT_PIPELINE_BASE_BRANCH"
-PUBLICATION_BASE="$AGENT_PIPELINE_BASE_BRANCH"
-[ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ] \
-  || PUBLICATION_BASE="origin/$AGENT_PIPELINE_BASE_BRANCH"
+PUBLICATION_BASE="$(git rev-parse --verify FETCH_HEAD)"
 git worktree add -b "$BRANCH" "$WORKTREE" "$PUBLICATION_BASE" >/dev/null \
   || die "failed to create isolated queue worktree"
 WORKTREE_ACTIVE=1
-mkdir -p "$WORKTREE/$(dirname "$ARTICLE")"
-cp "$ROOT/$ARTICLE" "$WORKTREE/$ARTICLE"
-if [ -d "$ROOT/images/$SLUG" ]; then
-  mkdir -p "$WORKTREE/images"
-  cp -R "$ROOT/images/$SLUG" "$WORKTREE/images/$SLUG"
+[ ! -e "$WORKTREE/$ARTICLE" ] || cmp -s "$WORKTREE/$ARTICLE" "$ARTIFACT_SOURCE/$ARTICLE" \
+  || die "article differs on latest publication base; refusing to overwrite: $ARTICLE"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" install-publication "$ARTIFACT_SOURCE" "$WORKTREE" \
+    || die "publication bundle differs from latest base or failed hash verification"
+else
+  mkdir -p "$WORKTREE/$(dirname "$ARTICLE")"
+  cp "$ARTIFACT_SOURCE/$ARTICLE" "$WORKTREE/$ARTICLE"
+  if [ -d "$ARTIFACT_SOURCE/images/$SLUG" ]; then
+    mkdir -p "$WORKTREE/images/$SLUG"
+    cp -R "$ARTIFACT_SOURCE/images/$SLUG/." "$WORKTREE/images/$SLUG/"
+  fi
 fi
 # The arm allocator counts registrations from analytics/contracts/, and every
 # run reads them out of a fresh worktree built from origin. A contract that is
@@ -171,7 +194,7 @@ CONTRACT="analytics/contracts/$SLUG.json"
 # pass --expect-arm and turn a missing or mismatched contract into a failure
 # here, before the push. auto-publish.sh and auto-publish-codex.sh never
 # register a contract, so the requirement stays opt-in rather than global.
-if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ROOT/$CONTRACT" ]; then
+if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
   die "no registered contract for the final article: $CONTRACT (the arm allocated for this run would go uncounted)"
 fi
 if [ -n "$EXPECT_ARM" ]; then
@@ -179,13 +202,13 @@ if [ -n "$EXPECT_ARM" ]; then
     const fs = require("node:fs");
     const contract = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
     process.stdout.write(String(contract?.classification?.arm ?? ""));
-  ' "$ROOT/$CONTRACT")" || die "could not read the arm out of $CONTRACT"
+  ' "$ARTIFACT_SOURCE/$CONTRACT")" || die "could not read the arm out of $CONTRACT"
   [ "$CONTRACT_ARM" = "$EXPECT_ARM" ] \
     || die "contract arm mismatch for $SLUG: allocated $EXPECT_ARM but the contract records ${CONTRACT_ARM:-<empty>}"
 fi
-if [ -f "$ROOT/$CONTRACT" ]; then
+if [ -z "${ARTICLE_PIPELINE_RUNTIME:-}" ] && [ -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
   mkdir -p "$WORKTREE/$(dirname "$CONTRACT")"
-  cp "$ROOT/$CONTRACT" "$WORKTREE/$CONTRACT"
+  cp "$ARTIFACT_SOURCE/$CONTRACT" "$WORKTREE/$CONTRACT"
 fi
 
 ENQUEUE_ARGS=(enqueue --queue "$PUBLISH_QUEUE_FILE" --article "$ARTICLE")
@@ -206,9 +229,15 @@ git -C "$WORKTREE" diff --cached --check || die "staged queue diff failed whites
 git -C "$WORKTREE" commit -m "queue: $SLUG for Zenn publication" >/dev/null \
   || die "queue commit failed"
 COMMIT="$(git -C "$WORKTREE" rev-parse HEAD)"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" commit "$COMMIT" || die "publication audit failed"
+fi
 GIT_TERMINAL_PROMPT=0 git -C "$WORKTREE" push --set-upstream origin "$BRANCH" >/dev/null \
   || die "queue push failed"
 
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" pushed "$COMMIT" || die "publication audit failed"
+fi
 cleanup_worktree
 PR_BODY="$ROOT/$PIPE_DIR/queue-pr-body.md"
 printf 'レビュー合格済みの記事をZenn公開キューへ追加します。公開はAI非依存ワーカーが1件ずつ行います。\n\n- article: `%s`\n- review: `%s`\n' \
@@ -216,26 +245,27 @@ printf 'レビュー合格済みの記事をZenn公開キューへ追加しま�
 PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$AGENT_PIPELINE_BASE_BRANCH" --head "$BRANCH" \
   --title "queue: $SLUG for Zenn publication" --body-file "$PR_BODY")" \
   || die "PR creation failed"
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" pr "$PR_URL" || die "publication audit failed"
+fi
 if [ "$AUTO_MERGE" = 1 ]; then
-  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --delete-branch; then
-    MERGE_RESULT="merged immediately"
-  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$AGENT_PIPELINE_MERGE_METHOD" --auto --delete-branch; then
-    MERGE_RESULT="auto-merge requested"
-  elif pr_is_merged; then
-    MERGE_RESULT="already merged (merge command raced)"
-  else
-    die "PR merge failed: $PR_URL"
-  fi
-  bash "$SAFE_SYNC_TOOL" "$AGENT_PIPELINE_BASE_BRANCH" \
-    || log "WARN: could not safely refresh $AGENT_PIPELINE_BASE_BRANCH after merge request"
+  node "$SOURCE_ROOT/scripts/agent-practice/recover-queue-pr.mjs" \
+    --pr "$PR_URL" --article "$ARTICLE" --expected-head "$COMMIT" \
+    --state "$ROOT/$PIPE_DIR/queue-recovery.json" --base "$AGENT_PIPELINE_BASE_BRANCH" \
+    --method "${AGENT_PIPELINE_MERGE_METHOD#--}" --merge \
+    || die "queue PR remains incomplete; inspect $PIPE_DIR/queue-recovery.json"
+  MERGE_RESULT="merged (confirmed on GitHub)"
 else
+  if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+    node "$ARTICLE_PIPELINE_RUNTIME" publication "$ROOT" "$ARTICLE" "$REVIEW" awaiting-approval "$PR_URL" || die "publication audit failed"
+  fi
   if [ "${AGENT_PIPELINE_OUTER_AUTO_MERGE:-0}" = 1 ]; then
-    MERGE_RESULT="PR created; outer pipeline will auto-merge"
+    MERGE_RESULT="PR created; outer pipeline will recover and confirm merge"
   else
     MERGE_RESULT="PR created; waiting for human merge"
   fi
 fi
 
-log "queue complete: article=$ARTICLE PR=$PR_URL merge=$MERGE_RESULT"
+log "queue PR prepared: article=$ARTICLE PR=$PR_URL merge=$MERGE_RESULT"
 printf 'Article: %s\nPR: %s\nQueue: %s\nCommit: %s\nMerge: %s\n' \
   "$ARTICLE" "$PR_URL" "$PUBLISH_QUEUE_FILE" "$COMMIT" "$MERGE_RESULT"

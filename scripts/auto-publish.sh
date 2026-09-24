@@ -36,6 +36,20 @@
 
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-publish.sh "$@"
+    exit $?
+  fi
+fi
+
 # ---------- 設定（環境変数で上書き可能） ----------
 : "${CLAUDE_BIN:=claude}"
 : "${CLAUDE_FLAGS:=--permission-mode bypassPermissions}"
@@ -104,6 +118,7 @@ RESUME_DIR=""
 SEARCH_ARGS=""
 while [ $# -gt 0 ]; do
   case "$1" in
+    --pr-only) AUTO_MERGE=0 ;;
     --auto-merge)  AUTO_MERGE=1 ;;
     --dry-run)     DRY_RUN=1 ;;
     --resume)      RESUME_DIR="${2:?--resume にはパイプラインディレクトリを渡す}"; shift ;;
@@ -161,9 +176,6 @@ die()  {
 state_get() { node "$STATE_TOOL" get "$STATE" "$1"; }
 state_set() { node "$STATE_TOOL" set "$STATE" "$1" "$2"; }
 is_done() { [ "$(state_get "completed.$1")" = true ]; }
-pr_is_merged() {
-  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
-}
 require_artifact() {
   local value
   value="$(state_get "artifacts.$1")"
@@ -411,34 +423,8 @@ mkdir -p "$PIPE_DIR"
 touch "$PLOG"
 
 migrate_legacy_state() {
-  local legacy_rounds
-  # state.sh は旧版オーケストレーター自身が生成した代入文だけを含む。
-  # shellcheck disable=SC1090
-  . "$LEGACY_STATE"
-  node "$STATE_TOOL" init "$STATE" "$BASE_BRANCH"
-  [ -z "${DONE_gitreset:-}" ] || state_set completed.preflight true
-  if [ -n "${REPORT:-}" ]; then state_set artifacts.report "$(json_string "$REPORT")"; fi
-  if [ -n "${TASK:-}" ]; then state_set artifacts.task "$(json_string "$TASK")"; fi
-  if [ -n "${RUNLOG:-}" ]; then state_set artifacts.run_log "$(json_string "$RUNLOG")"; fi
-  if [ -n "${ARTICLE:-}" ]; then state_set artifacts.article "$(json_string "$ARTICLE")"; fi
-  if [ -n "${REVIEW:-}" ]; then state_set artifacts.review "$(json_string "$REVIEW")"; fi
-  [ -z "${DONE_search:-}" ] || state_set completed.search true
-  [ -z "${DONE_plan:-}" ] || state_set completed.plan true
-  [ -z "${DONE_run:-}" ] || state_set completed.run true
-  [ -z "${DONE_draft:-}" ] || state_set completed.draft true
-  legacy_rounds="$(grep -c '^REVIEW=' "$LEGACY_STATE" || true)"
-  state_set review.rounds "${legacy_rounds:-0}"
-  state_set review.history '[]'
-  state_set review.next_stage '"review"'
-  if [ -n "${DONE_review:-}" ]; then
-    state_set completed.review true
-    state_set review.last_verdict '"pass"'
-  fi
-  if [ -n "${DONE_publish:-}" ]; then
-    state_set completed.pr true
-    [ -z "${PR_URL:-}" ] || state_set publish.pr_url "$(json_string "$PR_URL")"
-  fi
-  [ -z "${DONE_merge:-}" ] || state_set completed.merge true
+  node "$STATE_TOOL" migrate-legacy "$STATE" "$LEGACY_STATE" "$BASE_BRANCH" \
+    || die "legacy state contains unsupported or executable syntax; inspect it as data before migration"
   log "旧 state.sh を state.json へ移行した"
 }
 
@@ -564,6 +550,11 @@ done
 REVIEW="$(state_get artifacts.review)"
 ARTICLE="$(state_get artifacts.article)"
 
+if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  log "development complete: final review passed; article held locally"
+  exit 0
+fi
+
 # ---------- 6. publication queue PR ----------
 SLUG="$(basename "$ARTICLE" .md)"
 if ! is_done pr; then
@@ -578,6 +569,9 @@ if ! is_done pr; then
   printf '%s\n' "$QUEUE_SUMMARY" >"$publog"
   PR_URL="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^PR: //p' | head -1)"
   [ -n "$PR_URL" ] || die "公開キューPRのURLを確認できなかった。ログ: $publog"
+  COMMIT="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^Commit: //p' | head -1)"
+  [ -n "$COMMIT" ] || die "公開キューPRのhead SHAを確認できなかった"
+  state_set publish.commit "$(json_string "$COMMIT")"
   state_set publish.pr_url "$(json_string "$PR_URL")"; state_set completed.pr true
   log "   公開キューPR作成: $PR_URL"
 else log "skip: publication queue PR (実行済み → $(state_get publish.pr_url))"; fi
@@ -598,18 +592,13 @@ fi
 MERGED=0
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   [ "$HAS_GH" = 1 ] || die "--auto-merge には gh CLI が必要"
-  # branch protection があれば --auto、無ければ即時マージ。ここでは公開ではなくキュー追加になる。
-  if pr_is_merged; then
-    log "PRはすでにマージ済み。マージ成功として処理を継続する"
-  elif gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch >>"$PLOG" 2>&1; then
-    log "auto-merge を予約した（必須チェック通過後に公開キューへ追加）"
-  elif gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch >>"$PLOG" 2>&1; then
-    log "PR を即時マージした（公開キューへ追加）"
-  elif pr_is_merged; then
-    log "マージコマンドは失敗したが、GitHub上ではマージ済み。成功として処理を継続する"
-  else
-    die "PR のマージに失敗した: $PR_URL ($PLOG 参照)"
-  fi
+  COMMIT="$(state_get publish.commit)"
+  [ -n "$COMMIT" ] && [ "$COMMIT" != null ] || die "resume requires an approved PR head; use recover-queue-pr.sh --expected-head after reviewing the PR"
+  node scripts/agent-practice/recover-queue-pr.mjs \
+    --pr "$PR_URL" --article "$ARTICLE" --expected-head "$COMMIT" \
+    --state "$PIPE_DIR/queue-recovery.json" --base "$BASE_BRANCH" \
+    --method "${MERGE_METHOD#--}" --merge \
+    || die "queue PR remains incomplete; inspect $PIPE_DIR/queue-recovery.json"
   MERGED=1
   state_set completed.merge true
   bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
@@ -624,7 +613,7 @@ log "=== auto-publish 完了"
   echo "  記事        : $ARTICLE"
   echo "  PR          : $PR_URL"
   if [ "$AUTO_MERGE" = 1 ]; then
-    echo "  マージ      : $([ "$MERGED" = 1 ] && echo '実行/予約済み（published:falseでキュー追加）' || echo '実行済み（resume）')"
+    echo "  マージ      : $([ "$MERGED" = 1 ] && echo 'マージ確認済み（published:falseでキュー追加）' || echo '実行済み（resume）')"
     echo "  次のアクション: AI非依存ワーカーが投稿枠に合わせて1件ずつ公開"
   else
     echo "  マージ      : 未実施（人間がPRを確認して公開キューへ追加）"

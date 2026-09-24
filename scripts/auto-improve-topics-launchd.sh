@@ -9,12 +9,27 @@
 # "insufficient" verdicts, and re-judging the same batch invites reading noise
 # as signal.
 set -uo pipefail
+
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-improve-topics-launchd.sh "$@"
+    exit $?
+  fi
+fi
 # The GA4 service-account key and analytics/private/ must not become
 # group- or world-readable via a file this job creates.
 umask 077
 
 export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-REPO="/Users/katayamaryuunosuke/workspace/024_zenn"
+REPO="${ARTICLE_PIPELINE_RUN_DIR:+$(git rev-parse --show-toplevel)}"
+: "${REPO:=/Users/katayamaryuunosuke/workspace/024_zenn}"
 cd "$REPO" || { echo "cannot cd to $REPO" >&2; exit 1; }
 
 LOG_DIR="$REPO/logs/launchd"

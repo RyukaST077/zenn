@@ -5,6 +5,20 @@
 # unrestricted permissions. Run this only on the dedicated local machine used for these experiments.
 set -euo pipefail
 
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/auto-agent-practice.sh "$@"
+    exit $?
+  fi
+fi
+
 : "${CODEX_BIN:=codex}"
 : "${CLAUDE_BIN:=claude}"
 : "${AGENT_PIPELINE_ORCHESTRATOR:=codex}"
@@ -678,25 +692,14 @@ while :; do
   round=$((round + 1))
 done
 
-if [ -n "${ARTICLE_PIPELINE_SHARED_ROOT:-}" ] && [ -n "${ARTICLE_PIPELINE_ARTIFACT_BASELINE:-}" ] \
-    && [ "$ROOT" != "$ARTICLE_PIPELINE_SHARED_ROOT" ]; then
-  EXPORT_PREFLIGHT="$PIPE_DIR/artifact-export-precheck.stderr"
-  log "artifact export precheck start before publication side effects"
-  set +e
-  node "$ARTIFACT_TOOL" check-sync "$ROOT" "$ARTICLE_PIPELINE_SHARED_ROOT" \
-    "$ARTICLE_PIPELINE_ARTIFACT_BASELINE" 2>"$EXPORT_PREFLIGHT"
-  EXPORT_PREFLIGHT_RC=$?
-  set -e
-  [ ! -s "$EXPORT_PREFLIGHT" ] || sed -n '1,200p' "$EXPORT_PREFLIGHT" >>"$PLOG"
-  if [ "$EXPORT_PREFLIGHT_RC" = 3 ]; then
-    if [ "$SCHEDULED" = 1 ]; then
-      retry_pipeline content "artifact-path-collision" "artifact export precheck found a shared-path collision before PR creation"
-    fi
-    die "artifact export precheck found a shared-path collision before PR creation: $EXPORT_PREFLIGHT"
-  elif [ "$EXPORT_PREFLIGHT_RC" != 0 ]; then
-    system_failure "artifact-export-precheck" "artifact export precheck failed with exit $EXPORT_PREFLIGHT_RC"
-  fi
-  log "artifact export precheck complete"
+if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  log "development complete: final review passed; article held locally"
+  exit 0
+fi
+
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" assert-controls "$ROOT" "$ARTICLE_PIPELINE_CONTROL_BASELINE" \
+    || die "control code changed during run"
 fi
 
 PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
@@ -713,7 +716,11 @@ fi
 PUBLISH_SUMMARY="$(bash scripts/agent-practice/enqueue-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
   || die "publication queue helper failed"
 
-log "complete: publication queued for $ARTICLE"
+if [ "$AUTO_MERGE" = 1 ]; then
+  log "complete: publication PR merged for $ARTICLE"
+else
+  log "complete: publication PR awaiting approval for $ARTICLE"
+fi
 log "research: $REPORT"
 log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"

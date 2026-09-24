@@ -1,5 +1,7 @@
 # テーマ選定の継続的改善ループ
 
+運用上の保存先は [記事実行基盤](article-runtime.md) の `runs/<run-id>/operations/`。日次更新は `auto-improve-topics.sh` を共通入口から起動し、成功runだけを `operations.json` で最新入力として採用する。以下の `analytics/` は実行worktree内の相対パスであり、共有checkoutへ出力を蓄積しない。
+
 「どのテーマで書けば読まれるか」を、観測 → 方針 → 記事 → 再観測で回す仕組み。
 パイプラインの各段（`search-topic` / `plan-practice` / `draft-article` / `review-article`）が
 このドキュメントを参照する。

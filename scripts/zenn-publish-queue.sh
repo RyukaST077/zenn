@@ -2,6 +2,27 @@
 # Publish or reconcile at most one queued Zenn article. This worker is deterministic and uses no AI.
 set -euo pipefail
 
+[ "${ARTICLE_PIPELINE_MODE:-normal}" != development ] || {
+  echo 'publication prohibited in development mode' >&2; exit 2;
+}
+if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
+  node "$ARTICLE_PIPELINE_RUNTIME" assert-controls "$(git rev-parse --show-toplevel)" "$ARTICLE_PIPELINE_CONTROL_BASELINE" || exit 2
+fi
+
+# Entrypoints dispatch before parsing (preserve all original arguments).
+if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" != 1 ]; then
+  ENTRY_PREVIEW=0
+  for ENTRY_ARG in "$@"; do
+    case "$ENTRY_ARG" in --dry-run|-h|--help) ENTRY_PREVIEW=1 ;; esac
+  done
+  if [ "$ENTRY_PREVIEW" = 0 ]; then
+    ENTRY_ROOT="$(git rev-parse --show-toplevel)" || exit 2
+    git -C "$ENTRY_ROOT" show HEAD:scripts/run-article-pipeline-worktree.sh | \
+      bash -s -- --shared-root "$ENTRY_ROOT" -- scripts/zenn-publish-queue.sh "$@"
+    exit $?
+  fi
+fi
+
 : "${PUBLISH_QUEUE_BASE_BRANCH:=main}"
 : "${PUBLISH_QUEUE_MERGE_METHOD:=--squash}"
 : "${PUBLISH_QUEUE_FILE:=config/zenn-publish-queue.json}"
@@ -35,7 +56,7 @@ TMP_BASE="${TMPDIR:-/tmp}"
 WORK_DIR="$(mktemp -d "$TMP_BASE/zenn-publish-queue.XXXXXX")"
 WORKTREE=""
 WORKTREE_ACTIVE=0
-LOCK="$ROOT/.zenn-publish-queue.lock"
+LOCK="${ARTICLE_PIPELINE_LOCK_ROOT:-$ROOT}/.zenn-publish-queue.lock"
 LOCK_ACTIVE=0
 cleanup() {
   if [ "$WORKTREE_ACTIVE" = 1 ]; then
@@ -66,7 +87,7 @@ GIT_TERMINAL_PROMPT=0 git -C "$ROOT" fetch --quiet origin "$PUBLISH_QUEUE_BASE_B
 WORKTREE="$WORK_DIR/worktree"
 git -C "$ROOT" worktree add --detach "$WORKTREE" "origin/$PUBLISH_QUEUE_BASE_BRANCH" >/dev/null
 WORKTREE_ACTIVE=1
-QUEUE_TOOL="$WORKTREE/scripts/zenn-publish-queue.mjs"
+QUEUE_TOOL="$ROOT/scripts/zenn-publish-queue.mjs"
 [ -f "$QUEUE_TOOL" ] || { echo "queue tool is missing: $QUEUE_TOOL" >&2; exit 2; }
 (cd "$WORKTREE" && node "$QUEUE_TOOL" validate --queue "$PUBLISH_QUEUE_FILE") >/dev/null
 

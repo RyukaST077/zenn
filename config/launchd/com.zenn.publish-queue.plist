@@ -2,24 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key>
-  <string>com.zenn.publish-queue</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/bash</string>
-    <string>/Users/katayamaryuunosuke/workspace/024_zenn/scripts/zenn-publish-queue-launchd.sh</string>
-  </array>
-  <key>WorkingDirectory</key>
-  <string>/Users/katayamaryuunosuke/workspace/024_zenn</string>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>StartInterval</key>
-  <integer>3600</integer>
-  <key>ProcessType</key>
-  <string>Background</string>
-  <key>StandardOutPath</key>
-  <string>/Users/katayamaryuunosuke/workspace/024_zenn/logs/launchd/publish-queue-stdout.log</string>
-  <key>StandardErrorPath</key>
-  <string>/Users/katayamaryuunosuke/workspace/024_zenn/logs/launchd/publish-queue-stderr.log</string>
+	<key>Label</key>
+	<string>com.zenn.publish-queue</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>-c</string>
+		<string>set -eo pipefail; export PATH="/Users/katayamaryuunosuke/.local/bin:/opt/homebrew/bin:/Users/katayamaryuunosuke/.nvm/versions/node/v22.17.0/bin:/usr/local/bin:/usr/bin:/bin"; git show HEAD:scripts/run-article-pipeline-worktree.sh | /bin/bash -s -- -- scripts/zenn-publish-queue-launchd.sh</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/katayamaryuunosuke/workspace/024_zenn</string>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StartInterval</key>
+	<integer>3600</integer>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>StandardOutPath</key>
+	<string>/Users/katayamaryuunosuke/workspace/024_zenn/.git/article-runtime/scheduler-publish-queue-stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/katayamaryuunosuke/workspace/024_zenn/.git/article-runtime/scheduler-publish-queue-stderr.log</string>
 </dict>
 </plist>

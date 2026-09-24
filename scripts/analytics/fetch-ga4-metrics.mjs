@@ -43,7 +43,7 @@ import { dayStamp, fail, parseArgs, readJson, writeJson } from "./zenn-metrics-l
 
 const { options } = parseArgs(process.argv.slice(2));
 const root = path.resolve(options.root || process.cwd());
-const configPath = path.resolve(root, options.config || "config/ga4.json");
+const configPath = path.resolve(root, options.config || process.env.GA4_CONFIG_PATH || "config/ga4.json");
 const probe = options.probe === true;
 
 if (!fs.existsSync(configPath)) {
@@ -59,7 +59,8 @@ const config = readJson(configPath, "ga4 config");
 const expandHome = (value) => (
   value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value
 );
-const keyPath = path.resolve(root, expandHome(config.keyFile || "config/ga4-service-account.json"));
+const keyRoot = process.env.GA4_CONFIG_PATH ? path.resolve(path.dirname(configPath), "..") : root;
+const keyPath = path.resolve(keyRoot, expandHome(config.keyFile || "config/ga4-service-account.json"));
 if (!fs.existsSync(keyPath)) {
   console.error(`ERROR: service account key not found: ${keyPath}`);
   process.exit(2);

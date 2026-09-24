@@ -83,7 +83,7 @@ else {
 }
 `;
 
-function runCase(provider, scenario) {
+function runCase(provider, scenario, development = false) {
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-review-'));
   const write = (file, content, executable = false) => {
     const full = path.join(temporary, file);
@@ -110,9 +110,9 @@ function runCase(provider, scenario) {
       assert.equal(result.status, 0, result.stderr);
     }
     const result = spawnSync('bash', ['scripts/auto-agent-practice.sh', '--orchestrator', provider,
-      '--resume-after-run', 'logs/agent/run-fixture/execution-log.md', '--max-rounds', '2', '--scheduled', '--pr-only'], {
+      '--resume-after-run', 'logs/agent/run-fixture/execution-log.md', '--max-rounds', '2', ...(development ? [] : ['--scheduled', '--pr-only'])], {
       cwd: temporary, encoding: 'utf8', timeout: 30_000,
-      env: { ...process.env, PATH: path.join(temporary, 'bin') + ':' + process.env.PATH,
+      env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ARTICLE_PIPELINE_MODE: development ? "development" : "normal", PATH: path.join(temporary, 'bin') + ':' + process.env.PATH,
         CODEX_BIN: path.join(temporary, 'bin/codex'), CLAUDE_BIN: path.join(temporary, 'bin/claude'),
         SCENARIO: scenario, AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE: '0',
         AGENT_PIPELINE_USAGE_RESUME_COUNT: '0', AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT: '1',
@@ -123,7 +123,7 @@ function runCase(provider, scenario) {
     });
     const expectedFail = ['final-fail', 'low-score', 'missing-revision-log'].includes(scenario);
     assert.equal(result.status, expectedFail ? 20 : 0, `${provider}/${scenario}\n${result.stdout}\n${result.stderr}`);
-    assert.equal(fs.existsSync(path.join(temporary, 'queued.txt')), !expectedFail);
+    assert.equal(fs.existsSync(path.join(temporary, 'queued.txt')), !expectedFail && !development);
     const calls = fs.readFileSync(path.join(temporary, 'calls.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
     const reviews = calls.filter(c => c.stage === 'review');
     const revisions = calls.filter(c => c.stage === 'revise');
@@ -184,6 +184,8 @@ function runCase(provider, scenario) {
 for (const provider of ['codex', 'claude']) {
   for (const scenario of ['normal', 'final-fail', 'fallback', 'fallback-zero', 'contract-repair', 'low-score', 'missing-revision-log']) runCase(provider, scenario);
 }
+runCase('codex', 'normal', true);
+runCase('claude', 'normal', true);
 runCase('claude', 'usage-review');
 runCase('claude', 'usage-revise');
 console.log('Agent review continuity tests passed');

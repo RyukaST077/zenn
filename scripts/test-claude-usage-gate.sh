@@ -1,5 +1,7 @@
 #!/bin/bash
 set -euo pipefail
+# Unit tests exercise the inner pipeline with fake CLIs; runtime boundaries have a separate Git fixture suite.
+export ARTICLE_PIPELINE_ISOLATED_WORKTREE=1
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"

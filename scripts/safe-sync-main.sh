@@ -27,13 +27,24 @@ git remote get-url origin >/dev/null 2>&1 || die "origin remote is required"
 git check-ref-format --branch "$BASE_BRANCH" >/dev/null 2>&1 \
   || die "invalid base branch: $BASE_BRANCH"
 
-GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$BASE_BRANCH" \
-  || die "failed to fetch origin/$BASE_BRANCH"
-
 if [ "${ARTICLE_PIPELINE_ISOLATED_WORKTREE:-0}" = 1 ]; then
   log "isolated worktree remains pinned at $(git rev-parse --short HEAD); shared checkout was not updated"
   exit 0
 fi
+
+SYNC_LOCK_ROOT="$(git rev-parse --git-common-dir)/article-runtime"
+mkdir -p "$SYNC_LOCK_ROOT"
+SYNC_LOCK="$SYNC_LOCK_ROOT/run.lock"
+mkdir "$SYNC_LOCK" 2>/dev/null || die "runtime or another sync holds $SYNC_LOCK"
+trap 'rmdir "$SYNC_LOCK" 2>/dev/null || true' EXIT
+SYNC_OPERATIONS_LOCK="$SYNC_LOCK_ROOT/operations.lock"
+mkdir "$SYNC_OPERATIONS_LOCK" 2>/dev/null || die "analytics holds $SYNC_OPERATIONS_LOCK"
+trap 'rmdir "$SYNC_OPERATIONS_LOCK" "$SYNC_LOCK" 2>/dev/null || true' EXIT
+GIT_TERMINAL_PROMPT=0 git fetch --quiet origin "$BASE_BRANCH" \
+  || die "failed to fetch origin/$BASE_BRANCH"
+SYNC_TARGET="$(git rev-parse --verify FETCH_HEAD)"
+git merge-base --is-ancestor HEAD "$SYNC_TARGET" \
+  || die "local HEAD is ahead of or diverged from origin/$BASE_BRANCH; refusing synchronization"
 
 [ "$(git branch --show-current)" = "$BASE_BRANCH" ] \
   || die "current branch must be $BASE_BRANCH"
@@ -43,7 +54,7 @@ fi
 
 TMP_BASE="${TMPDIR:-/tmp}"
 SYNC_TMP="$(mktemp -d "$TMP_BASE/zenn-safe-sync.XXXXXX")"
-cleanup() { rm -f "$SYNC_TMP/remote"; rmdir "$SYNC_TMP" 2>/dev/null || true; }
+cleanup() { rm -f "$SYNC_TMP/remote"; rmdir "$SYNC_TMP" 2>/dev/null || true; rmdir "$SYNC_OPERATIONS_LOCK" "$SYNC_LOCK" 2>/dev/null || true; }
 trap cleanup EXIT
 
 # A merged queue PR can introduce an article at the same path as the local
@@ -54,13 +65,13 @@ while IFS= read -r -d '' entry; do
     '?? '*) path="${entry#?? }" ;;
     *) continue ;;
   esac
-  if git cat-file -e "origin/$BASE_BRANCH:$path" 2>/dev/null; then
-    object_type="$(git cat-file -t "origin/$BASE_BRANCH:$path" 2>/dev/null || true)"
+  if git cat-file -e "$SYNC_TARGET:$path" 2>/dev/null; then
+    object_type="$(git cat-file -t "$SYNC_TARGET:$path" 2>/dev/null || true)"
     [ "$object_type" = blob ] \
       || die "untracked path conflicts with non-file on origin/$BASE_BRANCH: $path"
     [ -f "$path" ] && [ ! -L "$path" ] \
       || die "untracked path conflicts with origin/$BASE_BRANCH and is not a regular file: $path"
-    git show "origin/$BASE_BRANCH:$path" >"$SYNC_TMP/remote" \
+    git show "$SYNC_TARGET:$path" >"$SYNC_TMP/remote" \
       || die "could not read origin/$BASE_BRANCH:$path"
     cmp -s -- "$path" "$SYNC_TMP/remote" \
       || die "untracked file differs from origin/$BASE_BRANCH: $path"
@@ -69,6 +80,6 @@ while IFS= read -r -d '' entry; do
   fi
 done < <(git status --porcelain=v1 -z --untracked-files=all)
 
-GIT_TERMINAL_PROMPT=0 git merge --ff-only "origin/$BASE_BRANCH" >/dev/null \
+GIT_TERMINAL_PROMPT=0 git merge --ff-only "$SYNC_TARGET" >/dev/null \
   || die "fast-forward to origin/$BASE_BRANCH failed"
 log "synced $BASE_BRANCH to origin/$BASE_BRANCH"
