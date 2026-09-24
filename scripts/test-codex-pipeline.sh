@@ -174,8 +174,9 @@ rg -q -- '--review-style codex --pr-only' scripts/auto-publish-codex.sh
 rg -Fq 'ASTRO_TELEMETRY_DISABLED=1 "$TIMEOUT_BIN"' scripts/auto-publish-codex.sh
 rg -Fq '"-o" "$final"' scripts/auto-publish-codex.sh
 rg -Fq '"$final" "$result"' scripts/auto-publish-codex.sh
-rg -Fq 'cleanup_merged_pr_branch' scripts/auto-publish-codex.sh
-rg -Fq 'git push origin --delete "$head"' scripts/auto-publish-codex.sh
+rg -Fq 'scripts/agent-practice/recover-queue-pr.mjs' scripts/auto-publish-codex.sh
+! rg -q 'gh pr merge|git branch -D' scripts/auto-publish-codex.sh
+! rg -Fq 'git push origin --delete "$head"' scripts/auto-publish-codex.sh
 rg -q 'run-article-pipeline-worktree.sh' scripts/auto-publish-codex.sh
 rg -q -- '--shared-root' scripts/auto-publish-codex.sh
 rg -q 'astro preview status.*astro preview logs.*astro preview stop' .agents/skills/zenn-plan-practice/SKILL.md

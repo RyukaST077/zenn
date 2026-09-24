@@ -144,14 +144,16 @@ esac
     case " ${AGENT_ARGS[*]} " in
       *" --dry-run "*) ;;
       *)
-        if ! grep -q 'complete: publication queued for ' "$LOG"; then
+        if ! grep -Eq 'complete: publication PR (merged|awaiting approval) for ' "$LOG"; then
           echo "RESULT: failed (pipeline exited 0 without the success contract)"
           rc=1
         else
           mkdir -p "$AGENT_PRACTICE_STATUS_DIR"
           status_file="$AGENT_PRACTICE_STATUS_DIR/$(date +%F)-agent.json"
-          node -e 'const fs=require("node:fs"); const [file,log]=process.argv.slice(1); fs.writeFileSync(file, JSON.stringify({version:1,pipeline:"agent-practice",status:"success",completed_at:new Date().toISOString(),log},null,2)+"\n")' \
-            "$status_file" "$LOG"
+          publication_status=merged
+          grep -q 'complete: publication PR awaiting approval for ' "$LOG" && publication_status=awaiting-approval
+          node -e 'const fs=require("node:fs"); const [file,log,publication_status]=process.argv.slice(1); fs.writeFileSync(file, JSON.stringify({version:1,pipeline:"agent-practice",status:"success",publication_status,completed_at:new Date().toISOString(),log},null,2)+"\n")' \
+            "$status_file" "$LOG" "$publication_status"
           echo "SUCCESS: recorded $status_file"
         fi
         ;;

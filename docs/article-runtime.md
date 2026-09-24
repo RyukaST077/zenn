@@ -140,3 +140,48 @@ mkdir -p "$(git rev-parse --git-common-dir)/article-runtime"
 ## 検証
 
 `npm test` は隔離Gitリポジトリ、ローカルbare remote、模擬CLIで実行する。実記事の公開や認証済みモデル呼び出しはしない。実行基盤の統合テストは `node scripts/test-article-pipeline-worktree.mjs`。レビュー継続のテストは `node scripts/test-agent-review-continuity.mjs`。
+
+## 公開キューPRの競合復旧・承認・マージ
+
+通常記事（Claude / Codex）とAI記事は、レビュー合格後に作ったPRを同じ `recover-queue-pr.mjs` で処理する。PR作成時のhead SHAを保存し、そのheadから「対象記事を末尾へ1件追加する」操作だけを抽出する。キュー設定・既存entry・blockedの変更、許可範囲外のファイル、削除・symlink・実行可能ファイルを含むPRは自動復旧しない。検証ヘルパーは実行開始時のコードSHAに固定したまま、公開先のmainとPRのデータだけを取得する。
+
+最新mainを基に対象記事の追加を適用し直すため、他の記事、FIFO順序、試行回数・最終試行日時、保留情報、キュー設定を保持する。対象が既にあればentryをそのまま使う。公開済み・保留中、またはPRの元の分岐点以降のmain履歴で登録後に削除された記事は再追加しない。削除・保留済みの操作から記事・画像・契約を新たに復活させることもしない。記事が公開状態の変更以外で更新された場合や契約・画像が競合する場合は、どちらかを選ばず停止する。
+
+更新コミットは承認されたPR headを親に持つ追記で、履歴を巻き戻さない。push時はそのheadを指定したleaseで照合するため、他者の追記・巻き戻しがあれば上書きせず失敗する。main更新だけは最新データで再構築し直す。記事形式・キュー全体・許可された差分を検証したheadだけを `--match-head-commit` 付きでマージする。マージ要求の受理やチェック待ちは完了ではなく、GitHubの `MERGED` を確認した場合だけパイプラインの `completed.merge` を設定する。
+
+### 人による承認を待つ既存PR
+
+PRのhead SHAと差分を確認し、対象記事・レビュー済み本文・契約が意図したものか確認する。`--expected-head` はその確認済みSHAを明示する。新しいPRを作り直す必要はない。
+
+```bash
+# 読み取りだけ。表示されたheadと差分を確認する
+gh pr view <PR番号> --json url,headRefOid,state
+gh pr diff <PR番号>
+
+# 競合復旧と再検証だけ。--mergeを省略すると承認待ちで止まる
+git show HEAD:scripts/run-article-pipeline-worktree.sh |
+  bash -s -- -- scripts/agent-practice/recover-queue-pr.sh \
+    --pr <PR番号> --article articles/<slug>.md \
+    --expected-head <確認したhead-SHA> --state logs/queue-recovery-<PR番号>.json
+
+# 上記runのreceiptを引き継ぎ、承認したマージまで行う
+git show HEAD:scripts/run-article-pipeline-worktree.sh |
+  bash -s -- --resume-run <復旧run-id> -- scripts/agent-practice/recover-queue-pr.sh \
+    --pr <PR番号> --article articles/<slug>.md \
+    --expected-head <確認したhead-SHA> --state logs/queue-recovery-<PR番号>.json \
+    --merge --attempts 3 --method squash
+```
+
+`--merge` 自体がマージの明示的な承認。省略時はPRを更新してもマージしない。承認時は元の確認済みSHA、またはreceiptの `expected_head` を使える。receiptは元の追加操作と、この処理が生成したheadだけを引き継ぐ。他者によるPR更新は自動承認しない。差分を再確認し、元のreceiptを上書きせず、新しい `--state` のパスで開始する。開発モードではこの復旧入口も拒否する。
+
+### 未完了・失敗の確認
+
+再試行は既定3回、`--attempts` で1〜10回。mainの更新やマージ未完了を上限まで確認し、上限到達では非ゼロ終了する。必須チェックの通過に時間がかかる場合は終了後に再開する。自動マージの予約だけを成功扱いにしない。GitHub側でmerge queue等に受理された場合も、実際にマージされるまではこのrunは未完了として記録する。
+
+- runの `publication.jsonl` と `manifest.json` に `pr` / `awaiting-approval` / `merged` / `recovery-failed` を記録する。
+- 詳細は `files/logs/.../queue-recovery.json`（上記手動操作では指定したstateパス）。PR URL、承認済み・現在のhead、元の追加操作、検証したmain SHA、各試行、対象の扱い、失敗理由を確認する。
+- `recovery-failed` では表示された復旧用worktreeを残す。共有mainや他者のPRをresetしない。本文・契約の競合は手動で差分を確認し、変更した本文には必要なレビューを行う。
+- 再開には同じ `--state` と `--resume-run <run-id>` を使う。元のrunは変更せず新しいrunへ証拠を保存する。push直後に停止した場合も、receiptに保存した作成予定headとGitHubのheadが一致するときだけ継続する。
+- 旧パイプラインのstateにPR headがない場合は、上記の手動確認と復旧コマンドへ移行する。未知のheadを自動で承認しない。
+
+`node scripts/test-queue-pr-recovery.mjs` がローカルbare remoteと模擬GitHub CLIで、同じmainからの2本のPR、ワーカー更新、重複、公開完了・削除・保留、承認待ち、本文競合、他者更新、再競合・上限到達、チェック待ちからの再開を検証する。`npm test` にも含む。

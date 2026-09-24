@@ -238,7 +238,7 @@ async function supervise(o) {
     // Collision inventory is for generated-path validation only, never an export target.
     writeJSON(path.join(dir, 'shared-artifacts-before.json'), inventory(o.root, artifact));
     if (!safe(o.command[0]) || !/^scripts\/.+\.sh$/.test(o.command[0])) fail('pipeline must be a scripts/*.sh relative path');
-    if (o.mode === 'development' && (o.command.some(x => ['--auto-merge', '--pr-only', '--pr'].includes(x)) || /(?:launchd|publish-reviewed-article|enqueue-reviewed-article|zenn-publish-queue)\.sh$/.test(o.command[0]))) fail('development mode prohibits scheduled/publication commands and --auto-merge/--pr-only/--pr');
+    if (o.mode === 'development' && (o.command.some(x => ['--auto-merge', '--pr-only', '--pr'].includes(x)) || /(?:launchd|publish-reviewed-article|enqueue-reviewed-article|recover-queue-pr|zenn-publish-queue)\.sh$/.test(o.command[0]))) fail('development mode prohibits scheduled/publication commands and --auto-merge/--pr-only/--pr');
     if (isAnalytics && o.command.includes('--pr')) fail('policy changes must be reviewed in a separate development-branch PR; --pr is not available from the supervised data updater');
     // Every helper used after the child exits remains outside its writable tree.
     const env = { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1', ARTICLE_PIPELINE_MODE: o.mode,
@@ -299,8 +299,8 @@ async function supervise(o) {
     });
     const articlePaths = new Set([...m.changes.filter(x => x.path.startsWith('articles/')).map(x => x.path), ...m.publication.map(x => x.article), ...states.map(x => x.article).filter(Boolean)]);
     m.articles = [...articlePaths].map(article => ({ path: article,
-      disposition: m.publication.some(p => p.article === article && ['pushed', 'pr'].includes(p.phase)) ? 'accepted' : 'held',
-      reviews: [...new Set([...m.publication.filter(p => p.article === article).map(p => p.review), ...states.filter(p => p.article === article).map(p => p.review).filter(Boolean)])],
+      disposition: m.publication.some(p => p.article === article && ['pushed', 'pr', 'merged'].includes(p.phase)) ? 'accepted' : 'held',
+      reviews: [...new Set([...m.publication.filter(p => p.article === article).map(p => p.review).filter(Boolean), ...states.filter(p => p.article === article).map(p => p.review).filter(Boolean)])],
       evidence: m.changes.filter(p => /^(logs|research|practice)\//.test(p.path)).map(p => `files/${p.path}`) }));
     m.resume.worktree = null;
     m.resume.commands = Object.keys(after).filter(p => /^(logs\/.*\/state.json|logs\/agent\/run-[^/]+\/execution-log.md)$/.test(p)).map(p => ({ option: p.endsWith('state.json') ? '--resume' : '--resume-after-run', path: p.endsWith('state.json') ? path.dirname(p) : p }));

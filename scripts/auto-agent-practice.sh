@@ -716,7 +716,11 @@ fi
 PUBLISH_SUMMARY="$(bash scripts/agent-practice/enqueue-reviewed-article.sh "${PUBLISH_ARGS[@]}")" \
   || die "publication queue helper failed"
 
-log "complete: publication queued for $ARTICLE"
+if [ "$AUTO_MERGE" = 1 ]; then
+  log "complete: publication PR merged for $ARTICLE"
+else
+  log "complete: publication PR awaiting approval for $ARTICLE"
+fi
 log "research: $REPORT"
 log "manifest: $MANIFEST"
 log "execution: $RUN_LOG"

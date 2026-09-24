@@ -21,7 +21,7 @@ const manifest = r => {
 const checkFile = (m, p, text) => assert.equal(fs.readFileSync(path.join(m.dir, 'files', p), 'utf8'), text);
 try {
   fs.mkdirSync(checkout); git('init', '-b', 'main'); git('config', 'user.name', 'Runtime Test'); git('config', 'user.email', 'test@example.invalid');
-  for (const p of ['scripts/article-runtime.mjs', 'scripts/run-article-pipeline-worktree.sh', 'scripts/safe-sync-main.sh', 'scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh', 'scripts/check-article.mjs', 'scripts/zenn-publish-queue.mjs']) { write(p, fs.readFileSync(path.join(root, p))); fs.chmodSync(path.join(checkout, p), fs.statSync(path.join(root, p)).mode & 0o777); }
+  for (const p of ['scripts/article-runtime.mjs', 'scripts/run-article-pipeline-worktree.sh', 'scripts/safe-sync-main.sh', 'scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/recover-queue-pr.sh', 'scripts/agent-practice/recover-queue-pr.mjs', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh', 'scripts/check-article.mjs', 'scripts/zenn-publish-queue.mjs']) { write(p, fs.readFileSync(path.join(root, p))); fs.chmodSync(path.join(checkout, p), fs.statSync(path.join(root, p)).mode & 0o777); }
   write('.agents/skills/example/SKILL.md', 'committed skill\n');
   write('scripts/helper.sh', 'echo committed-helper\n');
   write('articles/baseline.md', 'baseline\n');
@@ -159,7 +159,7 @@ fi
     assert.notEqual(r.status, 0); assert.notEqual(r.status, 90); assert.match(r.stderr, /prohibited/);
     assert.equal(run('git', ['ls-remote', '--exit-code', '--heads', remote, 'should-not-exist']).status, 2);
   }
-  for (const helper of ['scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh']) {
+  for (const helper of ['scripts/agent-practice/recover-queue-pr.sh', 'scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh']) {
     const r = run('bash', [helper, '--pr-only'], checkout, { ARTICLE_PIPELINE_MODE: 'development', ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1' });
     assert.notEqual(r.status, 0); assert.match(r.stderr, /publication prohibited/);
   }

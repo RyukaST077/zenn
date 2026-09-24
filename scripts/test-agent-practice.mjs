@@ -379,7 +379,7 @@ exit 2
         "--pipeline", pipeline,
         "--review-style", "agent",
         "--expect-arm", allocated.arm,
-        "--auto-merge",
+        "--pr-only",
       ], {
         env: {
           PATH: `${bin}:${process.env.PATH}`,
@@ -390,8 +390,8 @@ exit 2
       "enqueue the allocated article",
     );
 
-    // 5. The fake gh reports a merge without performing one, so land the branch
-    //    on main the way the merged PR would.
+    // 5. This test creates a PR only, then simulates its approved merge.
+    //    Actual recovery and merge confirmation are covered by test-queue-pr-recovery.
     assertRun(
       runAt(checkout, "git", [`--git-dir=${remote}`, "update-ref", "refs/heads/main", `refs/heads/queue/${slug}`]),
       "land the queue branch on main",
@@ -503,16 +503,23 @@ ${reviewStyle === "agent" ? "editorial_score: 90/100\n" : ""}`;
     fs.writeFileSync(path.join(checkout, review), reviewText);
 
     const fakeGh = path.join(bin, "gh");
-    fs.writeFileSync(fakeGh, `#!/bin/sh
-printf '%s\\n' "$*" >> "$FAKE_GH_LOG"
-if [ "$1" = auth ] && [ "$2" = status ]; then exit 0; fi
-if [ "$1" = pr ] && [ "$2" = create ]; then
-  if [ "$FAKE_PR_CREATE_FAILURE" = 1 ]; then exit 7; fi
-  echo "https://example.invalid/pull/2"
-  exit 0
-fi
-if [ "$1" = pr ] && [ "$2" = merge ]; then exit 0; fi
-exit 2
+    fs.writeFileSync(fakeGh, `#!/usr/bin/env node
+const fs = require('node:fs'), cp = require('node:child_process');
+const args = process.argv.slice(2), remote = process.env.FAKE_REMOTE, branch = process.env.FAKE_BRANCH;
+fs.appendFileSync(process.env.FAKE_GH_LOG, args.join(' ') + '\\n');
+const git = (...a) => cp.execFileSync('git', ['--git-dir', remote, ...a], {encoding:'utf8'}).trim();
+if (args[0] === 'auth' && args[1] === 'status') process.exit(0);
+if (args[0] === 'pr' && args[1] === 'create') {
+  if (process.env.FAKE_PR_CREATE_FAILURE === '1') process.exit(7);
+  console.log('https://example.invalid/pull/2');
+} else if (args[0] === 'pr' && args[1] === 'view') {
+  const head = git('rev-parse', branch), merged = git('rev-parse', 'main') === head;
+  console.log(JSON.stringify({number:2,url:'https://example.invalid/pull/2',state:merged?'MERGED':'OPEN',headRefOid:head,headRefName:branch,baseRefName:'main',isCrossRepository:false,mergeCommit:merged?{oid:head}:null}));
+} else if (args[0] === 'pr' && args[1] === 'merge') {
+  const head = git('rev-parse', branch);
+  if (!args.includes('--match-head-commit') || args[args.indexOf('--match-head-commit') + 1] !== head) process.exit(3);
+  git('update-ref', 'refs/heads/main', head, git('rev-parse', 'main'));
+} else process.exit(2);
 `, { mode: 0o755 });
 
     const result = runAt(checkout, "bash", [
@@ -530,6 +537,8 @@ exit 2
         PATH: `${bin}:${process.env.PATH}`,
         FAKE_GH_LOG: ghLog,
         FAKE_PR_CREATE_FAILURE: failPrCreate ? "1" : "0",
+        FAKE_REMOTE: remote,
+        FAKE_BRANCH: `queue/${slug}`,
         PUBLISH_QUEUE_NOW: "2026-08-14T03:00:00.000Z",
       },
     });
@@ -738,7 +747,7 @@ if [ "$count" -le 1 ]; then
   printf 'content|evidence-safe-skip\\n' >"$AGENT_PIPELINE_RETRY_SIGNAL_FILE"
   exit 20
 fi
-echo "complete: publication queued for articles/fake.md"
+echo "complete: publication PR merged for articles/fake.md"
 exit 0
 `, { mode: 0o755 });
   const retryRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
@@ -821,7 +830,7 @@ exit 20
 printf '%s\\n' "$*" >"$FAKE_DEFAULT_ARGS"
 printf '%s|%s\\n' "$AGENT_PIPELINE_MODEL" "$AGENT_PIPELINE_EFFORT" >"$FAKE_DEFAULT_MODEL"
 printf '%s\\n' "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" >"$FAKE_USAGE_WAIT"
-echo "complete: publication queued for articles/fake-default.md"
+echo "complete: publication PR merged for articles/fake-default.md"
 `, { mode: 0o755 });
   const defaultArgsRun = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
     env: {
@@ -843,6 +852,19 @@ echo "complete: publication queued for articles/fake-default.md"
     "scheduled Claude pipeline must use the usage-fit model and effort defaults");
   assert.equal(fs.readFileSync(path.join(retryDir, "usage-wait"), "utf8").trim(), "18000",
     "scheduled Claude pipeline must wait five hours after a usage limit");
+  const awaitingScript = path.join(retryDir, "awaiting-approval.sh");
+  const awaitingStatus = path.join(retryDir, "awaiting-status");
+  fs.writeFileSync(awaitingScript, '#!/bin/sh\necho "complete: publication PR awaiting approval for articles/fake.md"\n', { mode: 0o755 });
+  assertRun(run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
+    env: {
+      AGENT_PRACTICE_SCRIPT: awaitingScript,
+      AGENT_PRACTICE_ARGS: "--pr-only",
+      AGENT_PRACTICE_LOG_DIR: path.join(retryDir, "awaiting-logs"),
+      AGENT_PRACTICE_STATUS_DIR: awaitingStatus,
+    },
+  }), "record a PR-only run without claiming a merge");
+  const awaitingFile = fs.readdirSync(awaitingStatus).find(file => file.endsWith('.json'));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(awaitingStatus, awaitingFile))).publication_status, 'awaiting-approval');
   fs.rmSync(retryDir, { recursive: true, force: true });
   const claudeDryRun = run("bash", ["scripts/auto-publish.sh", "--dry-run"]);
   assert.equal(claudeDryRun.status, 0, claudeDryRun.stderr);

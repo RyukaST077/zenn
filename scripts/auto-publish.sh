@@ -176,9 +176,6 @@ die()  {
 state_get() { node "$STATE_TOOL" get "$STATE" "$1"; }
 state_set() { node "$STATE_TOOL" set "$STATE" "$1" "$2"; }
 is_done() { [ "$(state_get "completed.$1")" = true ]; }
-pr_is_merged() {
-  [ "$(GH_PROMPT_DISABLED=1 gh pr view "$PR_URL" --json state --jq .state 2>/dev/null || true)" = "MERGED" ]
-}
 require_artifact() {
   local value
   value="$(state_get "artifacts.$1")"
@@ -572,6 +569,9 @@ if ! is_done pr; then
   printf '%s\n' "$QUEUE_SUMMARY" >"$publog"
   PR_URL="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^PR: //p' | head -1)"
   [ -n "$PR_URL" ] || die "公開キューPRのURLを確認できなかった。ログ: $publog"
+  COMMIT="$(printf '%s\n' "$QUEUE_SUMMARY" | sed -n 's/^Commit: //p' | head -1)"
+  [ -n "$COMMIT" ] || die "公開キューPRのhead SHAを確認できなかった"
+  state_set publish.commit "$(json_string "$COMMIT")"
   state_set publish.pr_url "$(json_string "$PR_URL")"; state_set completed.pr true
   log "   公開キューPR作成: $PR_URL"
 else log "skip: publication queue PR (実行済み → $(state_get publish.pr_url))"; fi
@@ -592,18 +592,13 @@ fi
 MERGED=0
 if [ "$AUTO_MERGE" = 1 ] && ! is_done merge; then
   [ "$HAS_GH" = 1 ] || die "--auto-merge には gh CLI が必要"
-  # branch protection があれば --auto、無ければ即時マージ。ここでは公開ではなくキュー追加になる。
-  if pr_is_merged; then
-    log "PRはすでにマージ済み。マージ成功として処理を継続する"
-  elif gh pr merge "$PR_URL" "$MERGE_METHOD" --auto --delete-branch >>"$PLOG" 2>&1; then
-    log "auto-merge を予約した（必須チェック通過後に公開キューへ追加）"
-  elif gh pr merge "$PR_URL" "$MERGE_METHOD" --delete-branch >>"$PLOG" 2>&1; then
-    log "PR を即時マージした（公開キューへ追加）"
-  elif pr_is_merged; then
-    log "マージコマンドは失敗したが、GitHub上ではマージ済み。成功として処理を継続する"
-  else
-    die "PR のマージに失敗した: $PR_URL ($PLOG 参照)"
-  fi
+  COMMIT="$(state_get publish.commit)"
+  [ -n "$COMMIT" ] && [ "$COMMIT" != null ] || die "resume requires an approved PR head; use recover-queue-pr.sh --expected-head after reviewing the PR"
+  node scripts/agent-practice/recover-queue-pr.mjs \
+    --pr "$PR_URL" --article "$ARTICLE" --expected-head "$COMMIT" \
+    --state "$PIPE_DIR/queue-recovery.json" --base "$BASE_BRANCH" \
+    --method "${MERGE_METHOD#--}" --merge \
+    || die "queue PR remains incomplete; inspect $PIPE_DIR/queue-recovery.json"
   MERGED=1
   state_set completed.merge true
   bash scripts/safe-sync-main.sh "$BASE_BRANCH" \
@@ -618,7 +613,7 @@ log "=== auto-publish 完了"
   echo "  記事        : $ARTICLE"
   echo "  PR          : $PR_URL"
   if [ "$AUTO_MERGE" = 1 ]; then
-    echo "  マージ      : $([ "$MERGED" = 1 ] && echo '実行/予約済み（published:falseでキュー追加）' || echo '実行済み（resume）')"
+    echo "  マージ      : $([ "$MERGED" = 1 ] && echo 'マージ確認済み（published:falseでキュー追加）' || echo '実行済み（resume）')"
     echo "  次のアクション: AI非依存ワーカーが投稿枠に合わせて1件ずつ公開"
   else
     echo "  マージ      : 未実施（人間がPRを確認して公開キューへ追加）"
