@@ -11,9 +11,10 @@ import { redactText, redactValue } from "./agent-practice/redact.mjs";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptDir, "..");
 const token = `${process.pid}-${Date.now()}`;
-const reportRelative = `research/agent/test-agent-runner-${token}.md`;
-const planRelative = `practice/agent/test-agent-runner-${token}.md`;
-const manifestRelative = `practice/agent/test-agent-runner-${token}.json`;
+// Avoid the hosted CI username "runner": evidence redaction removes usernames.
+const reportRelative = `research/agent/test-agent-experiment-${token}.md`;
+const planRelative = `practice/agent/test-agent-experiment-${token}.md`;
+const manifestRelative = `practice/agent/test-agent-experiment-${token}.json`;
 const analysisRelative = `logs/agent/test-agent-analysis-${token}.md`;
 const report = path.join(root, reportRelative);
 const plan = path.join(root, planRelative);
@@ -29,7 +30,13 @@ const generatedRunIds = [];
 const run = (command, args, options = {}) => spawnSync(command, args, {
   cwd: root,
   encoding: "utf8",
-  env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ...options.env },
+  env: {
+    ...process.env,
+    ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1",
+    // Match the runtime context so launchd tests use this checkout on every OS.
+    ...(args[0]?.endsWith("-launchd.sh") ? { ARTICLE_PIPELINE_RUN_DIR: fakeDir } : {}),
+    ...options.env,
+  },
 });
 
 const runAt = (cwd, command, args, options = {}) => spawnSync(command, args, {
@@ -401,7 +408,7 @@ exit 2
     //    same thing the next run's worktree does. This is the assertion the
     //    three-day stall would have failed.
     const fresh = path.join(armRoot, "fresh");
-    assertRun(runAt(armRoot, "git", ["clone", "-q", remote, fresh]), "clone the merged branch");
+    assertRun(runAt(armRoot, "git", ["clone", "-q", "--branch", "main", remote, fresh]), "clone the merged branch");
     assert.ok(fs.existsSync(path.join(fresh, contract)),
       "the contract must reach main in the same commit as its article");
     assert.equal(
@@ -690,7 +697,7 @@ try {
   const invalidSameSystemFailures = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
     env: { AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES: "invalid" },
   });
-  assert.equal(invalidSameSystemFailures.status, 2);
+  assert.equal(invalidSameSystemFailures.status, 2, invalidSameSystemFailures.stderr);
   assert.match(invalidSameSystemFailures.stderr,
     /AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES must be a positive integer/);
   const resumeDryRun = run("bash", [
@@ -945,7 +952,7 @@ console.log(JSON.stringify(provider === "claude"
   }));
   fs.writeFileSync(manifest, `${JSON.stringify({
     version: 1,
-    id: `runner-test-${process.pid}`,
+    id: `experiment-test-${process.pid}`,
     topic: "runner test",
     claim: "the deterministic runner records each case",
     mode: "ablation",
@@ -1044,7 +1051,7 @@ console.log(JSON.stringify(provider === "claude"
   });
   assert.equal(experiment.status, 0, `${experiment.stdout}\n${experiment.stderr}`);
   const executionLogRelative = experiment.stdout.trim();
-  assert.match(executionLogRelative, /^logs\/agent\/run-runner-test-/);
+  assert.match(executionLogRelative, /^logs\/agent\/run-experiment-test-/);
   generatedRun = path.dirname(path.join(root, executionLogRelative));
   const directRunStdout = path.join(fakeDir, "direct-run.stdout");
   const directRunMarker = path.join(fakeDir, "direct-run.marker");
@@ -1089,7 +1096,7 @@ console.log(JSON.stringify(provider === "claude"
   const codexHistorical = JSON.parse(fs.readFileSync(path.join(
     root, "practice/agent/agent-practice-codex-exec-jsonl-final-artifact-20260814-0504.json",
   ), "utf8"));
-  const codexWrapperId = `runner-wrapper-codex-${process.pid}`;
+  const codexWrapperId = `experiment-wrapper-codex-${process.pid}`;
   generatedRunIds.push(codexWrapperId);
   const codexWrapperManifestRelative = `practice/agent/${codexWrapperId}.json`;
   const codexWrapperManifest = path.join(root, codexWrapperManifestRelative);
@@ -1140,7 +1147,7 @@ console.log(JSON.stringify(provider === "claude"
     const claudeHistorical = JSON.parse(fs.readFileSync(path.join(
       root, "practice/agent/agent-practice-claude-subprocess-scrub-home-stubs-20260813-0502.json",
     ), "utf8"));
-    const claudeWrapperId = `runner-wrapper-claude-${process.pid}`;
+    const claudeWrapperId = `experiment-wrapper-claude-${process.pid}`;
     generatedRunIds.push(claudeWrapperId);
     const claudeWrapperManifestRelative = `practice/agent/${claudeWrapperId}.json`;
     const claudeWrapperManifest = path.join(root, claudeWrapperManifestRelative);
@@ -1198,7 +1205,7 @@ if (args.length === 1 && args[0] === "--version") {
 fs.writeFileSync(process.env.GUARD_SENTINEL, "started\\n");
 process.exit(9);
 `, { mode: 0o755 });
-  const rejectedId = `runner-wrapper-rejected-${process.pid}`;
+  const rejectedId = `experiment-wrapper-rejected-${process.pid}`;
   generatedRunIds.push(rejectedId);
   const rejectedManifestRelative = `practice/agent/${rejectedId}.json`;
   const rejectedManifest = path.join(root, rejectedManifestRelative);

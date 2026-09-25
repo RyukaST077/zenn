@@ -33,8 +33,12 @@ printf '%s' "$probe" | bash "$CLAUDE_USAGE_STATUSLINE_SCRIPT" >/dev/null 2>&1 ||
   fail "status line refresh failed"
 
 [ -f "$CLAUDE_USAGE_CACHE_FILE" ] || fail "usage cache was not created"
-cache_mtime="$(stat -f %m "$CLAUDE_USAGE_CACHE_FILE" 2>/dev/null || stat -c %Y "$CLAUDE_USAGE_CACHE_FILE" 2>/dev/null || true)"
-[ -n "$cache_mtime" ] || fail "usage cache timestamp is unavailable"
+if ! cache_mtime="$(stat -f %m "$CLAUDE_USAGE_CACHE_FILE" 2>/dev/null)"; then
+  cache_mtime="$(stat -c %Y "$CLAUDE_USAGE_CACHE_FILE" 2>/dev/null || true)"
+fi
+case "$cache_mtime" in
+  ''|*[!0-9]*) fail "usage cache timestamp is unavailable" ;;
+esac
 cache_age=$(( $(date +%s) - cache_mtime ))
 [ "$cache_age" -le "$CLAUDE_USAGE_MAX_CACHE_AGE" ] || fail "usage cache is stale (${cache_age}s)"
 

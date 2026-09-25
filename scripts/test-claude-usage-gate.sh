@@ -28,6 +28,30 @@ run_gate() {
 
 run_gate 19
 
+# GNU stat -f can write filesystem metadata before returning a failure. The
+# BSD-to-GNU fallback must discard that output, not concatenate it with mtime.
+mkdir -p "$TEST_DIR/bin"
+cat >"$TEST_DIR/bin/stat" <<'EOF'
+#!/bin/bash
+if [ "$1" = -f ]; then
+  printf '  File: usage.json\n'
+  exit 1
+fi
+if [ "${FAKE_STAT_INVALID:-0}" = 1 ]; then
+  echo unavailable
+else
+  date +%s
+fi
+EOF
+chmod +x "$TEST_DIR/bin/stat"
+PATH="$TEST_DIR/bin:$PATH" run_gate 19
+set +e
+PATH="$TEST_DIR/bin:$PATH" FAKE_STAT_INVALID=1 run_gate 19 2>"$TEST_DIR/invalid-mtime.err"
+rc_invalid_mtime=$?
+set -e
+[ "$rc_invalid_mtime" = 2 ]
+grep -q 'usage cache timestamp is unavailable' "$TEST_DIR/invalid-mtime.err"
+
 set +e
 run_gate 20
 rc_at_threshold=$?
@@ -98,6 +122,7 @@ FAKE_PIPELINE_MODEL="$TEST_DIR/pipeline-model" \
 AP_ARGS="--fixture" \
 AUTO_PUBLISH_LOG_DIR="$TEST_DIR/launchd-logs" \
 AUTO_PUBLISH_STATUS_DIR="$TEST_DIR/status" \
+ARTICLE_PIPELINE_RUN_DIR="$TEST_DIR" \
 ARTICLE_PIPELINE_LOCK_WAIT_ENABLED=0 \
   bash scripts/auto-publish-launchd.sh || {
     find "$TEST_DIR/launchd-logs" -type f -maxdepth 1 -name '*.log' -exec sed -n '1,240p' {} \; >&2
