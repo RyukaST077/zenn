@@ -190,4 +190,5 @@ if CODEX_SANDBOX_MODE=danger-full-access bash scripts/auto-publish-codex.sh --dr
 fi
 rg -q 'CODEX_SANDBOX_MODE must be workspace-write' "$TMP/dry-run-invalid.txt"
 
+node scripts/test-codex-search-contract.mjs
 echo "Codex pipeline tests passed"
