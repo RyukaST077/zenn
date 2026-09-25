@@ -122,6 +122,7 @@ FAKE_PIPELINE_MODEL="$TEST_DIR/pipeline-model" \
 AP_ARGS="--fixture" \
 AUTO_PUBLISH_LOG_DIR="$TEST_DIR/launchd-logs" \
 AUTO_PUBLISH_STATUS_DIR="$TEST_DIR/status" \
+ARTICLE_PIPELINE_RUN_DIR="$TEST_DIR" \
 ARTICLE_PIPELINE_LOCK_WAIT_ENABLED=0 \
   bash scripts/auto-publish-launchd.sh || {
     find "$TEST_DIR/launchd-logs" -type f -maxdepth 1 -name '*.log' -exec sed -n '1,240p' {} \; >&2
