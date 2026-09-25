@@ -29,7 +29,13 @@ const generatedRunIds = [];
 const run = (command, args, options = {}) => spawnSync(command, args, {
   cwd: root,
   encoding: "utf8",
-  env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ...options.env },
+  env: {
+    ...process.env,
+    ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1",
+    // Match the runtime context so launchd tests use this checkout on every OS.
+    ...(args[0]?.endsWith("-launchd.sh") ? { ARTICLE_PIPELINE_RUN_DIR: fakeDir } : {}),
+    ...options.env,
+  },
 });
 
 const runAt = (cwd, command, args, options = {}) => spawnSync(command, args, {
@@ -690,7 +696,7 @@ try {
   const invalidSameSystemFailures = run("bash", ["scripts/auto-agent-practice-launchd.sh"], {
     env: { AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES: "invalid" },
   });
-  assert.equal(invalidSameSystemFailures.status, 2);
+  assert.equal(invalidSameSystemFailures.status, 2, invalidSameSystemFailures.stderr);
   assert.match(invalidSameSystemFailures.stderr,
     /AGENT_PRACTICE_MAX_SAME_SYSTEM_FAILURES must be a positive integer/);
   const resumeDryRun = run("bash", [
