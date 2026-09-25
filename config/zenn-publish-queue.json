@@ -16,6 +16,12 @@
       "enqueuedAt": "2026-09-24T01:12:36.328Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-gpt6-config-migration-checklist.md",
+      "enqueuedAt": "2026-09-25T20:27:13.653Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
