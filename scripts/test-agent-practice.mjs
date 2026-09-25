@@ -407,7 +407,7 @@ exit 2
     //    same thing the next run's worktree does. This is the assertion the
     //    three-day stall would have failed.
     const fresh = path.join(armRoot, "fresh");
-    assertRun(runAt(armRoot, "git", ["clone", "-q", remote, fresh]), "clone the merged branch");
+    assertRun(runAt(armRoot, "git", ["clone", "-q", "--branch", "main", remote, fresh]), "clone the merged branch");
     assert.ok(fs.existsSync(path.join(fresh, contract)),
       "the contract must reach main in the same commit as its article");
     assert.equal(
