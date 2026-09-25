@@ -1,0 +1,39 @@
+{
+  "slug": "codex-gpt6-config-migration-checklist",
+  "topics": [
+    "cli",
+    "codex",
+    "aiagent",
+    "ai"
+  ],
+  "primaryTopic": "cli",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "migration",
+    "titleFeatures": {
+      "length": 49,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-25T20:07:45.040Z",
+    "contract": {
+      "targetReader": "Codex CLIをChatGPT契約(サブスクリプション認証)で使っていて、config.tomlにGPT-5.6世代(Sol/Terra/Luna)のモデル指定・reasoning effortを書き込んだprofileを運用している人",
+      "readerDecision": "手元のconfig.tomlをGPT-6 Sol/Lunaへ今切り替えてよいか、退役までに直す必要がある箇所はどこかを、自分の設定を見比べるだけで判断できる",
+      "takeaway": "移行前後のconfig.toml diff(model・model_reasoning_effort・profile定義)と、Terra指定・Lunaでのultra指定・退役済み/退役予定モデル指定の有無で自分の設定が影響を受けるか判定するチェックリスト表",
+      "verificationItems": [
+        "model = \"gpt-6-terra\"を指定したprofileでcodex execを起動し、GPT-6に存在しないTerra階層が明示的なエラーになるか無言フォールバックするかを確認する",
+        "model = \"gpt-6-luna\" + model_reasoning_effort = \"ultra\"(公式非対応の組み合わせ)を指定したprofileが、ターン消費前のconfig検証で拒否されるかターン消費後のAPIエラーになるかを確認する",
+        "既存のmodel = \"gpt-5.6-sol\"を指定したprofileが、GPT-6公開後の現行バージョンでも変更なしに起動できるかを確認し、即時の書き換えが不要な猶予期間が実在するか確かめる",
+        "model = \"gpt-6-sol\" + model_reasoning_effort = \"xhigh\"(新設の効果水準)を指定したprofileがconfig検証を通るかを確認し、旧effort語彙前提の自作バリデーションが新しい値を誤って弾かないか点検する",
+        "Codex CLI(サブスクリプション認証)のモデル選択経路にgpt-6-astraが選択肢として現れるか確認し、API専用のAstraとCodex/ChatGPT提供のSol/Lunaの対象範囲の境界を実際のCLI挙動で確定する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "GPT-6 Sol/Lunaは2026-09-22公開の一次情報(OpenAI公式発表、Codex CLI公式changelog)で、対応するCodex CLIビルド(0.156.0/0.156.1/0.157.0)も同週に連続公開されており、調査時点(2026-09-25)で3日以内の現行トピック。公式モデルページではLunaがultra非対応・Sol/Astraはxhigh/ultra対応という非対称、GPT-5.4/5.4-miniが既に退役済み・GPT-5.5が2026-10-14退役予定という具体的な移行期限も確認できる。リポジトリ内の既存記事(codex-gpt-5-6-model-guide.md)はGPT-5.6の選び方(decision型)のみでGPT-6移行を扱っておらず、gpt-6-astra-api-migration-guide.mdは生API・APIキー課金前提でCodex CLIのサブスクリプション運用は明示的に対象外としている。analytics/topic-feedback.mdではcliトピックのd30-45コホートがn=59で「続行判断まで測れる」水準にあり、migration型は市場上位記事で持ち帰りチェックリストが勝ち筋として観測されている(節1)。"
+    }
+  }
+}
