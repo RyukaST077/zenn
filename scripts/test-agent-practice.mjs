@@ -11,9 +11,10 @@ import { redactText, redactValue } from "./agent-practice/redact.mjs";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(scriptDir, "..");
 const token = `${process.pid}-${Date.now()}`;
-const reportRelative = `research/agent/test-agent-runner-${token}.md`;
-const planRelative = `practice/agent/test-agent-runner-${token}.md`;
-const manifestRelative = `practice/agent/test-agent-runner-${token}.json`;
+// Avoid the hosted CI username "runner": evidence redaction removes usernames.
+const reportRelative = `research/agent/test-agent-experiment-${token}.md`;
+const planRelative = `practice/agent/test-agent-experiment-${token}.md`;
+const manifestRelative = `practice/agent/test-agent-experiment-${token}.json`;
 const analysisRelative = `logs/agent/test-agent-analysis-${token}.md`;
 const report = path.join(root, reportRelative);
 const plan = path.join(root, planRelative);
@@ -951,7 +952,7 @@ console.log(JSON.stringify(provider === "claude"
   }));
   fs.writeFileSync(manifest, `${JSON.stringify({
     version: 1,
-    id: `runner-test-${process.pid}`,
+    id: `experiment-test-${process.pid}`,
     topic: "runner test",
     claim: "the deterministic runner records each case",
     mode: "ablation",
@@ -1050,7 +1051,7 @@ console.log(JSON.stringify(provider === "claude"
   });
   assert.equal(experiment.status, 0, `${experiment.stdout}\n${experiment.stderr}`);
   const executionLogRelative = experiment.stdout.trim();
-  assert.match(executionLogRelative, /^logs\/agent\/run-runner-test-/);
+  assert.match(executionLogRelative, /^logs\/agent\/run-experiment-test-/);
   generatedRun = path.dirname(path.join(root, executionLogRelative));
   const directRunStdout = path.join(fakeDir, "direct-run.stdout");
   const directRunMarker = path.join(fakeDir, "direct-run.marker");
@@ -1095,7 +1096,7 @@ console.log(JSON.stringify(provider === "claude"
   const codexHistorical = JSON.parse(fs.readFileSync(path.join(
     root, "practice/agent/agent-practice-codex-exec-jsonl-final-artifact-20260814-0504.json",
   ), "utf8"));
-  const codexWrapperId = `runner-wrapper-codex-${process.pid}`;
+  const codexWrapperId = `experiment-wrapper-codex-${process.pid}`;
   generatedRunIds.push(codexWrapperId);
   const codexWrapperManifestRelative = `practice/agent/${codexWrapperId}.json`;
   const codexWrapperManifest = path.join(root, codexWrapperManifestRelative);
@@ -1146,7 +1147,7 @@ console.log(JSON.stringify(provider === "claude"
     const claudeHistorical = JSON.parse(fs.readFileSync(path.join(
       root, "practice/agent/agent-practice-claude-subprocess-scrub-home-stubs-20260813-0502.json",
     ), "utf8"));
-    const claudeWrapperId = `runner-wrapper-claude-${process.pid}`;
+    const claudeWrapperId = `experiment-wrapper-claude-${process.pid}`;
     generatedRunIds.push(claudeWrapperId);
     const claudeWrapperManifestRelative = `practice/agent/${claudeWrapperId}.json`;
     const claudeWrapperManifest = path.join(root, claudeWrapperManifestRelative);
@@ -1204,7 +1205,7 @@ if (args.length === 1 && args[0] === "--version") {
 fs.writeFileSync(process.env.GUARD_SENTINEL, "started\\n");
 process.exit(9);
 `, { mode: 0o755 });
-  const rejectedId = `runner-wrapper-rejected-${process.pid}`;
+  const rejectedId = `experiment-wrapper-rejected-${process.pid}`;
   generatedRunIds.push(rejectedId);
   const rejectedManifestRelative = `practice/agent/${rejectedId}.json`;
   const rejectedManifest = path.join(root, rejectedManifestRelative);
