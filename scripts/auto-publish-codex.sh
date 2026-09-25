@@ -288,15 +288,19 @@ run_stage() {
 
 if ! is_done search || ! require_artifact report; then
   run_stage search 1 zenn-search-topic research true "$([ "$CODEX_SEARCH" = 1 ] && echo 1 || echo 0)" \
-    "Search constraints: ${SEARCH_ARGS:-use the skill defaults}. Create exactly one research report."
+    "Search constraints: ${SEARCH_ARGS:-use the skill defaults}. Create exactly one research report. Include the article contract JSON under the heading ## 記事契約 as specified by strategy/article-contract.md, with explicit experimentId and arm. Read strategy/topic-selection-policy.json and analytics/topic-feedback.md to select the contract fields, and pre-register it with node scripts/analytics/register-article.mjs --from-research <report>."
   case "$STAGE_ARTIFACT" in research/search-topic-*.md) ;; *) die "search artifact path is invalid: $STAGE_ARTIFACT" ;; esac
   state_set artifacts.report "\"$STAGE_ARTIFACT\""; state_set completed.search true
 fi
 REPORT="$(state_get artifacts.report)"
+# Recheck resumed reports too; an old search completion flag does not prove that
+# the report satisfies the contract consumed by the plan stage.
+node scripts/analytics/register-article.mjs --check --from-research "$REPORT" \
+  || die "search article contract is missing or invalid: $REPORT"
 
 if ! is_done plan || ! require_artifact task; then
   run_stage plan 2 zenn-plan-practice practice false 0 \
-    "Input research report: $REPORT. Create exactly one practice plan derived from it."
+    "Input research report: $REPORT. Create or update exactly one practice plan derived from it. If reusing a plan left by an interrupted attempt, revalidate it against the report and record the dated revalidation and any corrections in that plan during this attempt; do not return an unchanged stale artifact."
   case "$STAGE_ARTIFACT" in practice/practice-*.md) ;; *) die "plan artifact path is invalid: $STAGE_ARTIFACT" ;; esac
   state_set artifacts.task "\"$STAGE_ARTIFACT\""; state_set completed.plan true
 fi
