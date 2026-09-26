@@ -16,6 +16,12 @@
       "enqueuedAt": "2026-09-24T01:12:36.328Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-code-agents-md-fallback-migration-checklist.md",
+      "enqueuedAt": "2026-09-26T21:14:31.989Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
