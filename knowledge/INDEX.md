@@ -7,6 +7,10 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-09-29] [AI記事がレビュー合格後にslugと登録済み契約の不一致で停止する](./2026-09-29-agent-article-slug-contract-mismatch.md) — `Code/Logic` / tags: slug, article-contract, registration, resume, publication-queue
+- [2026-09-24] [unsnoozeのNode標準テストもnpm ciなしではpicocolors不足になる](./2026-09-24-unsnooze-tests-missing-dependencies.md) — `Dependency` / tags: unsnooze, npm-ci, picocolors, node-test
+- [2026-09-24] [Codex記事パイプラインのplanが記事契約なしで停止する](./2026-09-24-codex-search-missing-article-contract.md) — `Code/Logic` / tags: codex, article-contract, search-topic, plan-practice, worktree
+- [2026-09-24] [Codex記事パイプラインのworktree引き継ぎで--search-argsが消える](./2026-09-24-codex-pipeline-dispatch-loses-arguments.md) — `Code/Logic` / tags: bash, codex, search-args, worktree, shift
 - [2026-08-18] [Claude Codeの--json-schemaが2020-12メタスキーマ宣言を拒否する](./2026-08-18-claude-json-schema-metaschema-rejected.md) — `Compatibility` / tags: claude-code, json-schema, draft-2020-12, structured-output
 - [2026-08-18] [TypeScript 7.0 に上げると typescript-eslint が `typescript-eslint does not support TS 7.0.` で起動不能になる（公式 alias 併用構成で解決）](./2026-08-18-typescript7-eslint-alias-side-by-side.md) — `Dependency` / tags: typescript-7, typescript-eslint, alias, "@typescript/native", tsc6, bin衝突
 - [2026-08-18] [macOS Bash 3.2でset -u下の空配列展開がunbound variableになる](./2026-08-18-bash32-empty-array-nounset.md) — `Environment` / tags: bash, macos, bash-3.2, nounset, empty-array
