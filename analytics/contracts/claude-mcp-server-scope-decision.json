@@ -1,0 +1,39 @@
+{
+  "slug": "claude-mcp-server-scope-decision",
+  "topics": [
+    "claudecode",
+    "mcp",
+    "aiagent",
+    "security",
+    "cli"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 82,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-28T22:22:29.149Z",
+    "contract": {
+      "targetReader": "Claude Code をチームで使い始め、.mcp.json をコミットしてMCPサーバーを配ろうとしているが、teammateやCI側でPending approvalのまま動かない、承認フローがどう働くか分からずに困っている開発者",
+      "readerDecision": "新しく追加するMCPサーバーをlocal/project/userのどのスコープに登録すべきかを、共有範囲・シークレットの扱い・CIや新規クローン時の承認フローの条件から決められる",
+      "takeaway": "スコープ×可視範囲×承認要否×ユースケースの決定表と、チーム配布時にteammateが最初に叩くべきコマンドのチェックリスト、CI用に安全にバイパスするための.claude/settings.jsonテンプレート（enableAllProjectMcpServers / enabledMcpjsonServers / disabledMcpjsonServers）",
+      "verificationItems": [
+        "local scopeはプロジェクトの絶対パスに厳密に紐づき、兄弟ディレクトリからはclaude mcp listで見えない",
+        "user scopeは全プロジェクト共通でグローバルに見える",
+        "project scope（.mcp.json）はworkspace trust未確立だとclaude mcp get/listでPending approvalのまま接続を試みない",
+        "未トラストなworkspaceでは、リポジトリにコミットされた.claude/settings.jsonのenableAllProjectMcpServers: trueは無視され、trust確立後にのみ有効になる（hasTrustDialogAcceptedの切り替えで決定的に再現）"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Zennに「Claude Code MCPスコープ」関連の既存記事・scrapが複数存在し（ryoushinの『.mcp.jsonのMCPが認識されない問題』など）読者の実体験としての混乱が観測できる一方、trust dialog未承認時にenableAllProjectMcpServersがコミット済みでも無視されるという2.1.196時点の具体挙動までは扱われていない。primaryTopicのclaudecodeはtopic-feedback.mdでd30-45コホートn=400、続行判断に使える水準。"
+    }
+  }
+}

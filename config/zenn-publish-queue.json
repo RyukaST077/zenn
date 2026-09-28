@@ -22,6 +22,12 @@
       "enqueuedAt": "2026-09-26T21:14:31.989Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-mcp-server-scope-decision.md",
+      "enqueuedAt": "2026-09-28T22:38:32.492Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
