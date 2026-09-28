@@ -93,6 +93,24 @@ const requireStrictBase = () => {
   if (!hasContext && !hasCheck)
     fail(`cannot guarantee validated ${state.base} at merge: at least one named required status check is required`);
 };
+// Required checks start only after a push, so a merge right after creating or
+// updating the PR is always refused. Wait until they finish for the head.
+const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+const waitForRequiredChecks = () => {
+  const timeout = Number(process.env.AGENT_QUEUE_CHECK_TIMEOUT_SECONDS || 1200);
+  const interval = Number(process.env.AGENT_QUEUE_CHECK_INTERVAL_SECONDS || 15);
+  const deadline = Date.now() + timeout * 1000;
+  for (;;) {
+    // Before any check is reported gh exits non-zero with an empty stdout.
+    const result = run('gh', ['pr', 'checks', options.pr, '--required', '--json', 'bucket'], process.cwd(), false);
+    let buckets = [];
+    try { buckets = JSON.parse(result.stdout || '[]').map(check => check.bucket); } catch { /* not reported yet */ }
+    if (buckets.some(bucket => bucket === 'fail' || bucket === 'cancel')) fail('required checks failed; PR is left open');
+    if (buckets.length && buckets.every(bucket => bucket === 'pass' || bucket === 'skipping')) return;
+    if (Date.now() >= deadline) fail(`required checks did not finish within ${timeout}s; PR is left open`);
+    sleep(interval * 1000);
+  }
+};
 const verifyPr = () => {
   const current = pr();
   if (current.headRefOid !== state.expected_head || current.headRefName !== state.branch || current.baseRefName !== state.base || current.isCrossRepository)
@@ -235,6 +253,9 @@ try {
       if (!options.merge) { save('awaiting-approval', 'no merge authorization supplied'); finished = true; break; }
       assertControls();
       requireStrictBase();
+      waitForRequiredChecks();
+      verifyPr();
+      if (remoteHead(state.base) !== base) { save('retrying', 'base advanced while waiting for checks'); continue; }
       const merged = run('gh', ['pr', 'merge', options.pr, `--${method}`, '--match-head-commit', state.expected_head], process.cwd(), false);
       const observed = verifyPr();
       if (observed.state === 'MERGED') {

@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { assertSlug } from "./article-identity.mjs";
 
 const argv = process.argv.slice(2);
 const article = argv[0];
@@ -18,7 +19,7 @@ if (!article || !fs.existsSync(article)) {
 const rel = path.relative(root, path.resolve(article)).split(path.sep).join("/");
 if (!/^articles\/[a-z0-9-]+\.md$/.test(rel)) errors.push("article path must be articles/<valid-slug>.md");
 const slug = path.basename(article, ".md");
-if (slug.length < 12 || slug.length > 50) errors.push("slug length must be 12-50 characters");
+try { assertSlug(slug); } catch (error) { errors.push(error.message); }
 
 const text = fs.readFileSync(article, "utf8");
 const fm = text.match(/^---\n([\s\S]*?)\n---\n/);

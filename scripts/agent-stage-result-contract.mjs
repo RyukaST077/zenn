@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 
-const slugPattern = "^[a-z0-9-]{12,50}$";
+import { slugPattern } from "./article-identity.mjs";
 const stages = new Set(["search", "plan", "run", "analyze", "draft", "review", "revise"]);
 const analysisVerdicts = ["confirmed", "conditional", "not-reproduced", "unsupported", "inconclusive"];
 const analysisActions = ["draft", "rerun", "stop"];

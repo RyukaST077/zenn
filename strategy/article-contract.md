@@ -36,7 +36,7 @@
 
 | フィールド | 必須 | 意味 |
 |---|---|---|
-| `slug` | ✅ | 記事の slug。`articles/<slug>.md` と一致させる |
+| `slug` | ✅ | 半角英小文字・数字・ハイフンの12〜50文字。登録後は固定し、`articles/<slug>.md`・工程応答のslugと一致させる。タイトル変更では改名しない |
 | `policyVersion` | ✅ | 選定時に読んだ policy の `policyVersion` |
 | `experimentId` | ✅ | 実験ID（`experiments/EXP-*.json`）。実験に入れない場合は明示的に `null`。**省略は不可**（省略を実施中の実験で埋めると、仮説を検証していない記事が判定を汚す） |
 | `arm` | ✅ | 群。`"B-payload"`（EXP-001の実験対象）/ `"exploration"`（探索枠）/ `"legacy-transition"`（旧ドラフトの書き直し）。実験IDを指定した場合はその実験が定義する arm でなければ棄却される |

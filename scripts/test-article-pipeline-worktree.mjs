@@ -21,7 +21,7 @@ const manifest = r => {
 const checkFile = (m, p, text) => assert.equal(fs.readFileSync(path.join(m.dir, 'files', p), 'utf8'), text);
 try {
   fs.mkdirSync(checkout); git('init', '-b', 'main'); git('config', 'user.name', 'Runtime Test'); git('config', 'user.email', 'test@example.invalid');
-  for (const p of ['scripts/article-runtime.mjs', 'scripts/run-article-pipeline-worktree.sh', 'scripts/safe-sync-main.sh', 'scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/recover-queue-pr.sh', 'scripts/agent-practice/recover-queue-pr.mjs', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh', 'scripts/check-article.mjs', 'scripts/zenn-publish-queue.mjs']) { write(p, fs.readFileSync(path.join(root, p))); fs.chmodSync(path.join(checkout, p), fs.statSync(path.join(root, p)).mode & 0o777); }
+  for (const p of ['scripts/article-runtime.mjs', 'scripts/run-article-pipeline-worktree.sh', 'scripts/safe-sync-main.sh', 'scripts/agent-practice/enqueue-reviewed-article.sh', 'scripts/agent-practice/recover-queue-pr.sh', 'scripts/agent-practice/recover-queue-pr.mjs', 'scripts/agent-practice/publish-reviewed-article.sh', 'scripts/zenn-publish-queue.sh', 'scripts/check-article.mjs', 'scripts/article-identity.mjs', 'scripts/zenn-publish-queue.mjs']) { write(p, fs.readFileSync(path.join(root, p))); fs.chmodSync(path.join(checkout, p), fs.statSync(path.join(root, p)).mode & 0o777); }
   write('.agents/skills/example/SKILL.md', 'committed skill\n');
   write('scripts/helper.sh', 'echo committed-helper\n');
   write('articles/baseline.md', 'baseline\n');
@@ -44,7 +44,7 @@ case "\${1:-success}" in
     mkdir -p analytics/contracts "images/$SLUG"
     printf '%s\\n' --- 'title: "Runtime publication fixture"' 'emoji: "🧪"' 'type: tech' 'topics: ["test"]' 'published: false' --- '' 'Reviewed content.' > "articles/$SLUG.md"
     printf 'verdict: pass\\nblockers: 0\\nwarnings: 0\\n' > logs/review-fixture.md
-    printf '{"classification":{"arm":"test"}}\\n' > "analytics/contracts/$SLUG.json"
+    printf '{"slug":"%s","classification":{"arm":"test"}}\\n' "$SLUG" > "analytics/contracts/$SLUG.json"
     printf 'image\\n' > "images/$SLUG/test.png"
     bash scripts/agent-practice/enqueue-reviewed-article.sh --article "articles/$SLUG.md" --review logs/review-fixture.md --pipeline logs/codex-pipeline-fixture --review-style codex --pr-only
     exit $?
