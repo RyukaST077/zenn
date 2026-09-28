@@ -27,6 +27,8 @@ fi
 : "${PUBLISH_QUEUE_MERGE_METHOD:=--squash}"
 : "${PUBLISH_QUEUE_FILE:=config/zenn-publish-queue.json}"
 : "${PUBLISH_QUEUE_API_URL:=}"
+: "${PUBLISH_QUEUE_CHECK_TIMEOUT_SECONDS:=1200}"
+: "${PUBLISH_QUEUE_CHECK_INTERVAL_SECONDS:=15}"
 
 DRY_RUN=0
 AUTO_MERGE=1
@@ -119,6 +121,74 @@ command -v gh >/dev/null 2>&1 || { echo "gh is required" >&2; exit 2; }
 GH_PROMPT_DISABLED=1 gh auth status >/dev/null 2>&1 || { echo "GitHub CLI is not authenticated" >&2; exit 2; }
 ARTICLE="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.article)' "$PLAN")"
 SLUG="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.slug)' "$PLAN")"
+
+# Required checks start after the PR exists, so merge only once they pass. A PR
+# that is left open is picked up again by the next run instead of duplicated.
+wait_and_merge() {
+  local pr_url="$1" deadline buckets merged_branch
+  deadline=$(( $(date +%s) + PUBLISH_QUEUE_CHECK_TIMEOUT_SECONDS ))
+  while :; do
+    buckets="$(GH_PROMPT_DISABLED=1 gh pr checks "$pr_url" --required --json bucket \
+      --jq '[.[].bucket] | join(" ")' 2>/dev/null || true)"
+    case " $buckets " in
+      *" fail "*|*" cancel "*)
+        echo "required checks failed; leaving PR open: $pr_url" >&2; return 1 ;;
+      "  "|*" pending "*) ;;
+      *) break ;;
+    esac
+    if [ "$(date +%s)" -ge "$deadline" ]; then
+      echo "required checks did not finish in ${PUBLISH_QUEUE_CHECK_TIMEOUT_SECONDS}s; leaving PR open: $pr_url" >&2
+      return 1
+    fi
+    sleep "$PUBLISH_QUEUE_CHECK_INTERVAL_SECONDS"
+  done
+  # gh can exit non-zero after the merge itself succeeded (its local branch
+  # cleanup fails in this detached worktree), so GitHub's PR state decides.
+  GH_PROMPT_DISABLED=1 gh pr merge "$pr_url" "$PUBLISH_QUEUE_MERGE_METHOD" || true
+  merged_branch="$(GH_PROMPT_DISABLED=1 gh pr view "$pr_url" --json state,headRefName \
+    --jq 'select(.state == "MERGED") | .headRefName' || true)"
+  if [ -z "$merged_branch" ]; then
+    echo "PR merge failed; leaving PR open: $pr_url" >&2
+    return 1
+  fi
+  GIT_TERMINAL_PROMPT=0 git -C "$ROOT" push --quiet origin --delete "$merged_branch" 2>/dev/null \
+    || echo "merged, but could not delete branch $merged_branch" >&2
+}
+
+# The queue file on main changes only when a queue PR merges, so an open PR for
+# this head means its action is still pending. Never open a second one.
+EXISTING="$(GH_PROMPT_DISABLED=1 gh pr list --base "$PUBLISH_QUEUE_BASE_BRANCH" --state open --limit 1000 \
+  --json url,headRefName \
+  --jq ".[] | select(.headRefName | test(\"^publish-queue/(publish|retry|reconcile|block)-${SLUG}-[0-9]{8}-[0-9]{6}\$\")) | .url")" || {
+  echo "could not list open queue PRs; refusing to open another" >&2; exit 1;
+}
+if [ -n "$EXISTING" ]; then
+  if [ "$(printf '%s\n' "$EXISTING" | wc -l | tr -d ' ')" -gt 1 ]; then
+    printf 'multiple open queue PRs for %s; close the duplicates first:\n%s\n' "$SLUG" "$EXISTING" >&2
+    exit 1
+  fi
+  EXISTING_URL="$EXISTING"
+  if [ "$AUTO_MERGE" = 0 ]; then
+    printf 'RESULT: skipped (queue PR is waiting for human merge)\nPR: %s\n' "$EXISTING_URL"
+    exit 0
+  fi
+  EXISTING_STATE="$(GH_PROMPT_DISABLED=1 gh pr view "$EXISTING_URL" --json mergeStateStatus --jq .mergeStateStatus)" || {
+    echo "could not read the state of $EXISTING_URL" >&2; exit 1;
+  }
+  case "$EXISTING_STATE" in
+    BEHIND|DIRTY)
+      # Built on an older queue file; recreate it from the current main below.
+      GH_PROMPT_DISABLED=1 gh pr close "$EXISTING_URL" --delete-branch \
+        --comment "Superseded: $PUBLISH_QUEUE_BASE_BRANCH moved ($EXISTING_STATE). The queue worker recreates this action from the current base." >/dev/null
+      ;;
+    *)
+      wait_and_merge "$EXISTING_URL" || exit 1
+      printf 'RESULT: %s\nArticle: %s\nPR: %s\nMerge: %s\n' "$ACTION" "$ARTICLE" "$EXISTING_URL" "merged (existing PR)"
+      exit 0
+      ;;
+  esac
+fi
+
 TS="$(date +%Y%m%d-%H%M%S)"
 BRANCH="publish-queue/$ACTION-$SLUG-$TS"
 git -C "$WORKTREE" switch -c "$BRANCH" >/dev/null
@@ -152,14 +222,8 @@ git -C "$ROOT" worktree remove --force "$WORKTREE" >/dev/null
 WORKTREE_ACTIVE=0
 PR_URL="$(GH_PROMPT_DISABLED=1 gh pr create --base "$PUBLISH_QUEUE_BASE_BRANCH" --head "$BRANCH" --title "$PR_TITLE" --body-file "$PR_BODY")"
 if [ "$AUTO_MERGE" = 1 ]; then
-  if GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$PUBLISH_QUEUE_MERGE_METHOD" --delete-branch; then
-    MERGE_RESULT="merged"
-  elif GH_PROMPT_DISABLED=1 gh pr merge "$PR_URL" "$PUBLISH_QUEUE_MERGE_METHOD" --auto --delete-branch; then
-    MERGE_RESULT="auto-merge requested"
-  else
-    echo "PR merge failed: $PR_URL" >&2
-    exit 1
-  fi
+  wait_and_merge "$PR_URL" || exit 1
+  MERGE_RESULT="merged"
 else
   MERGE_RESULT="PR created; waiting for human merge"
 fi

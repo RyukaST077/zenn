@@ -10,7 +10,7 @@ description: Revise an explicit AI coding-agent Zenn article from an explicit ev
 3. If the review verdict is `rerun` or new evidence is required, do not simulate it; return `abort` with the precise need.
 4. Make the smallest scope of evidence-backed change, not the smallest textual diff. Retitle, rewrite the opening, reorder or merge sections, remove repetition, move audit detail later, strengthen practical mapping, and rewrite the conclusion when required by the review.
 5. Keep claims proportional to the run count and conditions. Correct recipes to match successful recorded commands and configuration exactly. Never add an anecdote, emotion, surprise, or first-person judgment absent from recorded sources.
-6. If a slug changes, atomically update the article path, related images, and image references.
+6. Preserve the registered slug, article path and `metadata.slug`, including when retitling. Read `analytics/contracts/<slug>.json` and check the supplied identity and source report agree. A necessary slug migration is a separate operation covering registration, derived ledger, images and review/publication references; report the blocker rather than silently renaming or re-registering during revision.
 7. Run `bash scripts/check-article.sh <article> --expect-published false`.
 8. Create `logs/agent/revise-<slug>-YYYYMMDD-HHMM.md` using [revision-log.md](references/revision-log.md).
 9. End with only the pipeline result object. Set `artifact` to the revised article path.

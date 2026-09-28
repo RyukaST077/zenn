@@ -298,6 +298,7 @@ const testArmRoundTrip = () => {
       "experiments/EXP-001.json",
       "scripts/analytics/next-arm.mjs",
       "scripts/analytics/register-article.mjs",
+      "scripts/article-identity.mjs",
       "scripts/analytics/zenn-metrics-lib.mjs",
       "scripts/zenn-publish-queue.mjs",
     ]) {
@@ -483,7 +484,7 @@ Queue fixture body.
     // carries it, so the queue flow has to stage it alongside the article.
     const contract = `analytics/contracts/${slug}.json`;
     const contractBody = `${JSON.stringify({
-      slug,
+      slug: armGate === "slug" ? "different-registered-slug" : slug,
       topics: ["codex", "test"],
       primaryTopic: "codex",
       classification: { source: "contract", arm: "B-payload", experimentId: "EXP-001" },
@@ -524,6 +525,8 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
 } else if (args[0] === 'pr' && args[1] === 'view') {
   const head = git('rev-parse', branch), merged = git('rev-parse', 'main') === head;
   console.log(JSON.stringify({number:2,url:'https://example.invalid/pull/2',state:merged?'MERGED':'OPEN',headRefOid:head,headRefName:branch,baseRefName:'main',isCrossRepository:false,mergeCommit:merged?{oid:head}:null}));
+} else if (args[0] === 'pr' && args[1] === 'checks') {
+  console.log(JSON.stringify([{bucket:'pass'}]));
 } else if (args[0] === 'pr' && args[1] === 'merge') {
   const head = git('rev-parse', branch);
   if (!args.includes('--match-head-commit') || args[args.indexOf('--match-head-commit') + 1] !== head) process.exit(3);
@@ -570,11 +573,11 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
     // for a different arm -- must stop here. Publishing anyway is the failure
     // that kept EXP-001 at 0/12 while every stage reported success, so the
     // check has to land before the push rather than in a later reconciliation.
-    if (armGate === "missing" || armGate === "mismatch") {
+    if (["missing", "mismatch", "slug"].includes(armGate)) {
       assert.notEqual(result.status, 0, `${armGate} contract unexpectedly reached the push`);
       assert.match(
         result.stdout + result.stderr,
-        armGate === "missing" ? /no registered contract/ : /contract arm mismatch/,
+        armGate === "missing" ? /no registered contract/ : armGate === "slug" ? /registered slug/ : /contract arm mismatch/,
       );
       const rejected = runAt(checkout, "git", [
         `--git-dir=${remote}`, "rev-parse", "--verify", `refs/heads/queue/${slug}`,
@@ -907,6 +910,7 @@ echo "complete: publication PR merged for articles/fake-default.md"
   testQueueFlow({ autoMerge: true, withContract: true });
   testQueueFlow({ autoMerge: true, withContract: true, armGate: "match" });
   testQueueFlow({ autoMerge: true, withContract: true, armGate: "mismatch" });
+  testQueueFlow({ autoMerge: true, withContract: true, armGate: "slug" });
   testQueueFlow({ autoMerge: true, withContract: false, armGate: "missing" });
   testArmRoundTrip();
   testQueueFlow({ autoMerge: false, failPrCreate: true });

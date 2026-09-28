@@ -2,6 +2,8 @@
 
 Issue #299。通常記事（Claude / Codex）、AI記事、launchd、日次分析、公開キューワーカーの共通入口は `scripts/run-article-pipeline-worktree.sh`。
 
+2026-09-28に発生した記事slugと登録済み契約の不一致については、[再発防止の実装と既存記事の復旧方針](article-slug-consistency-plan.md)を参照。AI記事の登録情報はpipelineと実験runの `article-identity.json` に保存し、再開時も同じ契約を検証する。
+
 ## 実行の流れ
 
 | 区間 | コード | データ・出力 |
