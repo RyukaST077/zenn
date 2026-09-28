@@ -30,11 +30,13 @@ AUTO_MERGE=1
 REVIEW_STYLE="agent"
 REQUIRE_CONTRACT=0
 EXPECT_ARM=""
+IDENTITY_STATE=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --article) ARTICLE="${2:?--article requires a path}"; shift ;;
     --review) REVIEW="${2:?--review requires a path}"; shift ;;
     --pipeline) PIPE_DIR="${2:?--pipeline requires a path}"; shift ;;
+    --identity-state) IDENTITY_STATE="${2:?--identity-state requires a path}"; REQUIRE_CONTRACT=1; shift ;;
     --review-style) REVIEW_STYLE="${2:?--review-style requires agent, codex, or claude}"; shift ;;
     --require-contract) REQUIRE_CONTRACT=1 ;;
     --expect-arm) EXPECT_ARM="${2:?--expect-arm requires an arm name}"; REQUIRE_CONTRACT=1; shift ;;
@@ -136,6 +138,15 @@ if [ "$REVIEW_STYLE" = agent ]; then
     || die "passing review editorial score must be 80-100"
 fi
 
+if [ -z "$IDENTITY_STATE" ] && [ -f "$PIPE_DIR/article-identity.json" ]; then
+  IDENTITY_STATE="$PIPE_DIR/article-identity.json"
+fi
+if [ -n "$IDENTITY_STATE" ]; then
+  safe_relative "$IDENTITY_STATE" || die "invalid article identity path"
+  node "$SOURCE_ROOT/scripts/article-identity.mjs" publication --article "$ARTICLE" --state "$IDENTITY_STATE" \
+    || die "publication article identity failed"
+fi
+
 ARTIFACT_SOURCE="$ROOT"
 if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
   ARTIFACT_SOURCE="$(node "$ARTICLE_PIPELINE_RUNTIME" prepare-publication "$ROOT" "$ARTICLE" "$REVIEW")" \
@@ -196,6 +207,10 @@ CONTRACT="analytics/contracts/$SLUG.json"
 # register a contract, so the requirement stays opt-in rather than global.
 if [ "$REQUIRE_CONTRACT" = 1 ] && [ ! -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
   die "no registered contract for the final article: $CONTRACT (the arm allocated for this run would go uncounted)"
+fi
+if [ -f "$ARTIFACT_SOURCE/$CONTRACT" ]; then
+  node "$SOURCE_ROOT/scripts/article-identity.mjs" publication --root "$ARTIFACT_SOURCE" --article "$ARTICLE" \
+    || die "registered article slug mismatch"
 fi
 if [ -n "$EXPECT_ARM" ]; then
   CONTRACT_ARM="$(node -e '

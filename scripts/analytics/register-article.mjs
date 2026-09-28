@@ -14,6 +14,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { assertSlug, contractFromResearch as parseResearchContract } from "../article-identity.mjs";
 
 import {
   fail,
@@ -52,13 +53,8 @@ const contractsDir = path.resolve(root, options.contracts || "analytics/contract
 
 /** Pull the ```json block that follows the "## 記事契約" heading. */
 const contractFromResearch = (file) => {
-  const source = fs.readFileSync(file, "utf8");
-  const section = source.split(/^##\s+記事契約\s*$/m)[1];
-  if (!section) fail(`no "## 記事契約" section in ${path.relative(root, file)}`);
-  const block = section.match(/```json\s*\n([\s\S]*?)```/);
-  if (!block) fail(`no json block under "## 記事契約" in ${path.relative(root, file)}`);
   try {
-    return JSON.parse(block[1]);
+    return parseResearchContract(fs.readFileSync(file, "utf8"));
   } catch (error) {
     fail(`contract json is invalid in ${path.relative(root, file)}: ${error.message}`);
   }
@@ -86,9 +82,7 @@ for (const field of REQUIRED) {
   if (empty) problems.push(`missing required field: ${field}`);
 }
 
-if (!/^[a-z0-9][a-z0-9-]*$/.test(contract.slug ?? "")) {
-  problems.push(`slug must be lowercase kebab-case: ${contract.slug}`);
-}
+try { assertSlug(contract.slug); } catch (error) { problems.push(error.message); }
 
 const archetype = policy.valueArchetypes?.find((item) => item.id === contract.valueArchetype);
 if (!archetype) {

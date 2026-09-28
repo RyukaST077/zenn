@@ -238,7 +238,7 @@ test("register rejects the deprecated archetype and single-check contracts", (di
 
 test("register rejects a missing field, a multi-sentence decision, and quantified without a metric", (dir) => {
   const base = {
-    slug: "ok-slug",
+    slug: "valid-article-slug",
     policyVersion: "2026-09-05.1",
     experimentId: null,
     arm: "exploration",
@@ -276,7 +276,7 @@ test("register reads the contract out of a research report and refuses silent ov
   fs.writeFileSync(report, [
     "# report", "", "## 記事契約", "", "```json",
     JSON.stringify({
-      slug: "deny-recipe",
+      slug: "deny-recipe-fixture",
       policyVersion: "2026-09-05.1",
       experimentId: "EXP-001",
       arm: "B-payload",
@@ -295,7 +295,7 @@ test("register reads the contract out of a research report and refuses silent ov
 
   ok(run(scripts.register, ["--from-research", "research/search-topic-20260905-0000.md"], dir), "register from research");
   const entry = readLedger(dir)[0];
-  assert.equal(entry.slug, "deny-recipe");
+  assert.equal(entry.slug, "deny-recipe-fixture");
   assert.equal(entry.classification.source, "contract");
   assert.equal(entry.classification.experimentId, "EXP-001");
   assert.equal(entry.classification.arm, "B-payload");
@@ -313,7 +313,7 @@ test("register refuses to re-arm a slug whose contract file outlived its ledger 
   // the guard read the ledger alone, the next run would silently re-register the
   // same slug under a different arm and the experiment would miscount.
   const contract = writeJson(dir, "c.json", {
-    slug: "deny-recipe",
+    slug: "deny-recipe-fixture",
     policyVersion: "2026-09-05.1",
     experimentId: "EXP-001",
     arm: "B-payload",
@@ -339,7 +339,7 @@ test("register refuses to re-arm a slug whose contract file outlived its ledger 
 
 test("collect realigns a ledger line that disagrees with the contract file", (dir) => {
   const contract = writeJson(dir, "c.json", {
-    slug: "deny-recipe",
+    slug: "deny-recipe-fixture",
     policyVersion: "2026-09-05.1",
     experimentId: "EXP-001",
     arm: "B-payload",
@@ -363,7 +363,7 @@ test("collect realigns a ledger line that disagrees with the contract file", (di
   fs.writeFileSync(ledgerPath, `${stale.map((e) => JSON.stringify(e)).join("\n")}\n`);
 
   const self = writeJson(dir, "self.json", [{ articles: [article({
-    slug: "deny-recipe", published_at: "2026-09-04T10:00:00.000+09:00", liked_count: 1,
+    slug: "deny-recipe-fixture", published_at: "2026-09-04T10:00:00.000+09:00", liked_count: 1,
   })] }]);
   ok(run(scripts.collect, ["--self-json", self, "--now", NOW], dir), "collect");
 
@@ -374,7 +374,7 @@ test("collect realigns a ledger line that disagrees with the contract file", (di
 
 test("collect fills in the publish time of a pre-registered contract without touching it", (dir) => {
   const contract = writeJson(dir, "c.json", {
-    slug: "deny-recipe",
+    slug: "deny-recipe-fixture",
     policyVersion: "2026-09-05.1",
     experimentId: "EXP-001",
     arm: "B-payload",
@@ -391,7 +391,7 @@ test("collect fills in the publish time of a pre-registered contract without tou
   ok(run(scripts.register, ["--contract", contract], dir), "register");
 
   const self = writeJson(dir, "self.json", [{ articles: [article({
-    slug: "deny-recipe", title: "公開後の実タイトル", published_at: "2026-09-04T10:00:00.000+09:00", liked_count: 2,
+    slug: "deny-recipe-fixture", title: "公開後の実タイトル", published_at: "2026-09-04T10:00:00.000+09:00", liked_count: 2,
   })] }]);
   ok(run(scripts.collect, ["--self-json", self, "--now", NOW], dir), "collect");
 
@@ -464,7 +464,7 @@ test("evaluate raises a stop-rule regression when the new arm's zero-like share 
   // Treatment: 6 registered articles, all at zero (100%) -> +70 points.
   const treatment = Array.from({ length: 6 }, (unused, index) => article({
     id: 100 + index,
-    slug: `new-${index}`,
+    slug: `new-article-${index}`,
     title: "設定",
     // Inside the d30 observation window at NOW, so the slot is measured rather
     // than an unrecoverable upper bound.
@@ -474,7 +474,7 @@ test("evaluate raises a stop-rule regression when the new arm's zero-like share 
 
   for (let index = 0; index < 6; index += 1) {
     const contract = writeJson(dir, `c-${index}.json`, {
-      slug: `new-${index}`,
+      slug: `new-article-${index}`,
       policyVersion: "2026-09-05.1",
       experimentId: "EXP-001",
       arm: "B-payload",
@@ -509,7 +509,7 @@ test("evaluate raises a stop-rule regression when the new arm's zero-like share 
 
 test("register refuses an implicit or mismatched experiment assignment", (dir) => {
   const base = {
-    slug: "ok-slug",
+    slug: "valid-article-slug",
     policyVersion: "2026-09-05.1",
     valueArchetype: "asset",
     targetReader: "reader",
@@ -642,7 +642,7 @@ test("the day after the D30 slot is taken, the daily run must not overwrite it",
 
 test("a lost ledger line cannot downgrade a registered contract to a heuristic label", (dir) => {
   const contract = writeJson(dir, "c.json", {
-    slug: "deny-recipe",
+    slug: "deny-recipe-fixture",
     policyVersion: "2026-09-05.1",
     experimentId: "EXP-001",
     arm: "B-payload",
@@ -658,7 +658,7 @@ test("a lost ledger line cannot downgrade a registered contract to a heuristic l
   });
   ok(run(scripts.register, ["--contract", contract], dir), "register");
   assert.ok(
-    fs.existsSync(path.join(dir, "analytics/contracts/deny-recipe.json")),
+    fs.existsSync(path.join(dir, "analytics/contracts/deny-recipe-fixture.json")),
     "the contract must also live in its own file",
   );
 
@@ -666,7 +666,7 @@ test("a lost ledger line cannot downgrade a registered contract to a heuristic l
   fs.rmSync(path.join(dir, "analytics/article-ledger.jsonl"));
 
   ok(run(scripts.collect, ["--self-json", writeJson(dir, "self.json", [{ articles: [
-    article({ slug: "deny-recipe", title: "検証した", published_at: "2026-09-04T10:00:00.000+09:00" }),
+    article({ slug: "deny-recipe-fixture", title: "検証した", published_at: "2026-09-04T10:00:00.000+09:00" }),
   ] }]), "--now", NOW], dir), "collect after losing the ledger");
 
   const entry = readLedger(dir)[0];
@@ -687,7 +687,7 @@ test("evaluate does not stop the experiment on a small sample, and --apply carri
   // 12 is not complete and the sixth is non-zero, so nothing may be concluded.
   const treatment = Array.from({ length: 5 }, (unused, index) => article({
     id: 100 + index,
-    slug: `new-${index}`,
+    slug: `new-article-${index}`,
     title: "設定",
     published_at: "2026-08-01T00:00:00.000+09:00",
     liked_count: 0,
@@ -695,7 +695,7 @@ test("evaluate does not stop the experiment on a small sample, and --apply carri
 
   for (let index = 0; index < 5; index += 1) {
     ok(run(scripts.register, ["--contract", writeJson(dir, `c-${index}.json`, {
-      slug: `new-${index}`,
+      slug: `new-article-${index}`,
       policyVersion: "2026-09-05.1",
       experimentId: "EXP-001",
       arm: "B-payload",
@@ -729,7 +729,7 @@ test("--apply writes a real policy diff when the experiment actually regresses",
   // Six treatment articles, every one at zero: the catastrophic stop rule.
   for (let index = 0; index < 6; index += 1) {
     ok(run(scripts.register, ["--contract", writeJson(dir, `c-${index}.json`, {
-      slug: `new-${index}`,
+      slug: `new-article-${index}`,
       policyVersion: "2026-09-05.1",
       experimentId: "EXP-001",
       arm: "B-payload",
@@ -746,7 +746,7 @@ test("--apply writes a real policy diff when the experiment actually regresses",
   }
   const treatment = Array.from({ length: 6 }, (unused, index) => article({
     id: 100 + index,
-    slug: `new-${index}`,
+    slug: `new-article-${index}`,
     published_at: "2026-08-01T00:00:00.000+09:00",
     liked_count: 0,
   }));
@@ -877,8 +877,8 @@ test("the allocator sends the next article to the arm the active experiment is s
   // The real ledger got into exactly this state: two exploration contracts and
   // zero treatment articles. The allocator must not read that as "exploration
   // is owed more"; the experiment is what is starved.
-  registerContract(dir, "explore-a");
-  registerContract(dir, "explore-b");
+  registerContract(dir, "explore-article-a");
+  registerContract(dir, "explore-article-b");
   const starved = nextArm(dir);
   assert.equal(starved.arm, "B-payload");
   assert.equal(starved.state.treatmentFilled, 0);
@@ -890,7 +890,7 @@ test("exploration keeps its share instead of being deferred to the end of the ba
   for (let i = 0; i < 8; i += 1) {
     const assignment = nextArm(dir);
     arms.push(assignment.arm);
-    registerContract(dir, `slot-${i}`, assignment.arm === "B-payload"
+    registerContract(dir, `article-slot-${i}`, assignment.arm === "B-payload"
       ? { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" }
       : { arm: "exploration", experimentId: null, valueArchetype: "mental-model" });
   }
@@ -907,8 +907,8 @@ test("a full or closed experiment stops taking articles instead of overfilling",
   experiment.design.treatment.n = 2;
   fs.writeFileSync(experimentPath, JSON.stringify(experiment));
 
-  registerContract(dir, "b-1", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
-  registerContract(dir, "b-2", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "migration" });
+  registerContract(dir, "b-article-001", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "b-article-002", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "migration" });
   const full = nextArm(dir);
   assert.equal(full.arm, "exploration", "a filled arm must not take a 13th article");
   assert.equal(full.experimentId, null);
@@ -926,7 +926,7 @@ test("a registration the ledger lost still counts, because the contract file car
   // by the daily loop in the shared checkout, so the worktree's ledger line does
   // not travel back. Only analytics/contracts/<slug>.json does. If the allocator
   // counted the ledger alone it would hand the same slot out twice.
-  registerContract(dir, "b-1", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "b-article-001", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
   const ledgerPath = path.join(dir, "analytics/article-ledger.jsonl");
   assert.ok(fs.existsSync(ledgerPath), "register should have written a ledger line");
   fs.rmSync(ledgerPath);
@@ -947,14 +947,14 @@ test("the funnel separates registration from publication, because only one of th
   // A registered contract with an article that was never published is progress
   // for the allocator and no progress at all for EXP-001. Reporting a single
   // "12 registered" is what hid a loop whose two halves never overlapped.
-  registerContract(dir, "b-one", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
-  registerContract(dir, "b-two", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "b-article-one", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "b-article-two", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
   fs.writeFileSync(
-    path.join(dir, "articles/b-one.md"),
+    path.join(dir, "articles/b-article-one.md"),
     '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
   );
   fs.writeFileSync(
-    path.join(dir, "articles/b-two.md"),
+    path.join(dir, "articles/b-article-two.md"),
     '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: false\n---\n\nbody\n',
   );
   writeJson(dir, "config/zenn-publish-queue.json", {
@@ -964,7 +964,7 @@ test("the funnel separates registration from publication, because only one of th
     retryAfterHours: 12,
     maxAttempts: 15,
     entries: [
-      { article: "articles/b-two.md", enqueuedAt: NOW, attempts: 0, lastAttemptAt: null },
+      { article: "articles/b-article-two.md", enqueuedAt: NOW, attempts: 0, lastAttemptAt: null },
       { article: "articles/no-contract.md", enqueuedAt: NOW, attempts: 0, lastAttemptAt: null },
     ],
   });
@@ -972,8 +972,8 @@ test("the funnel separates registration from publication, because only one of th
   const { report } = loopStatus(dir);
   assert.equal(report.treatment.registered, 2);
   assert.equal(report.treatment.articleWritten, 2);
-  assert.equal(report.treatment.queued, 1, "only b-two is queued");
-  assert.equal(report.treatment.published, 1, "only b-one is published");
+  assert.equal(report.treatment.queued, 1, "only b-article-two is queued");
+  assert.equal(report.treatment.published, 1, "only b-article-one is published");
   assert.equal(report.treatment.d30Measured, 0, "nothing has been measured at D30 yet");
   // A queued article with no contract advances no arm. Six of these is how the
   // real queue and the real experiment ended up describing different articles.
@@ -991,12 +991,12 @@ test("a contract that never reached main is reported as a burned arm slot", (dir
   git("init", "-q");
   git("config", "user.email", "test@example.invalid");
   git("config", "user.name", "test");
-  registerContract(dir, "reached", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "reached-main-article", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
   fs.writeFileSync(
-    path.join(dir, "articles/reached.md"),
+    path.join(dir, "articles/reached-main-article.md"),
     '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
   );
-  git("add", "analytics/contracts/reached.json");
+  git("add", "analytics/contracts/reached-main-article.json");
   const committed = git("commit", "-q", "-m", "contract reached main");
   assert.equal(committed.status, 0, `commit failed: ${committed.stderr}`);
 
@@ -1006,15 +1006,15 @@ test("a contract that never reached main is reported as a burned arm slot", (dir
 
   // Now leave behind exactly what a failed run leaves behind: the contract on
   // disk, nothing on the branch.
-  registerContract(dir, "orphan", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
+  registerContract(dir, "orphan-article", { arm: "B-payload", experimentId: "EXP-001", valueArchetype: "asset" });
   fs.writeFileSync(
-    path.join(dir, "articles/orphan.md"),
+    path.join(dir, "articles/orphan-article.md"),
     '---\ntitle: "t"\nemoji: "x"\ntype: tech\ntopics: ["claudecode"]\npublished: true\n---\n\nbody\n',
   );
   const stalled = loopStatus(dir, ["--strict", "--base-ref", "HEAD"]);
   assert.equal(stalled.status, 1, "an uncommitted contract must fail --strict");
   assert.deepEqual(
-    stalled.report.orphanContracts.map((row) => row.slug), ["orphan"],
+    stalled.report.orphanContracts.map((row) => row.slug), ["orphan-article"],
     "only the contract that never reached main is an orphan",
   );
   assert.equal(stalled.report.treatment.registered, 2,
