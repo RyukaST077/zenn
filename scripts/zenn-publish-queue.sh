@@ -125,7 +125,7 @@ SLUG="$(node -e 'const p=JSON.parse(process.argv[1]); process.stdout.write(p.slu
 # Required checks start after the PR exists, so merge only once they pass. A PR
 # that is left open is picked up again by the next run instead of duplicated.
 wait_and_merge() {
-  local pr_url="$1" deadline buckets
+  local pr_url="$1" deadline buckets merged_branch
   deadline=$(( $(date +%s) + PUBLISH_QUEUE_CHECK_TIMEOUT_SECONDS ))
   while :; do
     buckets="$(GH_PROMPT_DISABLED=1 gh pr checks "$pr_url" --required --json bucket \
@@ -142,10 +142,17 @@ wait_and_merge() {
     fi
     sleep "$PUBLISH_QUEUE_CHECK_INTERVAL_SECONDS"
   done
-  if ! GH_PROMPT_DISABLED=1 gh pr merge "$pr_url" "$PUBLISH_QUEUE_MERGE_METHOD" --delete-branch; then
+  # gh can exit non-zero after the merge itself succeeded (its local branch
+  # cleanup fails in this detached worktree), so GitHub's PR state decides.
+  GH_PROMPT_DISABLED=1 gh pr merge "$pr_url" "$PUBLISH_QUEUE_MERGE_METHOD" || true
+  merged_branch="$(GH_PROMPT_DISABLED=1 gh pr view "$pr_url" --json state,headRefName \
+    --jq 'select(.state == "MERGED") | .headRefName' || true)"
+  if [ -z "$merged_branch" ]; then
     echo "PR merge failed; leaving PR open: $pr_url" >&2
     return 1
   fi
+  GIT_TERMINAL_PROMPT=0 git -C "$ROOT" push --quiet origin --delete "$merged_branch" 2>/dev/null \
+    || echo "merged, but could not delete branch $merged_branch" >&2
 }
 
 # The queue file on main changes only when a queue PR merges, so an open PR for
