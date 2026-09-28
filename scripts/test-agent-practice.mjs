@@ -525,6 +525,8 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
 } else if (args[0] === 'pr' && args[1] === 'view') {
   const head = git('rev-parse', branch), merged = git('rev-parse', 'main') === head;
   console.log(JSON.stringify({number:2,url:'https://example.invalid/pull/2',state:merged?'MERGED':'OPEN',headRefOid:head,headRefName:branch,baseRefName:'main',isCrossRepository:false,mergeCommit:merged?{oid:head}:null}));
+} else if (args[0] === 'pr' && args[1] === 'checks') {
+  console.log(JSON.stringify([{bucket:'pass'}]));
 } else if (args[0] === 'pr' && args[1] === 'merge') {
   const head = git('rev-parse', branch);
   if (!args.includes('--match-head-commit') || args[args.indexOf('--match-head-commit') + 1] !== head) process.exit(3);

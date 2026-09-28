@@ -219,7 +219,7 @@ Merge gate fixture body.
   };
   // The fake gh prints what the real one prints after --jq. `checks` is a list
   // of successive `gh pr checks` outputs; the last one repeats.
-  const fakeGh = (env, { existing = "", state = "CLEAN", checks = ["pass"], listFails = false }) => {
+  const fakeGh = (env, { existing = "", state = "CLEAN", checks = ["pass"], listFails = false, mergeExit = 0 }) => {
     const checksFile = path.join(env.dir, "checks");
     fs.writeFileSync(checksFile, `${checks.join("\n")}\n`);
     fs.writeFileSync(path.join(env.bin, "gh"), `#!/bin/sh
@@ -227,14 +227,24 @@ echo "$*" >>"${env.log}"
 case "$1 $2" in
   "auth status") exit 0 ;;
   "pr list") ${listFails ? "exit 1" : `printf '%s' '${existing}'; exit 0`} ;;
-  "pr view") echo "${state}"; exit 0 ;;
-  "pr create") echo "https://example.invalid/pull/9"; exit 0 ;;
+  "pr view")
+    case "$*" in
+      *headRefName*) [ ! -f "${env.dir}/merged" ] || cat "${env.dir}/merged"; exit 0 ;;
+      *) echo "${state}"; exit 0 ;;
+    esac ;;
+  "pr create")
+    prev=""; for arg in "$@"; do [ "$prev" != --head ] || printf '%s' "$arg" >"${env.dir}/branch"; prev="$arg"; done
+    echo "https://example.invalid/pull/9"; exit 0 ;;
+  "pr merge")
+    if [ -f "${env.dir}/branch" ]; then cp "${env.dir}/branch" "${env.dir}/merged"
+    else printf '%s' "publish-queue/retry-${slug}-20260101-000000" >"${env.dir}/merged"; fi
+    exit ${mergeExit} ;;
   "pr checks")
     line="$(head -n 1 "${checksFile}")"
     if [ "$(wc -l <"${checksFile}")" -gt 1 ]; then sed -i.bak 1d "${checksFile}"; fi
     [ "$line" = none ] || echo "$line"
     exit 0 ;;
-  "pr merge"|"pr close") exit 0 ;;
+  "pr close") exit 0 ;;
 esac
 exit 2
 `, { mode: 0o755 });
@@ -272,6 +282,16 @@ exit 2
     assert.ok(calls.findIndex((c) => c.startsWith("pr merge"))
       > calls.findLastIndex((c) => c.startsWith("pr checks")));
     assert.match(result.stdout, /Merge: merged/);
+    assert.deepEqual(pushedBranches(env), [], "the merged queue branch must be deleted");
+
+    // gh exits non-zero after a successful merge (its local branch cleanup
+    // fails in a detached worktree); GitHub's PR state decides, not the exit.
+    env = setup("merge-exit-after-merge");
+    fakeGh(env, { mergeExit: 1 });
+    result = work(env);
+    assertRun(result, "merge gate: gh fails after the merge");
+    assert.match(result.stdout, /Merge: merged/);
+    assert.deepEqual(pushedBranches(env), []);
 
     // Failed required check: the PR stays open and nothing is merged.
     env = setup("check-fails");
@@ -290,7 +310,7 @@ exit 2
     assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 0,
       `worker opened a duplicate queue PR:\n${calls.join("\n")}`);
     assert.deepEqual(pushedBranches(env), []);
-    assert.ok(calls.some((c) => c === `pr merge ${existingPr} --squash --delete-branch`));
+    assert.ok(calls.some((c) => c === `pr merge ${existingPr} --squash`));
     assert.match(result.stdout, /merged \(existing PR\)/);
 
     // --pr-only leaves an open PR to the human and does nothing else.
@@ -310,7 +330,7 @@ exit 2
     calls = ghCalls(env);
     assert.ok(calls.some((c) => c.startsWith(`pr close ${existingPr} --delete-branch`)));
     assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 1);
-    assert.equal(pushedBranches(env).length, 1);
+    assert.deepEqual(pushedBranches(env), [], "the recreated branch is deleted after its merge");
 
     // Several open PRs for one head: stop and ask for cleanup.
     env = setup("duplicates");

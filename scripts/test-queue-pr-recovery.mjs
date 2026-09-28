@@ -11,7 +11,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zenn-recovery-test-'));
 const checkout = path.join(root, 'checkout'), remote = path.join(root, 'remote.git'), bin = path.join(root, 'bin');
 const qpath = 'config/zenn-publish-queue.json';
 const run = (cmd, args, cwd = checkout, env = {}) => spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 60000,
-  env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 'Queue Test', GIT_AUTHOR_EMAIL: 'queue@example.invalid', GIT_COMMITTER_NAME: 'Queue Test', GIT_COMMITTER_EMAIL: 'queue@example.invalid', ARTICLE_PIPELINE_RUNTIME: '', ARTICLE_PIPELINE_RUN_DIR: '', ARTICLE_PIPELINE_MODE: 'normal', ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1', PATH: `${bin}:${process.env.PATH}`, TEST_REMOTE: remote, TEST_ROOT: root, ...env } });
+  env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 'Queue Test', GIT_AUTHOR_EMAIL: 'queue@example.invalid', GIT_COMMITTER_NAME: 'Queue Test', GIT_COMMITTER_EMAIL: 'queue@example.invalid', ARTICLE_PIPELINE_RUNTIME: '', ARTICLE_PIPELINE_RUN_DIR: '', ARTICLE_PIPELINE_MODE: 'normal', ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1', PATH: `${bin}:${process.env.PATH}`, TEST_REMOTE: remote, TEST_ROOT: root, AGENT_QUEUE_CHECK_INTERVAL_SECONDS: '0', ...env } });
 const ok = r => { assert.equal(r.status, 0, `${r.stdout}\n${r.stderr}`); return r.stdout.trim(); };
 const git = (...args) => ok(run('git', args));
 const write = (p, content) => { fs.mkdirSync(path.dirname(path.join(checkout, p)), { recursive: true }); fs.writeFileSync(path.join(checkout, p), content); };
@@ -92,7 +92,15 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
   }
   save();
   console.log(JSON.stringify({number:p.number,url:p.url,state:p.state,headRefOid:head(),headRefName:p.branch,baseRefName:'main',isCrossRepository:false,mergeCommit:p.mergeCommit}));
+} else if (args[0] === 'pr' && args[1] === 'checks') {
+  p.checks = (p.checks || 0) + 1; save();
+  const sequence = (process.env.TEST_CHECKS || 'pass').split(',');
+  const bucket = sequence[Math.min(p.checks, sequence.length) - 1];
+  if (bucket === 'none') { console.error('no checks reported on the branch'); process.exit(1); }
+  p.lastCheck = bucket; save();
+  console.log(JSON.stringify([{bucket}]));
 } else if (args[0] === 'pr' && args[1] === 'merge') {
+  if (process.env.TEST_CHECKS && JSON.parse(fs.readFileSync(file)).lastCheck !== 'pass') process.exit(4);
   p.merges = (p.merges || 0) + 1; save();
   const expected = args[args.indexOf('--match-head-commit') + 1];
   if (!args.includes('--match-head-commit') || expected !== head()) process.exit(3);
@@ -232,11 +240,11 @@ process.exit(result.status ?? 1);
 
   const noChecksBase = advance(() => write('articles/no-required-checks.md', draft('no-required-checks')));
   const noChecks = makePr('no-required-checks', noChecksBase);
-  const protectedMain = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+  const protectedMain = (git('fetch', '-q', 'origin', 'main'), git('rev-parse', 'FETCH_HEAD'));
   for (const protection of ['empty', 'missing', 'blank', 'malformed']) {
     assertFailure(recover(noChecks, ['--merge'], { TEST_PROTECTION: protection, TEST_RACE: 'merge-body-once' }), /at least one named required status check/);
     assert.equal(json(noChecks.metaFile).merges, undefined);
-    assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), protectedMain);
+    assert.equal((git('fetch', '-q', 'origin', 'main'), git('rev-parse', 'FETCH_HEAD')), protectedMain);
   }
   // Both REST representations of a named required check are supported.
   ok(recover(noChecks, ['--merge'], { TEST_PROTECTION: 'contexts-only' }));
@@ -262,6 +270,15 @@ process.exit(result.status ?? 1);
   const forever = makePr('retry-forever', base);
   assertFailure(recover(forever, ['--merge', '--attempts', '2'], { TEST_RACE: 'main-always' }), /retry limit reached \(2\)/);
   assert.equal(json(forever.state).attempts.length, 2); assert.equal(json(forever.state).status, 'recovery-failed');
+  // Required checks register only after the push: wait for them, never merge early.
+  const gated = makePr('checks-gated', (git('fetch', '-q', 'origin', 'main'), git('rev-parse', 'FETCH_HEAD')));
+  ok(recover(gated, ['--merge'], { TEST_CHECKS: 'none,pending,pass' }));
+  assert.equal(json(gated.state).status, 'merged');
+  assert.equal(json(gated.metaFile).merges, 1);
+  assert.ok(json(gated.metaFile).checks >= 3);
+  const red = makePr('checks-failing-red', (git('fetch', '-q', 'origin', 'main'), git('rev-parse', 'FETCH_HEAD')));
+  assertFailure(recover(red, ['--merge'], { TEST_CHECKS: 'pending,fail' }), /required checks failed/);
+  assert.equal(json(red.metaFile).state, 'OPEN'); assert.equal(json(red.metaFile).merges ?? 0, 0);
   const checks = makePr('checks-pending', base);
   assertFailure(recover(checks, ['--merge', '--attempts', '2'], { TEST_RACE: 'checks' }), /not merged/);
   assert.equal(json(checks.metaFile).state, 'OPEN'); assert.equal(json(checks.state).status, 'recovery-failed');
