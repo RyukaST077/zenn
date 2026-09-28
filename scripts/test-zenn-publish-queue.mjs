@@ -112,6 +112,7 @@ Remote worker fixture body.
     const fakeGh = path.join(bin, "gh");
     fs.writeFileSync(fakeGh, `#!/bin/sh
 if [ "$1" = auth ] && [ "$2" = status ]; then exit 0; fi
+if [ "$1" = pr ] && [ "$2" = list ]; then exit 0; fi
 if [ "$1" = pr ] && [ "$2" = create ]; then echo "https://example.invalid/pull/3"; exit 0; fi
 exit 2
 `, { mode: 0o755 });
@@ -158,6 +159,176 @@ exit 2
     assert.equal(sharedStatus.stdout, `?? ${workerArticle}\n`);
   } finally {
     fs.rmSync(integration, { recursive: true, force: true });
+  }
+};
+
+const testWorkerMergeGate = () => {
+  // Since main requires the article-pipeline-tests check, an immediate merge
+  // always failed, the queue state on main never advanced, and every hourly run
+  // opened another identical retry PR (77 of them). The worker must wait for the
+  // required checks and reuse an open PR for the queue head instead.
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), "zenn-publish-merge-gate-test-"));
+  const retryArticle = "articles/merge-gate-fixture.md";
+  const slug = "merge-gate-fixture";
+  const setup = (name) => {
+    const dir = path.join(base, name);
+    const remote = path.join(dir, "remote.git");
+    const checkout = path.join(dir, "checkout");
+    const bin = path.join(dir, "bin");
+    fs.mkdirSync(path.join(checkout, "articles"), { recursive: true });
+    fs.mkdirSync(path.join(checkout, "config"), { recursive: true });
+    fs.mkdirSync(path.join(checkout, "scripts"), { recursive: true });
+    fs.mkdirSync(bin, { recursive: true });
+    fs.writeFileSync(path.join(checkout, queueRelative), `${JSON.stringify({
+      version: 1,
+      zennUsername: "clopy",
+      maxPublicationsPer24Hours: 2,
+      retryAfterHours: 6,
+      entries: [{
+        article: retryArticle,
+        enqueuedAt: "2026-08-13T00:00:00.000Z",
+        attempts: 1,
+        lastAttemptAt: "2026-08-13T00:00:00.000Z",
+      }],
+    }, null, 2)}\n`);
+    fs.writeFileSync(path.join(checkout, retryArticle), `---
+title: "Merge gate fixture"
+emoji: "🧪"
+type: tech
+topics: ["test"]
+published: true
+---
+
+Merge gate fixture body.
+`);
+    fs.copyFileSync(script, path.join(checkout, "scripts/zenn-publish-queue.mjs"));
+    fs.copyFileSync(path.join(path.dirname(script), "zenn-publish-queue.sh"),
+      path.join(checkout, "scripts/zenn-publish-queue.sh"));
+    fs.writeFileSync(path.join(dir, "api.json"), '{"articles":[]}\n');
+    for (const [args, label] of [
+      [["init", "-b", "main"], "init"],
+      [["config", "user.name", "Merge Gate Test"], "user.name"],
+      [["config", "user.email", "merge-gate@example.com"], "user.email"],
+      [["add", "."], "add"],
+      [["commit", "-m", "fixture"], "commit"],
+    ]) assertRun(runAt(checkout, "git", args), `merge gate git ${label}`);
+    assertRun(runAt(dir, "git", ["init", "--bare", remote]), "merge gate bare");
+    assertRun(runAt(checkout, "git", ["remote", "add", "origin", remote]), "merge gate remote");
+    assertRun(runAt(checkout, "git", ["push", "-u", "origin", "main"]), "merge gate push");
+    return { dir, remote, checkout, bin, log: path.join(dir, "gh.log") };
+  };
+  // The fake gh prints what the real one prints after --jq. `checks` is a list
+  // of successive `gh pr checks` outputs; the last one repeats.
+  const fakeGh = (env, { existing = "", state = "CLEAN", checks = ["pass"], listFails = false }) => {
+    const checksFile = path.join(env.dir, "checks");
+    fs.writeFileSync(checksFile, `${checks.join("\n")}\n`);
+    fs.writeFileSync(path.join(env.bin, "gh"), `#!/bin/sh
+echo "$*" >>"${env.log}"
+case "$1 $2" in
+  "auth status") exit 0 ;;
+  "pr list") ${listFails ? "exit 1" : `printf '%s' '${existing}'; exit 0`} ;;
+  "pr view") echo "${state}"; exit 0 ;;
+  "pr create") echo "https://example.invalid/pull/9"; exit 0 ;;
+  "pr checks")
+    line="$(head -n 1 "${checksFile}")"
+    if [ "$(wc -l <"${checksFile}")" -gt 1 ]; then sed -i.bak 1d "${checksFile}"; fi
+    [ "$line" = none ] || echo "$line"
+    exit 0 ;;
+  "pr merge"|"pr close") exit 0 ;;
+esac
+exit 2
+`, { mode: 0o755 });
+  };
+  const work = (env, args = []) => runAt(env.checkout, "bash", [
+    "scripts/zenn-publish-queue.sh", ...args, "--now", now,
+  ], {
+    env: {
+      PATH: `${env.bin}:${process.env.PATH}`,
+      PUBLISH_QUEUE_API_FILE: path.join(env.dir, "api.json"),
+      PUBLISH_QUEUE_CHECK_INTERVAL_SECONDS: "0",
+      PUBLISH_QUEUE_CHECK_TIMEOUT_SECONDS: "30",
+    },
+  });
+  const ghCalls = (env) => (fs.existsSync(env.log) ? fs.readFileSync(env.log, "utf8") : "")
+    .trim().split("\n").filter(Boolean);
+  const pushedBranches = (env) => runAt(env.dir, "git", [
+    `--git-dir=${env.remote}`, "for-each-ref", "--format=%(refname)", "refs/heads/publish-queue/",
+  ]).stdout.trim().split("\n").filter(Boolean);
+  const existingPr = "https://example.invalid/pull/7";
+
+  try {
+    // New PR: no checks reported yet, then pending, then pass -> merge once.
+    let env = setup("new-pr");
+    fakeGh(env, { checks: ["none", "pending", "pass"] });
+    let result = work(env);
+    assertRun(result, "merge gate: new PR");
+    let calls = ghCalls(env);
+    assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 1);
+    assert.ok(calls.filter((c) => c.startsWith("pr checks")).length >= 3,
+      `worker merged before the required checks passed:\n${calls.join("\n")}`);
+    const merges = calls.filter((c) => c.startsWith("pr merge"));
+    assert.equal(merges.length, 1);
+    assert.doesNotMatch(merges[0], /--auto/);
+    assert.ok(calls.findIndex((c) => c.startsWith("pr merge"))
+      > calls.findLastIndex((c) => c.startsWith("pr checks")));
+    assert.match(result.stdout, /Merge: merged/);
+
+    // Failed required check: the PR stays open and nothing is merged.
+    env = setup("check-fails");
+    fakeGh(env, { checks: ["pending", "fail"] });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /required checks failed; leaving PR open/);
+    assert.equal(ghCalls(env).filter((c) => c.startsWith("pr merge")).length, 0);
+
+    // An open PR for the head is merged, not duplicated.
+    env = setup("existing-clean");
+    fakeGh(env, { existing: existingPr, state: "BLOCKED", checks: ["pending", "pass"] });
+    result = work(env);
+    assertRun(result, "merge gate: existing PR");
+    calls = ghCalls(env);
+    assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 0,
+      `worker opened a duplicate queue PR:\n${calls.join("\n")}`);
+    assert.deepEqual(pushedBranches(env), []);
+    assert.ok(calls.some((c) => c === `pr merge ${existingPr} --squash --delete-branch`));
+    assert.match(result.stdout, /merged \(existing PR\)/);
+
+    // --pr-only leaves an open PR to the human and does nothing else.
+    env = setup("existing-pr-only");
+    fakeGh(env, { existing: existingPr });
+    result = work(env, ["--pr-only"]);
+    assertRun(result, "merge gate: existing PR, --pr-only");
+    assert.match(result.stdout, /waiting for human merge/);
+    assert.deepEqual(ghCalls(env).filter((c) => /^pr (create|merge|close)/.test(c)), []);
+    assert.deepEqual(pushedBranches(env), []);
+
+    // A PR built on an older main is closed and recreated from the current one.
+    env = setup("existing-behind");
+    fakeGh(env, { existing: existingPr, state: "BEHIND" });
+    result = work(env);
+    assertRun(result, "merge gate: stale existing PR");
+    calls = ghCalls(env);
+    assert.ok(calls.some((c) => c.startsWith(`pr close ${existingPr} --delete-branch`)));
+    assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 1);
+    assert.equal(pushedBranches(env).length, 1);
+
+    // Several open PRs for one head: stop and ask for cleanup.
+    env = setup("duplicates");
+    fakeGh(env, { existing: `${existingPr}\nhttps://example.invalid/pull/8` });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /multiple open queue PRs/);
+    assert.deepEqual(pushedBranches(env), []);
+
+    // If the open PRs cannot be listed, fail closed instead of opening another.
+    env = setup("list-fails");
+    fakeGh(env, { listFails: true });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /refusing to open another/);
+    assert.deepEqual(pushedBranches(env), []);
+  } finally {
+    fs.rmSync(base, { recursive: true, force: true });
   }
 };
 
@@ -422,6 +593,7 @@ Test body.
   testBlockFlow();
   testGiveUpTimeline();
   testWorkerFlow();
+  testWorkerMergeGate();
   // The shipped queue must stay patient enough for Zenn's real latency. Measured
   // on 2026-09-07 from `source_repo_updated_at` on 37 published articles: the lag
   // between the publish commit landing on main and Zenn reading the file had a
