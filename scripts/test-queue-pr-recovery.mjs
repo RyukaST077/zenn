@@ -91,7 +91,13 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
     git('update-ref', 'refs/heads/' + p.branch, next, old);
   }
   save();
-  console.log(JSON.stringify({number:p.number,url:p.url,state:p.state,headRefOid:head(),headRefName:p.branch,baseRefName:'main',isCrossRepository:false,mergeCommit:p.mergeCommit}));
+  const lag = process.env.TEST_ROOT + '/head-lag.json';
+  let shown = head();
+  if (fs.existsSync(lag)) {
+    const l = JSON.parse(fs.readFileSync(lag));
+    if (l.remaining > 0) { shown = l.previous; l.remaining--; fs.writeFileSync(lag, JSON.stringify(l)); }
+  }
+  console.log(JSON.stringify({number:p.number,url:p.url,state:p.state,headRefOid:shown,headRefName:p.branch,baseRefName:'main',isCrossRepository:false,mergeCommit:p.mergeCommit}));
 } else if (args[0] === 'pr' && args[1] === 'checks') {
   p.checks = (p.checks || 0) + 1; save();
   const sequence = (process.env.TEST_CHECKS || 'pass').split(',');
@@ -130,6 +136,10 @@ if (process.env.TEST_PUSH_RACE && args[0] === 'push' && args.some(a => a.startsW
   const replacement = process.env.TEST_PUSH_RACE === 'rewind' ? g('rev-parse', previous + '^') :
     g('commit-tree', g('rev-parse', previous + '^{tree}'), '-p', previous, '-m', 'concurrent push');
   g('update-ref', 'refs/heads/' + pr.branch, replacement, previous);
+}
+if (process.env.TEST_HEAD_LAG && args[0] === 'push' && args.some(a => a.startsWith('--force-with-lease='))) {
+  const lease = args.find(a => a.startsWith('--force-with-lease=')).split(':').pop();
+  fs.writeFileSync(process.env.TEST_ROOT + '/head-lag.json', JSON.stringify({previous: lease, remaining: Number(process.env.TEST_HEAD_LAG)}));
 }
 const result = cp.spawnSync(actual, args, {stdio:'inherit'});
 process.exit(result.status ?? 1);
@@ -270,6 +280,13 @@ process.exit(result.status ?? 1);
   const forever = makePr('retry-forever', base);
   assertFailure(recover(forever, ['--merge', '--attempts', '2'], { TEST_RACE: 'main-always' }), /retry limit reached \(2\)/);
   assert.equal(json(forever.state).attempts.length, 2); assert.equal(json(forever.state).status, 'recovery-failed');
+  // GitHub reports the replaced head for a moment after the reapply push; that
+  // lag must not be mistaken for another writer.
+  const lagged = makePr('head-sync-lagged', base);
+  advance(() => write('articles/unrelated-lag-fixture.md', draft('unrelated-lag-fixture')));
+  ok(recover(lagged, ['--merge'], { TEST_HEAD_LAG: '2' }));
+  assert.equal(json(lagged.state).status, 'merged');
+  assert.notEqual(json(lagged.state).expected_head, lagged.head, 'the PR must have been reapplied');
   // Required checks register only after the push: wait for them, never merge early.
   const gated = makePr('checks-gated', (git('fetch', '-q', 'origin', 'main'), git('rev-parse', 'FETCH_HEAD')));
   ok(recover(gated, ['--merge'], { TEST_CHECKS: 'none,pending,pass' }));

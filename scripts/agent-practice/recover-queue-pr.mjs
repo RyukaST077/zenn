@@ -111,6 +111,12 @@ const waitForRequiredChecks = () => {
     sleep(interval * 1000);
   }
 };
+// GitHub updates a PR's head asynchronously after a push. Until it catches up,
+// the head we just replaced is expected; any other head still fails verifyPr.
+const waitForPrHead = previous => {
+  const deadline = Date.now() + Number(process.env.AGENT_QUEUE_HEAD_SYNC_SECONDS || 60) * 1000;
+  while (pr().headRefOid === previous && Date.now() < deadline) sleep(2000);
+};
 const verifyPr = () => {
   const current = pr();
   if (current.headRefOid !== state.expected_head || current.headRefName !== state.branch || current.baseRefName !== state.base || current.isCrossRepository)
@@ -244,9 +250,11 @@ try {
         state.pending_head = commit;
         save('updating-pr');
         run('git', ['push', `--force-with-lease=refs/heads/${state.branch}:${state.expected_head}`, 'origin', `${commit}:refs/heads/${state.branch}`]);
+        const replaced = state.expected_head;
         state.expected_head = commit;
         delete state.pending_head;
         save('recovered');
+        waitForPrHead(replaced);
       }
       if (verifyPr().state === 'MERGED') { state.merge_commit = pr().mergeCommit?.oid; save('merged'); finished = true; break; }
       if (remoteHead(state.base) !== base) { save('retrying', 'base advanced after recovery'); continue; }
