@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-code-fast-mode-gate-precedence-decision.md",
-      "enqueuedAt": "2026-09-24T03:48:43.052Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-09-24T17:52:21.176Z"
-    },
-    {
       "article": "articles/unsnooze-rate-limit-auto-resume-guide.md",
       "enqueuedAt": "2026-09-24T01:12:36.328Z",
       "attempts": 0,
