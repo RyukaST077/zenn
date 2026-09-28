@@ -101,6 +101,10 @@ TS="$(date +%Y%m%d-%H%M%S)"
 PIPE_DIR="logs/agent/pipeline-$TS"
 PLOG="$PIPE_DIR/pipeline.log"
 CONTRACT_TOOL="scripts/agent-stage-result-contract.mjs"
+IDENTITY_TOOL="scripts/article-identity.mjs"
+IDENTITY_STATE="$PIPE_DIR/article-identity.json"
+ARTICLE_IDENTITY=""
+IDENTITY_PROMPT=""
 ARM_TOOL="scripts/analytics/next-arm.mjs"
 RESULT_TOOL="scripts/validate-agent-stage-result.mjs"
 RUN_RESULT_TOOL="scripts/validate-agent-run-result.mjs"
@@ -182,6 +186,7 @@ command -v git >/dev/null 2>&1 || die "git is required"
 command -v gh >/dev/null 2>&1 || die "gh is required"
 command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$CONTRACT_TOOL" ] || die "agent stage contract tool is missing"
+[ -f "$IDENTITY_TOOL" ] || die "article identity helper is missing"
 [ -f "$ARM_TOOL" ] || die "experiment arm allocator is missing"
 [ -f "$RESULT_TOOL" ] || die "agent stage result validator is missing"
 [ -f "$RUN_RESULT_TOOL" ] || die "agent direct-run result validator is missing"
@@ -244,6 +249,10 @@ restart_after_usage_limit() {
   fi
   if [ -n "$resume_log" ] && [ ! -f "$resume_log" ]; then
     die "$stage selected a missing execution log for automatic resume: $resume_log"
+  fi
+  if [ -n "$resume_log" ] && [ -n "$ARTICLE_IDENTITY" ]; then
+    node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" \
+      --save "$(dirname "$resume_log")/article-identity.json" || die "usage-limit resume identity failed"
   fi
 
   next_count=$((AGENT_PIPELINE_USAGE_RESUME_COUNT + 1))
@@ -315,6 +324,9 @@ run_stage() {
   local schema="$PIPE_DIR/$idx-$stage.schema.json"
   local validation_error="$PIPE_DIR/$idx-$stage.validation.stderr"
   local seconds contract rc stage_prompt schema_json
+  case "$stage" in
+    draft|review|revise) prompt="$prompt $IDENTITY_PROMPT" ;;
+  esac
   seconds="$(stage_timeout "$stage")"
   node "$CONTRACT_TOOL" schema "$stage" "$schema" || die "$stage schema generation failed"
   contract="$(node "$CONTRACT_TOOL" prompt "$stage")" || die "$stage result prompt generation failed"
@@ -418,6 +430,22 @@ run_stage() {
   STAGE_ARTIFACT="$(node "$RESULT_TOOL" "${validation_args[@]}" 2>"$validation_error")"
   local result_rc=$?
   set -e
+  if [ "$result_rc" = 0 ] && [ -n "$ARTICLE_IDENTITY" ]; then
+    # The shell retains the original identity; editing the saved state or
+    # registration during a model stage cannot silently redefine the article.
+    node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" \
+      2>>"$validation_error" || die "registered article identity changed during $stage; see $validation_error"
+    case "$stage" in
+      draft|review|revise)
+        local identity_article="$STAGE_ARTIFACT"
+        [ "$stage" != review ] || identity_article="$ARTICLE"
+        if ! node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" \
+          --article "$identity_article" --result "$result" 2>>"$validation_error"; then
+          result_rc=2
+        fi
+        ;;
+    esac
+  fi
   [ ! -s "$validation_error" ] || sed -n '1,200p' "$validation_error" >>"$PLOG"
   if [ "$result_rc" = 4 ] && [ "$SCHEDULED" = 1 ]; then
     retry_pipeline content "stage-abort-$stage" "$stage selected no safe or article-worthy output; another scheduled topic may be tried"
@@ -437,6 +465,21 @@ run_stage() {
   [ "$result_rc" = 0 ] || die "$stage result contract failed: $result"
   STAGE_RESULT="$result"
   log "$stage complete: $STAGE_ARTIFACT"
+}
+
+bind_article_identity() {
+  local identity_args=(init --report "$REPORT" --state "$IDENTITY_STATE")
+  if [ -n "$RESUME_RUN_LOG" ]; then
+    identity_args+=(--resume-log "$RESUME_RUN_LOG")
+  else
+    node scripts/analytics/register-article.mjs --check --from-research "$REPORT" \
+      || die "search article contract is missing or invalid: $REPORT"
+    identity_args+=(--allocation "$PIPE_DIR/arm-allocation.json" --allocation-json "$ARM_ALLOCATION" --snapshot "$SHARED_ARTIFACT_SNAPSHOT")
+  fi
+  ARTICLE_IDENTITY="$(node "$IDENTITY_TOOL" "${identity_args[@]}" 2>>"$PLOG")" \
+    || die "article registration identity failed; see $PLOG"
+  IDENTITY_PROMPT="Registered article identity: $ARTICLE_IDENTITY. Use its exact article path and metadata.slug. Preserve the registered slug even if the title changes. Read the authoritative contract file, not only the derived ledger. Do not edit the research, registration or identity state to accommodate a different filename."
+  log "article identity fixed: $(node -e 'process.stdout.write(JSON.parse(process.argv[1]).article)' "$ARTICLE_IDENTITY")"
 }
 
 run_experiment_direct() {
@@ -559,6 +602,7 @@ if [ -n "$RESUME_RUN_LOG" ]; then
   ' "$MANIFEST")"
   case "$REPORT" in research/agent/*.md) ;; *) die "resume research path is invalid: $REPORT" ;; esac
   [ -f "$REPORT" ] || die "resume research report does not exist: $REPORT"
+  bind_article_identity
   log "resuming after verified run: $RUN_LOG"
 else
   # Which arm the next article belongs to is decided from the ledger BEFORE the
@@ -566,13 +610,12 @@ else
   # is how EXP-001 ended up with 0 of its 12 treatment articles while both
   # registered contracts went to exploration.
   ARM_PROMPT="$(node "$ARM_TOOL" --prompt)" || die "experiment arm allocation failed"
-  ALLOCATED_ARM="$(node "$ARM_TOOL" --json | node -e '
-    const chunks = [];
-    process.stdin.on("data", (chunk) => chunks.push(chunk));
-    process.stdin.on("end", () => {
-      process.stdout.write(String(JSON.parse(chunks.join("")).arm ?? ""));
-    });
-  ')" || die "experiment arm allocation failed"
+  ARM_ALLOCATION="$(node "$ARM_TOOL" --json)" || die "experiment arm allocation failed"
+  printf '%s\n' "$ARM_ALLOCATION" >"$PIPE_DIR/arm-allocation.json"
+  ALLOCATED_ARM="$(node -e '
+    const fs = require("node:fs");
+    process.stdout.write(String(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).arm ?? ""));
+  ' "$PIPE_DIR/arm-allocation.json")" || die "experiment arm allocation failed"
   [ -n "$ALLOCATED_ARM" ] || die "experiment arm allocation returned no arm"
   log "arm assignment: $(node "$ARM_TOOL" | sed -n '1p;4p' | tr '\n' ' ')"
 
@@ -580,6 +623,7 @@ else
   SEARCH_PROMPT="$SEARCH_PROMPT Prefer a claim whose expected and competing outcomes can be distinguished from deterministic CLI output, filesystem state, or configuration behavior without depending on a model to reproduce precise timing, simultaneous tool ordering, or probabilistic narration."
   run_stage search 1 zenn-agent-search-knowhow research/agent "$AGENT_PIPELINE_SEARCH" "$SEARCH_PROMPT"
   REPORT="$STAGE_ARTIFACT"
+  bind_article_identity
 
   PLAN_PROMPT="Research report: $REPORT. Before choosing any generated path, inspect the existing shared artifact inventory at $SHARED_ARTIFACT_SNAPSHOT. Create exactly one safe plan and one runner-compatible version 2 manifest for the selected claim. Every authenticated live case must complete with the machine's existing successful claude auth status or codex login status and subscription authentication; do not require an API key, new secret, separate paid API billing, or interactive login, and reject the report as infeasible if its tested mode discards those existing credentials. Bound live probes with the manifest timeout and turn limits; do not add --max-budget-usd because a low currency cap can terminate a valid subscription-backed probe before verification. Every case must declare execution with mode, wrapper, preflight_cli, and environment. Use direct/inherit with null wrapper fields unless a fixture adapter is essential. A fixture-wrapper case must declare executable fixture-relative wrapper and offline fake preflight CLI paths, protect both paths, and pass no credential, network, model, or paid request during preflight. Inspect scripts/agent-practice/run-experiment.mjs and make the wrapper accept its exact buildAgentArgs contract; in particular, Codex cases receive --sandbox workspace-write, so a wrapper must not require read-only. If a fake CLI starts asynchronous work needed by verification, wait for its required artifacts with a bounded timeout before the fake CLI exits. A Node-based fake CLI that allowlists environment names must tolerate harmless variables injected by the platform runtime, including macOS __CF_USER_TEXT_ENCODING, while still rejecting credential-bearing variables. Never rely on a launch override described only in prose. Reuse an origin-tracked existing fixture only when it fits without distortion and do not modify it. Otherwise create the smallest deterministic self-contained fixture under fixtures/agent-practice/: the new manifest id and fixture basename must be identical and end in -YYYYMMDD-HHMM. Never overwrite or reuse an untracked shared artifact path. New product guidance must live under fixtures/agent-practice/guidance/<manifest-id>/. Require no dependency installation, network, secret, browser login, production state, or external service. Use the fewest providers and cases that falsify the claim, pre-register the expected and competing outcomes, define deterministic verification and strict changed-path boundaries, validate the manifest, and return it as the primary artifact."
   PLAN_PROMPT="$PLAN_PROMPT The verifier must treat every pre-registered conclusive expected or competing outcome as a successful evidence capture, emit an outcome-specific marker for each, and leave the verdict to analysis; it must fail only for inconclusive harness, safety, service, or evidence-integrity conditions. Do not require an exact count of provider result events unless the wrapper first filters nested child events from the single top-level result."
@@ -605,6 +649,9 @@ else
 
   run_experiment_direct
 fi
+
+node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" \
+  --save "$(dirname "$RUN_LOG")/article-identity.json" || die "could not persist verified run identity"
 
 ANALYZE_PROMPT="Execution log: $RUN_LOG. Inspect the manifest and every case's raw metrics, verifier output, and diff. Create exactly one analysis report with one verdict, one next action, and the required editorial brief. A negative or conditional finding may still recommend drafting when it is reproducible and gives the named reader a useful decision."
 run_stage analyze 4 zenn-agent-analyze-results logs/agent 0 "$ANALYZE_PROMPT" "$RESUME_RUN_LOG"
@@ -693,6 +740,8 @@ while :; do
 done
 
 if [ "${ARTICLE_PIPELINE_MODE:-normal}" = development ]; then
+  node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" --article "$ARTICLE" \
+    || die "final article identity failed"
   log "development complete: final review passed; article held locally"
   exit 0
 fi
@@ -702,7 +751,9 @@ if [ -n "${ARTICLE_PIPELINE_RUNTIME:-}" ]; then
     || die "control code changed during run"
 fi
 
-PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR")
+node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" --article "$ARTICLE" \
+  || die "final article identity failed"
+PUBLISH_ARGS=(--article "$ARTICLE" --review "$REVIEW" --pipeline "$PIPE_DIR" --identity-state "$IDENTITY_STATE")
 # A run that allocated an arm must not reach main without the matching contract:
 # the article would be published and the experiment would still read 0/12. On a
 # resumed run the arm was allocated by the earlier attempt, so only require that
