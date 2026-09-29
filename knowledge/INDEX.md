@@ -7,6 +7,7 @@ Search: `grep -ri "<keyword>" knowledge/`
 
 ## Entries
 
+- [2026-09-29] [必須チェック追加後に公開キュー/キューPRの自動マージが失敗し、retry PRが毎時重複する](./2026-09-29-publish-queue-merge-before-required-checks.md) — `Code/Logic` / tags: github, gh-cli, merge-failure, duplicate-pr, publish-queue
 - [2026-09-29] [AI記事がレビュー合格後にslugと登録済み契約の不一致で停止する](./2026-09-29-agent-article-slug-contract-mismatch.md) — `Code/Logic` / tags: slug, article-contract, registration, resume, publication-queue
 - [2026-09-24] [unsnoozeのNode標準テストもnpm ciなしではpicocolors不足になる](./2026-09-24-unsnooze-tests-missing-dependencies.md) — `Dependency` / tags: unsnooze, npm-ci, picocolors, node-test
 - [2026-09-24] [Codex記事パイプラインのplanが記事契約なしで停止する](./2026-09-24-codex-search-missing-article-contract.md) — `Code/Logic` / tags: codex, article-contract, search-topic, plan-practice, worktree
