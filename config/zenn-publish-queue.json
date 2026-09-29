@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/unsnooze-rate-limit-auto-resume-guide.md",
-      "enqueuedAt": "2026-09-24T01:12:36.328Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-09-29T11:32:48.060Z"
-    },
-    {
       "article": "articles/codex-gpt6-config-migration-checklist.md",
       "enqueuedAt": "2026-09-25T20:27:13.653Z",
       "attempts": 0,
