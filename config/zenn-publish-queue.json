@@ -28,6 +28,12 @@
       "enqueuedAt": "2026-09-28T22:38:32.492Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-mcp-server-removal-migration-checklist.md",
+      "enqueuedAt": "2026-09-29T20:55:52.171Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
