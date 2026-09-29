@@ -1,0 +1,39 @@
+{
+  "slug": "codex-mcp-server-removal-migration-checklist",
+  "topics": [
+    "claudecode",
+    "codex",
+    "cli",
+    "aiagent"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "migration",
+    "titleFeatures": {
+      "length": 69,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-09-29T20:37:07.536Z",
+    "contract": {
+      "targetReader": "Codex CLIを`codex mcp-server`としてMCPサーバーに見立て、Claude Codeの.mcp.json等に`command: codex, args: [mcp-server]`のように登録してタスクを委譲していたが、Codex CLIを0.154.0以降にアップデートした(またはこれからする)人",
+      "readerDecision": "自分の古いcodex mcp-server配線を、Claude Code統合なら公式プラグインopenai/codex-plugin-ccに、自作クライアント統合ならcodex app-server proxyのソケット橋渡しに、どちらに置き換えるべきか(あるいは実は無関係で放置してよいか)を自分の設定を見て判定できる",
+      "takeaway": "codex mcp-serverの残存参照を検出するgrepチェックスクリプト、用途別の置き換え決定表、Claude Code統合の置き換えコマンド列全文、app-server proxy配線の設定スニペット",
+      "verificationItems": [
+        "GitHub Releasesで確認したv0.149.0(非推奨警告追加)とv0.154.0(削除)の境目を自分のcodex --versionと照合し、自分の環境で実際にmcp-serverが機能しなくなっているかを判定する",
+        "`.mcp.json`に`codex mcp-server`を指定した状態でclaude mcp add/getを実行し、エラーで落ちるのか対話プロンプト待ちのような分かりにくい壊れ方をするのかを実機で確認する",
+        "codex mcp(外部MCPサーバー管理、クライアント側)を触っても削除されたmcp-server(サーバー側)の代替にはならないことを、実際のサブコマンド一覧と向きの違いで確認する",
+        "codex app-server daemon startが返すsocketPathを使い、codex app-server proxy --sockでstdio橋渡しが確立できるかを確認する(既存のcodex loginセッションのみで、追加ログインなしに動くか含む)",
+        "openai/codex-plugin-ccのインストール〜/codex:setup相当の初期化が、既存のchatGPTサブスクリプション認証(codex login)のみで完了し、新規APIキー入力を要求されないことを確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "GitHub Releases(一次情報)でcodex mcp-serverはv0.149.0(2026-08-20)で非推奨警告、v0.154.0(2026-09-09)で完全削除されたことを確認(調査日2026-09-29時点で3週間以内の現行トピック)。analytics/topic-feedback.mdの市場勝ち型集計でmigration型は上位記事で持ち帰りチェックリストが勝ち筋として観測されており(節1)、claudecodeはprimaryTopic選定表で『昇格根拠まで測れる』(d30-45 n=400)水準。本リポジトリ内89記事・研究レポート11件のいずれもcodex mcp-serverの廃止・移行経路を扱っておらず(grepで無検出)、Claude Code側のMCP関連記事(claude-mcp-server-scope-decision.md)はCodex側の配線変更とは主題が異なる。"
+    }
+  }
+}
