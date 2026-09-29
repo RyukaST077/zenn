@@ -8,8 +8,8 @@
     {
       "article": "articles/unsnooze-rate-limit-auto-resume-guide.md",
       "enqueuedAt": "2026-09-24T01:12:36.328Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-09-28T23:24:19.157Z"
     },
     {
       "article": "articles/codex-gpt6-config-migration-checklist.md",
@@ -20,6 +20,12 @@
     {
       "article": "articles/claude-code-agents-md-fallback-migration-checklist.md",
       "enqueuedAt": "2026-09-26T21:14:31.989Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-mcp-server-scope-decision.md",
+      "enqueuedAt": "2026-09-28T22:38:32.492Z",
       "attempts": 0,
       "lastAttemptAt": null
     }

@@ -3,7 +3,7 @@ title: "unsnoozeでClaude Code・Codexをレートリミット解除後に自動
 emoji: "⏰"
 type: "tech"
 topics: ["claudecode", "codex", "cli", "aiagent"]
-published: false
+published: true
 ---
 
 Claude CodeやCodex CLIに長い作業を任せていると、利用上限で停止し、解除された後も「続きを進めて」と入力するまで作業が止まることがあります。
