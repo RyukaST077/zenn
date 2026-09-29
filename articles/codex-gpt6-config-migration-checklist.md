@@ -3,7 +3,7 @@ title: "Codex CLIでGPT-6 Sol/Lunaへ切り替える前にconfig.tomlで点検�
 emoji: "🧭"
 type: "tech"
 topics: ["cli", "codex", "aiagent", "ai"]
-published: false
+published: true
 ---
 
 ## この記事の結論
