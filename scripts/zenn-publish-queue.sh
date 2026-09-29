@@ -184,6 +184,9 @@ if [ -n "$EXISTING" ]; then
     *" fail "*|*" cancel "*)
       echo "required checks failed on the open queue PR; fix or close it first: $EXISTING" >&2
       exit 1 ;;
+    "  ")
+      echo "could not read required checks of the open queue PR; not rebuilding it: $EXISTING" >&2
+      exit 1 ;;
   esac
   # Like merge, gh's --delete-branch fails in this detached worktree, so close,
   # confirm on GitHub, and delete the remote branch explicitly.

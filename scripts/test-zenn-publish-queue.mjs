@@ -328,6 +328,14 @@ exit 2
     assert.deepEqual(ghCalls(env).filter((c) => /^pr (create|merge|close)/.test(c)), []);
     assert.deepEqual(pushedBranches(env), []);
 
+    // Unreadable checks are not a pass: stop instead of closing the PR.
+    env = setup("existing-unreadable");
+    fakeGh(env, { existing: existingPr, checks: ["none"] });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /could not read required checks/);
+    assert.deepEqual(ghCalls(env).filter((c) => /^pr (create|merge|close)/.test(c)), []);
+
     // --pr-only leaves an open PR to the human and does nothing else.
     env = setup("existing-pr-only");
     fakeGh(env, { existing: existingPr });
