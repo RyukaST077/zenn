@@ -219,7 +219,7 @@ Merge gate fixture body.
   };
   // The fake gh prints what the real one prints after --jq. `checks` is a list
   // of successive `gh pr checks` outputs; the last one repeats.
-  const fakeGh = (env, { existing = "", state = "CLEAN", checks = ["pass"], listFails = false, mergeExit = 0 }) => {
+  const fakeGh = (env, { existing = "", state = "CLEAN", checks = ["pass"], listFails = false, mergeExit = 0, closeExit = 0 }) => {
     const checksFile = path.join(env.dir, "checks");
     fs.writeFileSync(checksFile, `${checks.join("\n")}\n`);
     fs.writeFileSync(path.join(env.bin, "gh"), `#!/bin/sh
@@ -229,6 +229,7 @@ case "$1 $2" in
   "pr list") ${listFails ? "exit 1" : `printf '%s' '${existing}'; exit 0`} ;;
   "pr view")
     case "$*" in
+      *CLOSED*) [ ! -f "${env.dir}/closed" ] || cat "${env.dir}/closed"; exit 0 ;;
       *headRefName*) [ ! -f "${env.dir}/merged" ] || cat "${env.dir}/merged"; exit 0 ;;
       *) echo "${state}"; exit 0 ;;
     esac ;;
@@ -244,7 +245,7 @@ case "$1 $2" in
     if [ "$(wc -l <"${checksFile}")" -gt 1 ]; then sed -i.bak 1d "${checksFile}"; fi
     [ "$line" = none ] || echo "$line"
     exit 0 ;;
-  "pr close") exit 0 ;;
+  "pr close") printf '%s' "${staleBranch}" >"${env.dir}/closed"; exit ${closeExit} ;;
 esac
 exit 2
 `, { mode: 0o755 });
@@ -265,6 +266,7 @@ exit 2
     `--git-dir=${env.remote}`, "for-each-ref", "--format=%(refname)", "refs/heads/publish-queue/",
   ]).stdout.trim().split("\n").filter(Boolean);
   const existingPr = "https://example.invalid/pull/7";
+  const staleBranch = `publish-queue/retry-${slug}-20260101-000000`;
 
   try {
     // New PR: no checks reported yet, then pending, then pass -> merge once.
@@ -301,17 +303,38 @@ exit 2
     assert.match(result.stderr, /required checks failed; leaving PR open/);
     assert.equal(ghCalls(env).filter((c) => c.startsWith("pr merge")).length, 0);
 
-    // An open PR for the head is merged, not duplicated.
-    env = setup("existing-clean");
-    fakeGh(env, { existing: existingPr, state: "BLOCKED", checks: ["pending", "pass"] });
+    // An open PR from an earlier run is never merged: its commits, action and
+    // lastAttemptAt may be stale. It is closed and rebuilt from the current main.
+    env = setup("existing-rebuilt");
+    fakeGh(env, { existing: existingPr, checks: ["pass"] });
     result = work(env);
     assertRun(result, "merge gate: existing PR");
     calls = ghCalls(env);
-    assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 0,
-      `worker opened a duplicate queue PR:\n${calls.join("\n")}`);
+    assert.ok(calls.some((c) => c.startsWith(`pr close ${existingPr}`)));
+    assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 1);
+    assert.ok(!calls.some((c) => c.startsWith(`pr merge ${existingPr}`)),
+      `worker merged a PR it did not build:\n${calls.join("\n")}`);
+    const rebuiltMerge = calls.find((c) => c.startsWith("pr merge https://example.invalid/pull/9"));
+    assert.match(rebuiltMerge || "", /--match-head-commit [0-9a-f]{40}$/);
+    assert.match(result.stdout, /Merge: merged/);
+
+    // Failed required checks on the open PR need a human; rebuilding would
+    // only repeat them every hour.
+    env = setup("existing-red");
+    fakeGh(env, { existing: existingPr, checks: ["fail"] });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /required checks failed on the open queue PR/);
+    assert.deepEqual(ghCalls(env).filter((c) => /^pr (create|merge|close)/.test(c)), []);
     assert.deepEqual(pushedBranches(env), []);
-    assert.ok(calls.some((c) => c === `pr merge ${existingPr} --squash`));
-    assert.match(result.stdout, /merged \(existing PR\)/);
+
+    // Unreadable checks are not a pass: stop instead of closing the PR.
+    env = setup("existing-unreadable");
+    fakeGh(env, { existing: existingPr, checks: ["none"] });
+    result = work(env);
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /could not read required checks/);
+    assert.deepEqual(ghCalls(env).filter((c) => /^pr (create|merge|close)/.test(c)), []);
 
     // --pr-only leaves an open PR to the human and does nothing else.
     env = setup("existing-pr-only");
@@ -323,14 +346,20 @@ exit 2
     assert.deepEqual(pushedBranches(env), []);
 
     // A PR built on an older main is closed and recreated from the current one.
+    // gh's --delete-branch fails in the detached worktree (like merge), and
+    // `gh pr close` may exit non-zero after closing: the run must continue.
     env = setup("existing-behind");
-    fakeGh(env, { existing: existingPr, state: "BEHIND" });
+    assertRun(runAt(env.checkout, "git", ["push", "origin", `HEAD:refs/heads/${staleBranch}`]),
+      "merge gate: push stale branch");
+    fakeGh(env, { existing: existingPr, state: "BEHIND", closeExit: 1 });
     result = work(env);
     assertRun(result, "merge gate: stale existing PR");
     calls = ghCalls(env);
-    assert.ok(calls.some((c) => c.startsWith(`pr close ${existingPr} --delete-branch`)));
+    assert.ok(calls.some((c) => c.startsWith(`pr close ${existingPr}`)));
+    assert.ok(!calls.some((c) => c.startsWith("pr close") && c.includes("--delete-branch")));
     assert.equal(calls.filter((c) => c.startsWith("pr create")).length, 1);
-    assert.deepEqual(pushedBranches(env), [], "the recreated branch is deleted after its merge");
+    assert.match(result.stdout, /Merge: merged/);
+    assert.deepEqual(pushedBranches(env), [], "the stale and the recreated branches are deleted");
 
     // Several open PRs for one head: stop and ask for cleanup.
     env = setup("duplicates");
