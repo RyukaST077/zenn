@@ -8,8 +8,8 @@
     {
       "article": "articles/codex-gpt6-config-migration-checklist.md",
       "enqueuedAt": "2026-09-25T20:27:13.653Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-09-29T22:44:02.540Z"
+      "attempts": 2,
+      "lastAttemptAt": "2026-09-30T10:52:06.648Z"
     },
     {
       "article": "articles/claude-code-agents-md-fallback-migration-checklist.md",
