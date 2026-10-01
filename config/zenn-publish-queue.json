@@ -6,10 +6,10 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/codex-gpt6-config-migration-checklist.md",
-      "enqueuedAt": "2026-09-25T20:27:13.653Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-10-01T03:00:59.308Z"
+      "article": "articles/codex-gpt61-sol-astra-model-guide.md",
+      "enqueuedAt": "2026-10-01T03:05:37.907Z",
+      "attempts": 1,
+      "lastAttemptAt": "2026-10-01T03:40:46.676Z"
     },
     {
       "article": "articles/claude-code-agents-md-fallback-migration-checklist.md",
@@ -26,12 +26,6 @@
     {
       "article": "articles/codex-mcp-server-removal-migration-checklist.md",
       "enqueuedAt": "2026-09-29T20:55:52.171Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/codex-gpt61-sol-astra-model-guide.md",
-      "enqueuedAt": "2026-10-01T03:05:37.907Z",
       "attempts": 0,
       "lastAttemptAt": null
     },
