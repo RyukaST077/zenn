@@ -3,7 +3,7 @@ title: "Codexのモデル選び最新版：GPT-6.1 Sol・Astra・Lunaの使い�
 emoji: "🧭"
 type: "tech"
 topics: ["codex", "openai", "aiagent", "cli"]
-published: false
+published: true
 ---
 
 Codexのモデルが増えて、「普段はSolでいいのか」「Astraへ切り替えるのはいつか」「推論設定も最大にした方がいいのか」と迷う場面が増えました。
