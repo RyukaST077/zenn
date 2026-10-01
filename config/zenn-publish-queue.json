@@ -28,6 +28,30 @@
       "enqueuedAt": "2026-09-29T20:55:52.171Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/codex-gpt61-sol-astra-model-guide.md",
+      "enqueuedAt": "2026-10-01T03:05:37.907Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-code-model-guide-202610.md",
+      "enqueuedAt": "2026-10-01T03:05:37.995Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/pnpm12-rc-five-diffs.md",
+      "enqueuedAt": "2026-10-01T03:05:38.055Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
+      "article": "articles/vitest5-rc-breaking-changes.md",
+      "enqueuedAt": "2026-10-01T03:05:38.115Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []

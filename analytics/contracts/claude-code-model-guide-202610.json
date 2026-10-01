@@ -1,0 +1,37 @@
+{
+  "slug": "claude-code-model-guide-202610",
+  "topics": [
+    "claudecode",
+    "anthropic",
+    "aiagent",
+    "cli"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 57,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-30T17:29:16.139Z",
+    "contract": {
+      "targetReader": "Claude Codeを使い、最新モデルを日常の開発作業へ割り当てたい開発者",
+      "readerDecision": "作業の難しさと失敗の内容から、Claude Codeのモデルと開始時のeffortを選べる",
+      "takeaway": "用途別のモデルとeffortの判断表、3モデルのCLI指定例、モデル変更とeffort変更を分けるチェック表",
+      "verificationItems": [
+        "Sonnet 5.5をmedium指定で起動し、隔離fixtureの単一コマンドを完了するか確認する",
+        "Opus 5.5をmedium指定で起動し、同じ隔離fixtureの単一コマンドを完了するか確認する",
+        "Haiku 4.5をeffort省略で起動し、同じ隔離fixtureの単一コマンドを完了するか確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "ユーザーがCodexモデル選択最新版と同様のClaude版を明示的に依頼。公式資料には9月28日のSonnet5.5と9月22日のOpus5.5が掲載され、既存のモデル関連記事は5世代の設定/委譲診断が中心。analytics/topic-feedback.mdでclaudecodeのD30市場コホートは測定可能。"
+    }
+  }
+}

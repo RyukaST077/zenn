@@ -1,0 +1,37 @@
+{
+  "slug": "codex-gpt61-sol-astra-model-guide",
+  "topics": [
+    "codex",
+    "openai",
+    "aiagent",
+    "cli"
+  ],
+  "primaryTopic": "cli",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 42,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-09-30T16:56:52.837Z",
+    "contract": {
+      "targetReader": "Codexを使っておりGPT-5.6世代のSol・Terra・Lunaの選び方をGPT-6.1 Sol・GPT-6 Astraを含む現行モデルへ更新したい開発者",
+      "readerDecision": "自分のCodex作業に使うモデルと開始時の推論設定を、作業の曖昧さ・完了条件・利用量に合わせて選べる",
+      "takeaway": "用途別のモデル・推論設定の判断表と、3モデルの起動確認済みCLIコマンド",
+      "verificationItems": [
+        "GPT-6.1 Solをmedium指定でcodex execから起動し、隔離fixtureの単一コマンドが完了するか確認する",
+        "GPT-6 Astraをlow指定でcodex execから起動し、同じ隔離fixtureの単一コマンドが完了するか確認する",
+        "GPT-6 Lunaをhigh指定でcodex execから起動し、同じ隔離fixtureの単一コマンドが完了するか確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "ユーザーが既存の公開記事codex-gpt-5-6-model-guideの最新版を明示的に依頼した。既存記事はanalytics/privateの2026-10-01診断で検索到達の主要記事であることを確認したが、GA4の実数は公開成果物に転載しない。公式API changelogは2026-09-29のGPT-6.1 Sol公開を記録し、現行Codex ModelsがGPT-6.1 Solを推奨している。cliのD30市場コホートは既存feedbackで判断可能。"
+    }
+  }
+}
