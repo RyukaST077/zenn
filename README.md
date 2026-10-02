@@ -174,17 +174,19 @@ resume は `state.json` を読み、**完了済みの段をスキップして失
 
 多重起動は共通保存先の `run.lock` で防止する。競合時は理由を表示して停止し、実行中の処理や成果物を変更しない。
 
-### launchd実行時のClaude利用率ゲート
+### Claudeの利用上限に達した場合の再開
 
-`scripts/auto-publish-launchd.sh` は開始前にClaude.aiの5時間枠を確認する。残り利用可能量が
-80%以下ならリセット後に枠が回復するまで60秒間隔で待ち、記事生成を開始する。開始後も
-各AIステージの直前に再確認し、既定では残量20%以下で安全に一時停止する。途中でsession limitに
-達した場合も失敗済み成果物を捨てず、`state.json`と`logs/.auto-publish-resume`へ再開情報を保存する。
-launchdラッパーは同じ実行内で回復を待ち、完了済み段を飛ばして自動再開する。プロセスが中断されても、
+開始前・各AIステージ前の利用量チェックは行わない。利用量キャッシュの未作成や取得失敗で
+記事生成を停止することもない。Claudeの実行中に実際のsession limitへ達した場合は、
+`state.json`と`logs/.auto-publish-resume`へ再開情報を保存する。
+`scripts/auto-publish-launchd.sh` はエラーに含まれるリセット時刻まで待ち、
+完了済み段を飛ばして自動再開する。リセット時刻が不明・解釈不能な場合は成果物を保存して停止する。
+プロセスが中断されても、
 次回のlaunchd実行は新規パイプラインを作らず保存済みパイプラインを再開する。
 
-開始時のしきい値は`CLAUDE_USAGE_MIN_REMAINING_PERCENT`、段ごとのしきい値は
-`CLAUDE_STAGE_MIN_REMAINING_PERCENT`で変更できる。`--dry-run`ではゲートを通さない。
+利用量チェック用の`CLAUDE_USAGE_GATE_ENABLED`、`CLAUDE_USAGE_MIN_REMAINING_PERCENT`、
+`CLAUDE_STAGE_MIN_REMAINING_PERCENT`、`CLAUDE_LAUNCH_MIN_REMAINING_PERCENT`は使用しない。
+リセット後の待機余裕は`CLAUDE_USAGE_RESET_GRACE_SECONDS`（既定30秒）で変更できる。
 モデルとeffortは`AP_MODEL` / `AP_EFFORT`の全体設定に加え、`AP_MODEL_REVIEW`や
 `AP_EFFORT_RUN`のような`AP_MODEL_<STAGE>` / `AP_EFFORT_<STAGE>`で段ごとに上書きできる。
 

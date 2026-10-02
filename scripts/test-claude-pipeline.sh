@@ -19,7 +19,7 @@ RUNTIME_RUNLOG="$RUNTIME_RUN_DIR/execution-log.md"
 RUNTIME_SLUG="claude-command-runtime-$$"
 RUNTIME_ARTICLE="articles/$RUNTIME_SLUG.md"
 RUNTIME_REVIEW="logs/review-$RUNTIME_SLUG-test.md"
-trap 'rm -rf "$TMP" "$ARTICLE" "$INVALID_ARTICLE" "$REPORT" "$LEGACY_PIPELINE" "$RUNTIME_PIPELINE" "$RUNTIME_REPORT" "$RUNTIME_TASK" "$RUNTIME_RUN_DIR" "$RUNTIME_ARTICLE" "$RUNTIME_REVIEW"' EXIT
+trap 'if [ -f logs/.auto-publish-resume ] && [ "$(cat logs/.auto-publish-resume)" = "$RUNTIME_PIPELINE" ]; then rm -f logs/.auto-publish-resume; fi; rm -rf "$TMP" "$ARTICLE" "$INVALID_ARTICLE" "$REPORT" "$LEGACY_PIPELINE" "$RUNTIME_PIPELINE" "$RUNTIME_REPORT" "$RUNTIME_TASK" "$RUNTIME_RUN_DIR" "$RUNTIME_ARTICLE" "$RUNTIME_REVIEW"' EXIT
 
 bash -n scripts/auto-publish.sh scripts/auto-publish-launchd.sh \
   .claude/skills/review-article/scripts/check-article.sh
@@ -97,7 +97,7 @@ node scripts/pipeline-state.mjs set "$TMP/state.json" retry.pending true
 node scripts/pipeline-state.mjs review "$TMP/state.json" fix "$REPORT" 2026-08-18T00:00:00Z
 [ "$(node scripts/pipeline-state.mjs get "$TMP/state.json" review.next_stage)" = revise ]
 
-CLAUDE_USAGE_GATE_ENABLED=0 bash scripts/auto-publish.sh --dry-run >"$TMP/dry-run.out"
+bash scripts/auto-publish.sh --dry-run >"$TMP/dry-run.out"
 rg -Fq 'Claude JSON Schema + 構造化stage result' "$TMP/dry-run.out"
 rg -q -- '--json-schema' scripts/auto-publish.sh
 if rg -q 'grep -m1.*判定' scripts/auto-publish.sh; then
@@ -131,7 +131,7 @@ EOF
 chmod +x "$TMP/bin/gh"
 CURRENT_BRANCH="$(git branch --show-current)"
 PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN=true \
-  CLAUDE_USAGE_GATE_ENABLED=0 bash scripts/auto-publish.sh --resume "$LEGACY_PIPELINE" \
+  bash scripts/auto-publish.sh --resume "$LEGACY_PIPELINE" \
   >"$TMP/legacy.stdout" 2>"$TMP/legacy.stderr"
 [ -f "$LEGACY_PIPELINE/state.json" ]
 [ "$(node scripts/pipeline-state.mjs get "$LEGACY_PIPELINE/state.json" completed.review)" = true ]
@@ -142,6 +142,10 @@ PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN=true \
 cat >"$TMP/fake-claude" <<'EOF'
 #!/bin/sh
 set -eu
+if [ "${FAKE_LIMIT:-0}" = 1 ]; then
+  echo "hit your session limit; resets 9pm (Asia/Tokyo)"
+  exit 1
+fi
 prompt=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -197,7 +201,7 @@ node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.pr 
 node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.merge true
 node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" publish.pr_url '"https://example.invalid/pull/runtime"'
 PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN="$TMP/fake-claude" \
-  CLAUDE_USAGE_GATE_ENABLED=0 AP_MODEL= AP_EFFORT= \
+  AP_MODEL= AP_EFFORT= CLAUDE_USAGE_STATUSLINE_SCRIPT="$TMP/missing-statusline" \
   FAKE_REPORT="$RUNTIME_REPORT" FAKE_TASK="$RUNTIME_TASK" FAKE_RUNLOG="$RUNTIME_RUNLOG" \
   FAKE_ARTICLE="$RUNTIME_ARTICLE" FAKE_REVIEW="$RUNTIME_REVIEW" \
   FAKE_SLUG="$RUNTIME_SLUG" FAKE_CALLS="$TMP/runtime.calls" \
@@ -209,6 +213,24 @@ if rg -q 'unbound variable' "$TMP/runtime.stderr"; then
   echo "Bash 3.2 empty-array regression detected" >&2
   exit 1
 fi
+
+# An actual model limit still produces retry state instead of losing progress.
+rm -f "$RUNTIME_PIPELINE/state.json"
+node scripts/pipeline-state.mjs init "$RUNTIME_PIPELINE/state.json" "$CURRENT_BRANCH"
+node scripts/pipeline-state.mjs set "$RUNTIME_PIPELINE/state.json" completed.preflight true
+set +e
+PATH="$TMP/bin:$PATH" BASE_BRANCH="$CURRENT_BRANCH" CLAUDE_BIN="$TMP/fake-claude" \
+  FAKE_LIMIT=1 AP_MODEL= AP_EFFORT= \
+  bash scripts/auto-publish.sh --resume "$RUNTIME_PIPELINE" \
+  >"$TMP/limit.stdout" 2>"$TMP/limit.stderr"
+limit_rc=$?
+set -e
+[ "$limit_rc" = 20 ]
+[ "$(node scripts/pipeline-state.mjs get "$RUNTIME_PIPELINE/state.json" completed.search)" = false ]
+[ "$(node scripts/pipeline-state.mjs get "$RUNTIME_PIPELINE/state.json" retry.pending)" = true ]
+[ "$(node scripts/pipeline-state.mjs get "$RUNTIME_PIPELINE/state.json" retry.retry_at)" = '9pm (Asia/Tokyo)' ]
+[ "$(cat logs/.auto-publish-resume)" = "$RUNTIME_PIPELINE" ]
+rm -f logs/.auto-publish-resume
 
 # Saved data must never become an executable control-code overlay.
 printf 'REPORT=$(touch "%s")\n' "$TMP/legacy-executed" >"$TMP/unsafe-state.sh"

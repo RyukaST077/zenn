@@ -47,7 +47,6 @@ USAGE_WAITER="${CLAUDE_USAGE_WAITER:-$REPO/scripts/wait-for-claude-usage.sh}"
 : "${AUTO_PUBLISH_STATUS_DIR:=$REPO/logs/daily-status}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 : "${AUTO_PUBLISH_MAX_USAGE_RESUMES:=8}"
-: "${CLAUDE_LAUNCH_MIN_REMAINING_PERCENT:=20}"
 # Keep the scheduled workflow inside a five-hour subscription window. Direct
 # auto-publish.sh runs retain their Opus default unless the caller overrides it.
 : "${AP_MODEL=claude-sonnet-5}"
@@ -103,18 +102,6 @@ resolve_args || exit $?
       lock_waited=$((lock_waited + ARTICLE_PIPELINE_LOCK_WAIT_SECONDS))
     done
   fi
-  case " $ARGS " in
-    *" --dry-run "*) echo "Claude usage gate: bypassed for dry-run" ;;
-    *)
-      CLAUDE_USAGE_MIN_REMAINING_PERCENT="$CLAUDE_LAUNCH_MIN_REMAINING_PERCENT" \
-        bash "$USAGE_WAITER" || {
-        usage_rc=$?
-        echo "RESULT: failed (Claude allowance wait failed, exit=$usage_rc)"
-        echo "===== auto-publish (launchd) end: $(date) exit=$usage_rc ====="
-        exit "$usage_rc"
-      }
-      ;;
-  esac
   usage_resumes=0
   while :; do
     if [ -n "$PIPELINE_SCRIPT" ]; then
@@ -133,8 +120,13 @@ resolve_args || exit $?
     fi
     usage_resumes=$((usage_resumes + 1))
     echo "PAUSE: Claude allowance exhausted; waiting for reset before resume $usage_resumes/$AUTO_PUBLISH_MAX_USAGE_RESUMES"
-    CLAUDE_USAGE_MIN_REMAINING_PERCENT="$CLAUDE_LAUNCH_MIN_REMAINING_PERCENT" \
-      bash "$USAGE_WAITER" || { rc=$?; break; }
+    pending_pipeline="$(sed -n '1p' "$PENDING_RESUME_FILE" 2>/dev/null)"
+    if ! printf '%s\n' "$pending_pipeline" | grep -Eq '^logs/pipeline-[A-Za-z0-9._-]+$'; then
+      echo "RESULT: failed (missing or invalid pending pipeline after Claude limit)"
+      rc=2
+      break
+    fi
+    bash "$USAGE_WAITER" "$REPO/$pending_pipeline/state.json" || { rc=$?; break; }
     resolve_args || { rc=$?; break; }
     echo "RESUME: $ARGS"
   done
