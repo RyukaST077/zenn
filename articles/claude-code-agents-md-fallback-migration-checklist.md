@@ -3,7 +3,7 @@ title: "AGENTS.md移行チェックリスト:確認できた3項目、再現し�
 emoji: "🗂️"
 type: tech
 topics: ["claudecode", "aiagent", "cli", "productivity"]
-published: false
+published: true
 ---
 
 ## 誰のための記事か
