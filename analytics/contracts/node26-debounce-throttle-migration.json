@@ -1,0 +1,41 @@
+{
+  "slug": "node26-debounce-throttle-migration",
+  "topics": [
+    "nodejs",
+    "javascript",
+    "lodash",
+    "testing",
+    "migration"
+  ],
+  "primaryTopic": "nodejs",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "migration",
+    "titleFeatures": {
+      "length": 48,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-02T13:39:18.012Z",
+    "contract": {
+      "targetReader": "lodash.debounceまたはlodash.throttleを使うNode.jsアプリを保守していて、Node 26移行時に依存を外せるか判断したい新人Webエンジニア",
+      "readerDecision": "手元のLodash呼び出しをnode:utilへ直接置換できるか、互換ラッパーを挟むべきか、Lodashを継続すべきかを判断できる",
+      "takeaway": "移行可否チェックリスト表と、Node.js 26.10.0標準版とLodash版の呼び出し列・戻り値・cancel/flush・options・queue挙動を同条件で比較するnode:testスクリプト全文",
+      "verificationItems": [
+        "Node.js 22.17.0と26.10.0でnode:utilのdebounce/throttle利用可否を比較し、必要versionを固定する",
+        "debounceへ同じ3呼び出しを与え、実行回数・最後の引数・各callの戻り値型と解決値をLodash版と比較する",
+        "leading・trailing・maxWait相当の有無を連続入力fixtureで比較し、直接置換できないoption組み合わせを表にする",
+        "cancel・flush・AbortSignalをhandled/unhandledと--unhandled-rejections=strictで実行し、例外・終了コード・future callへの影響を比較する",
+        "burst入力時のNode標準throttleのqueue・drop・maxPending・concurrencyとLodashの先頭/末尾呼び出しを比較する",
+        "timerのref/unrefとpending状態を確認し、CLIが待機する条件と終了できる条件を比較する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Node.js 26.10.0は2026-09-22にutil.debounce/util.throttleを追加した。2026-10-02取得のnpm公式APIでは直近1週間のlodash.debounceが59,114,934 download、lodash.throttleが23,113,761 download。Zenn公式APIのnodejs taggings_countは4,061で、analytics/topic-feedback.mdのnodejs d30-45市場コホートはn=117（昇格根拠に使える）。国内Zenn記事でもLodashのleading/trailing/maxWaitを使い分ける解説需要が確認できる一方、Node標準版はPromise・cancel・queue設計が異なりdrop-in replacementではない。"
+    }
+  }
+}
