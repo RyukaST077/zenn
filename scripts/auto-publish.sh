@@ -60,8 +60,6 @@ fi
 : "${MAX_REVIEW_ROUNDS:=5}"
 : "${BASE_BRANCH:=main}"
 : "${MERGE_METHOD:=--squash}"
-: "${CLAUDE_USAGE_GATE_ENABLED:=1}"
-: "${CLAUDE_STAGE_MIN_REMAINING_PERCENT:=20}"
 : "${AGENT_PIPELINE_RETRYABLE_EXIT:=20}"
 
 stage_model() {
@@ -157,7 +155,6 @@ RESULT_TOOL="scripts/validate-stage-result.mjs"
 CONTRACT_TOOL="scripts/stage-result-contract.mjs"
 CLAUDE_RESULT_TOOL="scripts/extract-claude-stage-result.mjs"
 CLAUDE_REVIEW_TOOL="scripts/validate-claude-review-result.mjs"
-USAGE_GATE="scripts/check-claude-session-usage.sh"
 PENDING_RESUME_FILE="logs/.auto-publish-resume"
 
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "$PLOG" >&2; }
@@ -246,24 +243,10 @@ TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 # run_claude <段名> <ログファイル> <プロンプト> [JSON Schemaファイル]
 run_claude() {
   local name="$1" logfile="$2" prompt="$3" schema_file="${4:-}" rc=0
-  local secs turns usage_output usage_rc retry_at schema_json model effort
+  local secs turns retry_at schema_json model effort
   local -a claude_cmd
   secs="$(stage_timeout "$name")"; turns="$(stage_turns "$name")"
   model="$(stage_model "$name")"; effort="$(stage_effort "$name")"
-
-  if [ "$CLAUDE_USAGE_GATE_ENABLED" = 1 ]; then
-    set +e
-    usage_output="$(CLAUDE_USAGE_MIN_REMAINING_PERCENT="$CLAUDE_STAGE_MIN_REMAINING_PERCENT" \
-      bash "$USAGE_GATE" 2>&1)"
-    usage_rc=$?
-    set -e
-    log "$usage_output"
-    if [ "$usage_rc" != 0 ]; then
-      retry_at="$(printf '%s\n' "$usage_output" | sed -n 's/.*reset=\([^)]*\).*/\1/p' | tail -1)"
-      mark_retry_pending "$name の開始前にClaude利用可能量が不足または確認不能" "$retry_at"
-      return "$AGENT_PIPELINE_RETRYABLE_EXIT"
-    fi
-  fi
 
   # macOS 標準の Bash 3.2 は set -u 下で空配列の "${array[@]}" を
   # unbound variable として扱う。常に先頭要素を持つ単一配列へ条件付きで追記する。
@@ -365,7 +348,7 @@ if [ "$DRY_RUN" = 1 ]; then
   パイプラインdir  : $PIPE_DIR
   claude           : $CLAUDE_BIN $CLAUDE_FLAGS (default model=${AP_MODEL:-CLI default}, effort=${AP_EFFORT:-CLI default}; AP_MODEL_<STAGE>/AP_EFFORT_<STAGE>で段別上書き)
   timeout コマンド : ${TIMEOUT_BIN:-（無し: タイムアウト無効）}
-  段ごとの利用量確認: $([ "$CLAUDE_USAGE_GATE_ENABLED" = 1 ] && echo "ON (最低残量>${CLAUDE_STAGE_MIN_REMAINING_PERCENT}%)" || echo OFF)
+  利用上限への対応 : Claude実行時の上限エラーで一時停止・再開情報を保存
   review判定     : Claude JSON Schema + 構造化stage result
   再開状態       : $STATE
   レビューループ   : 最大 $MAX_REVIEW_ROUNDS 回
