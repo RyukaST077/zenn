@@ -1,0 +1,44 @@
+{
+  "slug": "mcp-sdk-v2-codemod-migration-checklist",
+  "topics": [
+    "mcp",
+    "typescript",
+    "aiagent",
+    "nodejs",
+    "cli"
+  ],
+  "primaryTopic": "aiagent",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "migration",
+    "titleFeatures": {
+      "length": 56,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-02T14:54:00.340Z",
+    "contract": {
+      "targetReader": "自作のMCPサーバーを @modelcontextprotocol/sdk@1.x で動かしていて、2026-07-28仕様のv2へ今上げるべきか据え置くべきか決めかねている人",
+      "readerDecision": "自分のMCPサーバーを今v2へ移すか据え置くかを、公式codemodで自動化できる範囲と手作業で残る範囲の量から決められる",
+      "takeaway": "「公式codemodが直す項目 / 手で直す項目 / 設計変更が要る項目」の3列対照表と、移行前後のconformance結果つき移行チェックリスト（コピーして自分のリポジトリに当てられる形）",
+      "verificationItems": [
+        "移行前のベースライン: v1サーバーに conformance@0.2.0-alpha.12 をかけ、新仕様で落ちるシナリオを特定する",
+        "npx @modelcontextprotocol/codemod@2.2.0 v1-to-v2 を実行し、git diff 全文から自動変換された項目を分類する",
+        "codemod 後の tsc / 起動で落ちる Zod 4.2 系の破壊的変更を記録する（raw shape 廃止・ZodRawShape の Readonly 化・z.record のアリティ変更）",
+        "未知ツール呼び出しの戻りが isError から JSON-RPC -32602 へ変わるかを curl で確認する",
+        "resource-not-found のエラーコードが -32002 から -32602 へ変わるかを curl で確認する",
+        "tools/list の生JSONで inputSchema が JSON Schema 2020-12 になり、トップレベル additionalProperties: false が落ちるかを確認する",
+        "MCP-Protocol-Version / Mcp-Method / Mcp-Name ヘッダを body と食い違わせて投げ、拒否されるかを確認する",
+        "移行後に conformance@0.2.0-alpha.12 を再実行し、シナリオ単位の pass/fail 差分表を作る",
+        "v1クライアント（@modelcontextprotocol/sdk@1.31.0）から v2サーバーへ接続し、新旧両対応が成立するか確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Zenn APIで実測したトピック規模は mcp 4874 / aiagent 3159 / typescript 17932 taggings。analytics/topic-feedback.md の市場上位485本で migration 型は9本・平均22.4いいね・最大85（代表例「Cloudflare の CLI を wrangler から cf に移行する」）。Zenn の mcp 新着（2026-10-02 API実測）には「MCPサーバーのもうひとつの『ステートレス化』」(2026-09-30, 2いいね)や「#4 MCPサーバーの単体テスト」「#5 結合テスト」が並び関心は立ち上がっているが、v1→v2のサーバー側移行チェックリストは日本語で見当たらない。国内情報はGIGAZINE等のニュースと、Qiita「MCP SDK v2のステートレス化、旧クライアントは無改造で動いた」のクライアント側報告に留まる。一次情報の日付も直近で、仕様改訂2026-07-28 / SDK 2.2.0 GA 2026-09-28 / conformance 0.2.0-alpha.12 公開 2026-10-01。"
+    }
+  }
+}
