@@ -40,6 +40,12 @@
       "enqueuedAt": "2026-10-01T03:05:38.115Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/node-bench-reproducible-template.md",
+      "enqueuedAt": "2026-10-02T12:33:41.712Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
