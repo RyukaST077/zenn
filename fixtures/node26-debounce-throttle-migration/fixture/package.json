@@ -1,0 +1,12 @@
+{
+  "name": "node26-debounce-throttle-migration-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 test/*.test.mjs"
+  },
+  "dependencies": {
+    "lodash.debounce": "4.0.8",
+    "lodash.throttle": "4.1.1"
+  }
+}
