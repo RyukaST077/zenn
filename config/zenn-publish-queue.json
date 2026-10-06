@@ -6,12 +6,6 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-code-model-guide-202610.md",
-      "enqueuedAt": "2026-10-01T03:05:37.995Z",
-      "attempts": 3,
-      "lastAttemptAt": "2026-10-06T15:05:34.790Z"
-    },
-    {
       "article": "articles/pnpm12-rc-five-diffs.md",
       "enqueuedAt": "2026-10-01T03:05:38.055Z",
       "attempts": 0,
