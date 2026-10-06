@@ -8,8 +8,8 @@
     {
       "article": "articles/pnpm12-rc-five-diffs.md",
       "enqueuedAt": "2026-10-01T03:05:38.055Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-10-06T17:14:52.483Z"
     },
     {
       "article": "articles/vitest5-rc-breaking-changes.md",
