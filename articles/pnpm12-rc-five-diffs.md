@@ -3,7 +3,7 @@ title: "pnpm 12 RC に上げて、公式が挙げた「5つの差分」を1つ�
 emoji: "📦"
 type: "tech"
 topics: ["pnpm", "nodejs", "npm", "monorepo", "rust"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-pnpm12-rc-five-diffs-20260816-0411/execution-log.md / 記事タイプ: 検証ログ / slug: pnpm12-rc-five-diffs / published: false -->
