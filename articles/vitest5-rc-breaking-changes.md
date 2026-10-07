@@ -3,7 +3,7 @@ title: "Vitest 5 RC に上げてみたら、テストより先に npm が落ち�
 emoji: "🧪"
 type: "tech"
 topics: ["vitest", "npm", "typescript", "testing", "vite"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-vitest5-rc-breaking-changes-20260817-0412/execution-log.md / 記事タイプ: 検証ログ・詰まった点まとめ / slug: vitest5-rc-breaking-changes / published: false -->
