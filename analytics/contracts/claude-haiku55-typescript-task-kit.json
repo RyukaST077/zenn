@@ -1,0 +1,39 @@
+{
+  "slug": "claude-haiku55-typescript-task-kit",
+  "topics": [
+    "claudecode",
+    "typescript",
+    "aiagent",
+    "testing",
+    "cli"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 52,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-09T10:37:09.607Z",
+    "contract": {
+      "targetReader": "既存のClaude CodeサブスクリプションでTypeScript保守をSonnetへ任せており、Haiku 5.5へ委任するチケットを選びたい開発者",
+      "readerDecision": "自分のTypeScript保守チケットをHaiku 5.5へ任せるかSonnet 5.5へ任せるかを、作業種別と独立した完了条件から決められる",
+      "takeaway": "バグ修正・テスト追加・6ファイルのリファクタを同条件で追試する全ソースと実行・採点・集計スクリプト、作業別の使い分けチェックリスト",
+      "verificationItems": [
+        "バグ修正: 同一仕様・初期状態でHaiku 5.5とSonnet 5.5を各3回実行し、独立した金額parse回帰テストと型チェックの全合格数を比較する",
+        "テスト追加: 正しい実装を通すこと、固定mutation6個の検出数、src不変を各モデル3試行で確認する",
+        "複数ファイルのリファクタ: 6ファイルの共通化について公開APIの型consumer、実行時互換性、構造条件、禁止変更hashを採点し各モデルの全合格数を比較する",
+        "測定キット: 全18試行の成否・欠測・打切りを外部時計と最終CLI resultから記録し、完了時間とinput/output/cache token内訳の比較表を再生成する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-10-09確認。公式Haiku 5.5公開は2026-10-07、Sonnet 5.5は2026-09-28。Zennの2026-10-08記事はtest-runnerとcode-exploreの役割選択を扱う一方、実装役は未検証と明記し、実編集の独立採点にgapがある。analytics/topic-feedback.mdの上位生データでは設定資産693いいね、TypeScript実装資産247いいね、AI時代のテスト記事232いいねを観測。claudecodeのD30市場コホートn=400で測定可能。既存モデルguideは起動確認までで、この3課題の追試コードと品質・時間・token比較は未掲載。"
+    }
+  }
+}
