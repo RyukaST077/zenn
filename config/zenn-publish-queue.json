@@ -4,6 +4,13 @@
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
   "maxAttempts": 15,
-  "entries": [],
+  "entries": [
+    {
+      "article": "articles/node26-event-loop-window-monitor.md",
+      "enqueuedAt": "2026-10-09T03:03:45.795Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    }
+  ],
   "blocked": []
 }
