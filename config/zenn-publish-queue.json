@@ -10,6 +10,12 @@
       "enqueuedAt": "2026-10-09T19:23:54.576Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/claude-plugin-eval-ci-gate-recipe.md",
+      "enqueuedAt": "2026-10-03T06:42:06.058Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
