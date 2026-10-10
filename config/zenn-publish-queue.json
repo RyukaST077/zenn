@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-haiku55-typescript-task-kit.md",
       "enqueuedAt": "2026-10-09T19:23:54.576Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-10-10T10:27:29.790Z"
     }
   ],
   "blocked": []

@@ -3,7 +3,7 @@ title: "Haiku 5.5へ任せるTypeScript保守を選ぶ：独立採点つき3課�
 emoji: "🧪"
 type: tech
 topics: [claudecode, typescript, aiagent, testing, cli]
-published: false
+published: true
 ---
 
 TypeScriptの保守をSonnetへ任せていても、次のチケットをHaikuへ回してよいかは、モデルの「完了しました」だけでは決められません。金額入力の修正なら例外の種類、テスト追加ならバグの検出力、共通化なら呼び出し元との互換性まで確認する必要があります。
