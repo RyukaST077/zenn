@@ -4,6 +4,13 @@
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
   "maxAttempts": 15,
-  "entries": [],
+  "entries": [
+    {
+      "article": "articles/claude-haiku55-typescript-task-kit.md",
+      "enqueuedAt": "2026-10-09T19:23:54.576Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    }
+  ],
   "blocked": []
 }
