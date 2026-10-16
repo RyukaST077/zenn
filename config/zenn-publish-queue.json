@@ -6,6 +6,12 @@
   "maxAttempts": 15,
   "entries": [
     {
+      "article": "articles/node-env-preflight-template.md",
+      "enqueuedAt": "2026-10-16T17:47:52.462Z",
+      "attempts": 0,
+      "lastAttemptAt": null
+    },
+    {
       "article": "articles/node26-event-loop-window-monitor.md",
       "enqueuedAt": "2026-10-09T03:03:45.795Z",
       "attempts": 0,
