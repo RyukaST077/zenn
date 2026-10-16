@@ -6,38 +6,14 @@
   "maxAttempts": 15,
   "entries": [
     {
-      "article": "articles/claude-code-agents-md-fallback-migration-checklist.md",
-      "enqueuedAt": "2026-09-26T21:14:31.989Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-10-02T06:29:35.319Z"
-    },
-    {
-      "article": "articles/claude-mcp-server-scope-decision.md",
-      "enqueuedAt": "2026-09-28T22:38:32.492Z",
+      "article": "articles/node-env-preflight-template.md",
+      "enqueuedAt": "2026-10-16T17:47:52.462Z",
       "attempts": 0,
       "lastAttemptAt": null
     },
     {
-      "article": "articles/codex-mcp-server-removal-migration-checklist.md",
-      "enqueuedAt": "2026-09-29T20:55:52.171Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/claude-code-model-guide-202610.md",
-      "enqueuedAt": "2026-10-01T03:05:37.995Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/pnpm12-rc-five-diffs.md",
-      "enqueuedAt": "2026-10-01T03:05:38.055Z",
-      "attempts": 0,
-      "lastAttemptAt": null
-    },
-    {
-      "article": "articles/vitest5-rc-breaking-changes.md",
-      "enqueuedAt": "2026-10-01T03:05:38.115Z",
+      "article": "articles/node26-event-loop-window-monitor.md",
+      "enqueuedAt": "2026-10-09T03:03:45.795Z",
       "attempts": 0,
       "lastAttemptAt": null
     },
