@@ -3,7 +3,7 @@ title: "Node.jsの環境変数ミスを起動前に止める、依存ゼロのTy
 emoji: "🧰"
 type: "tech"
 topics: ["nodejs", "typescript", "security", "testing", "configuration"]
-published: false
+published: true
 ---
 
 `.env` に `PORT=abc` と書いても、TypeScriptの型注釈だけでは実行時の値を検査できません。必須値の欠落やキー名のtypoも、値を使う場所まで進んで初めて発覚しがちです。

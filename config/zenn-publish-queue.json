@@ -8,8 +8,8 @@
     {
       "article": "articles/node-env-preflight-template.md",
       "enqueuedAt": "2026-10-16T17:47:52.462Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-10-16T18:38:42.100Z"
     },
     {
       "article": "articles/node26-event-loop-window-monitor.md",
