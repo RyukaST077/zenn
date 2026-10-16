@@ -3,7 +3,7 @@ title: "Node.js 26.11でイベントループ遅延をリセットせず窓別�
 emoji: "⏱️"
 type: tech
 topics: ["nodejs", "javascript", "performance", "observability", "backend"]
-published: false
+published: true
 ---
 
 ## この記事で解決すること
