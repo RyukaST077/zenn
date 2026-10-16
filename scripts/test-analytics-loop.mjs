@@ -428,6 +428,27 @@ test("feedback reports market winners, the control group, and what cannot be con
   assert.match(report, /順位算出済n/, "percentile columns must carry their sample size");
 });
 
+test("feedback counts on-time and late D30 measurements, excluding upper bounds and missing slots", (dir) => {
+  const bases = ["measured-on-time", "late-measured", "current-upper-bound", "measured", null];
+  const entries = bases.map((basis, index) => ({
+    slug: `measurement-${index}`,
+    title: "Measured article",
+    publishedAt: "2026-08-01T00:00:00.000Z",
+    primaryTopic: "claudecode",
+    classification: { experimentId: "EXP-001", arm: "B-payload", valueArchetype: "asset", source: "contract" },
+    observations: {
+      latest: { likes: 0 },
+      ...(basis ? { d30: { likes: 0, basis } } : {}),
+    },
+  }));
+  fs.mkdirSync(path.join(dir, "analytics"), { recursive: true });
+  fs.writeFileSync(path.join(dir, "analytics/article-ledger.jsonl"), entries.map((entry) => JSON.stringify(entry)).join("\n") + "\n");
+
+  ok(run(scripts.feedback, ["--now", NOW], dir), "feedback with D30 observations");
+  const report = fs.readFileSync(path.join(dir, "analytics/topic-feedback.md"), "utf8");
+  assert.equal(report.match(/^- D30到達: .*$/m)?.[0], "- D30到達: 2 本（判定には 12 本のD30が必要）");
+});
+
 // --------------------------------------------------------------- evaluate
 
 test("evaluate reports insufficient data instead of judging a half-finished batch", (dir) => {
