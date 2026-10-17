@@ -3,7 +3,7 @@ title: "Node.js標準だけで再実行できるnode:bench計測テンプレー�
 emoji: "⏱️"
 type: "tech"
 topics: ["nodejs", "javascript", "performance", "benchmark", "cli"]
-published: false
+published: true
 ---
 
 小さな性能改善PRで困るのは、1回だけ速い値を出すことより、レビュー時に同じ条件で測り直せる形を残すことです。`performance.now()` で処理を1回囲むだけでは、ウォームアップ、計測外に出すべき準備処理、プロセス間の状態、外れ値を確認できません。
