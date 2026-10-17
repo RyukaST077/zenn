@@ -8,8 +8,8 @@
     {
       "article": "articles/node-bench-reproducible-template.md",
       "enqueuedAt": "2026-10-02T12:33:41.712Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-10-17T20:02:33.551Z"
     }
   ],
   "blocked": []
