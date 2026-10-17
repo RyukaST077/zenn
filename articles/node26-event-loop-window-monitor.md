@@ -306,3 +306,5 @@ Node.js 26.11.0の `snapshot()` / `diff()` を使うと、監視元を `reset()`
 - [Node.js perf_hooks documentation](https://github.com/nodejs/node/blob/main/doc/api/perf_hooks.md)
 - [Node.js issue #34661: monitorEventLoopDelay histogram bias](https://github.com/nodejs/node/issues/34661)
 - [Node.js issue #56064: monitorEventLoopDelay resolution overhead](https://github.com/nodejs/node/issues/56064)
+
+<!-- zenn-publish-queue-retry: attempt=3 at=2026-10-17T19:45:41.352Z -->
