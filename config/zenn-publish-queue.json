@@ -8,8 +8,8 @@
     {
       "article": "articles/node26-event-loop-window-monitor.md",
       "enqueuedAt": "2026-10-09T03:03:45.795Z",
-      "attempts": 2,
-      "lastAttemptAt": "2026-10-17T07:37:14.318Z"
+      "attempts": 3,
+      "lastAttemptAt": "2026-10-17T19:45:41.352Z"
     },
     {
       "article": "articles/node-bench-reproducible-template.md",
