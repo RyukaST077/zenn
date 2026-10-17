@@ -128,6 +128,16 @@ const writePublished = (article, published) => {
   fs.writeFileSync(articlePath, next);
 };
 
+// Zenn update synchronization selects changed Markdown files. Keep a single
+// hidden marker so every retry changes the article without rewriting its content.
+const markPublishRetry = (article, attempt, now) => {
+  const { text, articlePath } = publishedField(article);
+  const marker = `<!-- zenn-publish-queue-retry: attempt=${attempt} at=${now.toISOString()} -->`;
+  const previousMarker = /\n<!-- zenn-publish-queue-retry: attempt=\d+ at=[^\n]+ -->\n$/;
+  const body = text.replace(previousMarker, "");
+  fs.writeFileSync(articlePath, `${body}\n${marker}\n`);
+};
+
 const writeQueue = (queue) => {
   fs.writeFileSync(queuePath, `${JSON.stringify(queue, null, 2)}\n`);
 };
@@ -269,6 +279,7 @@ switch (command) {
       entry.lastAttemptAt = now.toISOString();
     } else if (action === "retry") {
       if (!published) fail(`retry action requires published: true: ${entry.article}`);
+      markPublishRetry(entry.article, entry.attempts + 1, now);
       entry.attempts += 1;
       entry.lastAttemptAt = now.toISOString();
     } else if (action === "block") {
