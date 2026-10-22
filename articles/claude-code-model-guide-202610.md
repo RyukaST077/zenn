@@ -3,7 +3,7 @@ title: "Claude Codeのモデル選び最新版：Sonnet 5.5・Opus 5.5・Haiku�
 emoji: "🎛️"
 type: "tech"
 topics: ["claudecode", "anthropic", "aiagent", "cli"]
-published: false
+published: true
 ---
 
 Claude Codeで結果が物足りないとき、モデルをOpusへ変えるべきか、Sonnetのeffortを上げるべきか。この二つは、改善したい問題によって使い分けます。

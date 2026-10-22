@@ -3,7 +3,7 @@ title: "committedなenableAllProjectMcpServers: trueはworkspace trust未承認�
 emoji: "🔐"
 type: "tech"
 topics: ["claudecode", "mcp", "aiagent", "security", "cli"]
-published: false
+published: true
 ---
 
 ## 結論: 承認バイパスにはなっていない
