@@ -3,7 +3,7 @@ title: "claude plugin eval でCIゲートを組む：コピペできる最小ス
 emoji: "🧪"
 type: "tech"
 topics: ["claudecode", "aiagent", "cli", "testing"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-claude-plugin-eval-20261003-1335/execution-log.md / slug claude-plugin-eval-ci-gate-recipe / published: false（ドラフト） -->
