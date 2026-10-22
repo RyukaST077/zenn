@@ -1,0 +1,42 @@
+{
+  "slug": "claude-plugin-eval-ci-gate-recipe",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "cli",
+    "testing"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 51,
+      "hasNumber": true,
+      "hasVersion": true,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-03T04:28:48.712Z",
+    "contract": {
+      "targetReader": "Claude Code のスキルまたはプラグインを自作していて、プロンプトやモデルを変えるたびに挙動が壊れていないかCIで守りたいが、何をどう測ればいいか決めかねている人",
+      "readerDecision": "自分のスキル／プラグインのCI回帰ゲートを、claude plugin eval のどのグレーダー構成とどのオプションで組むかを決められる",
+      "takeaway": "コピーしてそのまま置ける evals/ スイート一式（plugin.json・prompt.md・無料グレーダー4種の実例・GitHub Actions ワークフロー全文）と、Δが0になる原因の判定表",
+      "verificationItems": [
+        "スキル1つの最小プラグインで claude plugin validate → claude plugin eval init → claude plugin eval . を通し、実行ログ・所要時間・表示コスト見積りを記録する",
+        "tool_used: Skill のみのケースと結果側グレーダー（regex / file_exists）を足したケースで、aggregate-result.json の scored フィールドと Δ がどう変わるかを比較する",
+        "同一スイートを --ablation none と --ablation with-without で実行し、絶対スコア・実行回数・コスト見積りの差を表にする",
+        "--threshold 1.0 と --threshold 0.8 の終了コード（0 / 1）を echo $? で確認する",
+        "--max-cost-usd を極小値にしたときに exit 2 と部分結果が返るかを確認する",
+        "claude plugin eval --json . のようにターゲットをフラグの後ろに置いた場合の実挙動を確認する",
+        "出力された report.html を Playwright で開いてスクリーンショットを撮る",
+        "CI用 GitHub Actions ワークフロー（--trust-plugin / モデル固定 / --no-publish / --json / --max-cost-usd）を書き、同じコマンド列をローカルで再現実行して通ることを確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "claudecode トピックは analytics/topic-feedback.md の d30-45 コホートが n=400 で昇格根拠に使える最大級トピック。プラグイン解説は過去に「Claude Code公式Pluginのすすめ」240いいね・「続・公式Pluginのすすめ」110いいねの実績がある。2026-10-03 に Zenn API（topicname=claudecode&order=liked_count）で取得した直近1週間の30本では「続・データサイエンティストのためのSkills:分析手法×診断可視化セット」が57いいねで突出しており、スキルを作って配る層が現在厚い。一方 claude plugin eval（v2.1.269 / 2026-09-11追加）の日本語実践記事はクラスメソッドの入門walkthrough 1本のみで、CIゲート化とΔの落とし穴は未カバー。"
+    }
+  }
+}
