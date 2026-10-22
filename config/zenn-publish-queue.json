@@ -4,13 +4,6 @@
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
   "maxAttempts": 15,
-  "entries": [
-    {
-      "article": "articles/claude-plugin-eval-ci-gate-recipe.md",
-      "enqueuedAt": "2026-10-03T06:42:06.058Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-10-22T17:35:54.354Z"
-    }
-  ],
+  "entries": [],
   "blocked": []
 }
