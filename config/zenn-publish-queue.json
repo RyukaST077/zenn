@@ -4,13 +4,6 @@
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
   "maxAttempts": 15,
-  "entries": [
-    {
-      "article": "articles/claude-code-login-expiry-signal-decision.md",
-      "enqueuedAt": "2026-11-04T16:47:11.482Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-11-04T17:13:22.252Z"
-    }
-  ],
+  "entries": [],
   "blocked": []
 }
