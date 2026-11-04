@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-code-login-expiry-signal-decision.md",
       "enqueuedAt": "2026-11-04T16:47:11.482Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-11-04T17:13:22.252Z"
     }
   ],
   "blocked": []

@@ -3,7 +3,7 @@ title: "cronでClaude Codeを回す前に: ログイン失効を課金せず検�
 emoji: "🔑"
 type: "tech"
 topics: ["claudecode", "cli", "aiagent", "automation"]
-published: false
+published: true
 ---
 
 ## 結論: 無人実行の事前チェックは `claude auth status` に置く
