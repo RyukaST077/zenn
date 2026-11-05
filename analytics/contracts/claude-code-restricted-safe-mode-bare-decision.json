@@ -1,0 +1,38 @@
+{
+  "slug": "claude-code-restricted-safe-mode-bare-decision",
+  "topics": [
+    "claudecode",
+    "security",
+    "cli",
+    "aiagent"
+  ],
+  "primaryTopic": "security",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 70,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-11-05T20:25:45.430Z",
+    "contract": {
+      "targetReader": "Claude Code をCIや評価ハーネス、外部由来の信頼できない入力の処理、壊れた設定のトラブルシュートに使っていて、サブスクリプション認証を維持したまま --restricted / --safe-mode / --bare のどれを選ぶべきか分からない人",
+      "readerDecision": "自分の状況（信頼できない入力の処理・壊れた設定の切り分け・認証維持のまま起動面を絞る・スクリプトをAPIキー認証へ完全移行する）に対して、--restricted / --safe-mode / --bare のどれを選び、既存のsettings.json denyルール・CLAUDE.md・hooks・サブスクリプション認証のうち何が生き残り何が消えるかを判断できる",
+      "takeaway": "状況別の推奨フラグ決定表と、各モードで生き残るもの/消えるもの(settings.jsonのdenyルール・CLAUDE.md・hooks・skills・認証方式)のチェックリスト、検証に使った最小settings.json/CLAUDE.md構成",
+      "verificationItems": [
+        "project settings.jsonのpermissions.denyルールが --restricted 実行時に読み込まれるか(ファイルへの書き込みが実際に発生するかで判定)",
+        "同じdenyルールが --safe-mode 実行時に読み込まれるか、--restricted と挙動が異なるか",
+        "CLAUDE.md中の一意なマーカー文字列が --safe-mode / --restricted それぞれでシステムプロンプト(stream-json出力)に含まれるか",
+        "サブスクリプション認証(APIキー未設定)のまま --restricted と --safe-mode は起動できるが --bare は拒否されるか、拒否時の終了コードとエラー文言"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "securityトピックはd30-45コホートn=400で昇格根拠まで測れる(analytics/topic-feedback.md)。市場勝ち型集計でdecision型はcandidate段階ながら平均23.4・最大73いいねで、自己最高帯の実績もこの型から出ている。--restricted/--safe-mode/--bareを横断して比較したarticles/・research/agent/内の既存記事は0件(既存は--restrictedのフック1点のみの単一境界検証)で、Web検索では非公式ブログ同士が--safe-modeのスキル無効化の有無で矛盾しており(2026-11-06確認)、一次情報(code.claude.com)で解消できていない未文書化のギャップ(denyルールの扱い)が残っている。"
+    }
+  }
+}
