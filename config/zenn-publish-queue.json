@@ -4,13 +4,6 @@
   "maxPublicationsPer24Hours": 2,
   "retryAfterHours": 12,
   "maxAttempts": 15,
-  "entries": [
-    {
-      "article": "articles/claude-code-restricted-safe-mode-bare-decision.md",
-      "enqueuedAt": "2026-11-05T20:49:23.404Z",
-      "attempts": 1,
-      "lastAttemptAt": "2026-11-05T21:32:53.168Z"
-    }
-  ],
+  "entries": [],
   "blocked": []
 }
