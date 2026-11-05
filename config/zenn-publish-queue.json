@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-code-restricted-safe-mode-bare-decision.md",
       "enqueuedAt": "2026-11-05T20:49:23.404Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-11-05T21:32:53.168Z"
     }
   ],
   "blocked": []

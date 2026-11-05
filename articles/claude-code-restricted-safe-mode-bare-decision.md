@@ -3,7 +3,7 @@ title: "Claude Codeの--restricted/--safe-mode、denyルールは両方素通り
 emoji: "🔓"
 type: "tech"
 topics: ["claudecode", "security", "cli", "aiagent"]
-published: false
+published: true
 ---
 
 Claude Code をCIや評価ハーネス、外部から取得したPR説明・Issue本文のような信頼できない入力の処理に使っていて、サブスクリプション認証（`claude.ai` ログイン、`ANTHROPIC_API_KEY` は未設定）を維持したまま起動面だけを絞りたいとき、`--restricted` か `--safe-mode` を足せば手元の `.claude/settings.json` の `permissions.deny` ルールはそのまま効き続ける、と考えていないだろうか。
