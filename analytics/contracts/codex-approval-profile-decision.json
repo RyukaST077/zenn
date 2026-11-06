@@ -1,0 +1,38 @@
+{
+  "slug": "codex-approval-profile-decision",
+  "topics": [
+    "cli",
+    "codex",
+    "aiagent",
+    "security"
+  ],
+  "primaryTopic": "cli",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 94,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-11-06T20:09:00.872Z",
+    "contract": {
+      "targetReader": "Codex CLIをcodex loginのサブスク認証で使っており、ローカル対話利用からCI無人実行や複数プロジェクト共有設定への移行を検討していて、config.tomlのsandbox_mode/approval_policyとbetaのpermission profileのどちらを使うべきか、また古い設定例に残るuntrusted/on-failureをどう扱うべきか迷っている人",
+      "readerDecision": "自分のユースケース(ローカル対話/CI無人実行/複数プロジェクト共有)に対して、旧来のsandbox_mode+approval_policyの組み合わせと新しいbeta permission profileのどちらをconfig.tomlに書くか、既存設定のuntrusted/on-failureを残してよいかを決められる",
+      "takeaway": "ユースケース別config.toml設定例3パターン(ローカル対話/CI無人実行/複数プロジェクト共有)と、廃止(untrusted)・非推奨(on-failure)設定の監査チェックリスト",
+      "verificationItems": [
+        "approval_policy=untrustedが起動前にハードエラーになることの確認(エラーメッセージの確定的出力)",
+        "approval_policy=on-failureがエラーも警告も出さずnever相当に無音で読み替えられることの確認(セッションヘッダのapproval表示で確認)",
+        "default_permissions(beta permission profile)を[permissions]テーブルなしで指定するとエラーになり、旧来のsandbox_mode/approval_policyと安易に混在できないことの確認",
+        "CLIフラグ(--sandbox/--ask-for-approval)がconfig.toml側の値より優先されることの確認(セッションヘッダの実効値で確認)"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "analytics/topic-feedback.mdの市場コホートで'cli'はd30-45まで昇格根拠に使える水準でnが育っている(cli d30-45 n=249)。claudecode(d30-45 n=400)はClaude Code記事向けなので、Codexを扱う本記事はprimaryTopicに'cli'を選んだ。valueArchetype別の市場実績ではdecision型が上位記事平均21.5いいね(最大73)で、policyのcandidate段階として探索枠の対象に明記されている。"
+    }
+  }
+}
