@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { claudeResult, claudeError } from './claude-response.mjs';
 
 const [eventsFile, nowArgument] = process.argv.slice(2);
 if (!eventsFile) {
@@ -16,22 +17,25 @@ try {
   process.exit(2);
 }
 
-const strings = [];
-const collectStrings = (value) => {
-  if (typeof value === "string") strings.push(value);
-  else if (Array.isArray(value)) value.forEach(collectStrings);
-  else if (value && typeof value === "object") Object.values(value).forEach(collectStrings);
-};
-
+let limitMessage;
 try {
-  collectStrings(JSON.parse(raw));
+  const response = claudeResult(raw);
+  if (!claudeError(response)) process.exit(1);
+  const message = typeof response.result === 'string' ? response.result
+    : typeof response.message === 'string' ? response.message : '';
+  if (response.api_error !== 'usage_limit_reached'
+      && !/(?:hit your (?:session|5[- ]hour) limit|usage limit)/i.test(message)) process.exit(1);
+  limitMessage = message;
 } catch {
-  strings.push(raw);
+  // Compatibility with the reset-only input synthesized by wait-for-claude-usage.sh.
+  if (/^usage limit resets? [^\r\n]+\s*$/i.test(raw.trim())
+      || /^You've hit your (?:session|5[- ]hour) limit\b[^\r\n]*\s*$/i.test(raw.trim())) {
+    limitMessage = raw.trim();
+  } else {
+    console.error('invalid Claude usage limit response');
+    process.exit(2);
+  }
 }
-
-const limitMessage = strings.find((value) =>
-  /(?:hit your session limit|usage limit|rate limit)/i.test(value));
-if (!limitMessage) process.exit(1);
 
 const resetMatch = limitMessage.match(/resets?\s+([^\n"·]+)/i);
 if (!resetMatch) {
@@ -97,9 +101,14 @@ const parseResetEpoch = () => {
   catch { throw new Error(`unsupported reset timezone: ${timeZone}`); }
 
   const absolute = resetLabel.match(
-    /(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/,
+    /^(\d{4})-(\d{2})-(\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*\([^)]+\))?$/,
   );
   if (absolute) {
+    const values = absolute.slice(1, 7).map(value => Number(value || 0));
+    const [year, month, day, hour, minute, second] = values;
+    const check = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+    if (check.getUTCFullYear() !== year || check.getUTCMonth() + 1 !== month || check.getUTCDate() !== day
+        || hour > 23 || minute > 59 || second > 59) throw new Error(`unsupported reset time: ${resetLabel}`);
     return zonedDateTimeToEpoch({
       year: Number(absolute[1]),
       month: Number(absolute[2]),
@@ -110,8 +119,11 @@ const parseResetEpoch = () => {
     }, timeZone);
   }
 
-  const clock = resetLabel.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+  const clock = resetLabel.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)(?:\s*\([^)]+\))?$/i);
   if (!clock) throw new Error(`unsupported reset time: ${resetLabel}`);
+  if (Number(clock[1]) < 1 || Number(clock[1]) > 12 || Number(clock[2] || 0) > 59) {
+    throw new Error(`unsupported reset time: ${resetLabel}`);
+  }
   let hour = Number(clock[1]) % 12;
   if (clock[3].toLowerCase() === "pm") hour += 12;
   const minute = Number(clock[2] || 0);

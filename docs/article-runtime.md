@@ -151,6 +151,24 @@ mkdir -p "$(git rev-parse --git-common-dir)/article-runtime"
 
 更新コミットは承認されたPR headを親に持つ追記で、履歴を巻き戻さない。push時はそのheadを指定したleaseで照合するため、他者の追記・巻き戻しがあれば上書きせず失敗する。main更新だけは最新データで再構築し直す。記事形式・キュー全体・許可された差分を検証したheadだけを `--match-head-commit` 付きでマージする。head SHAだけでは検証後のmain更新を防げないため、`--merge` はmainのbranch protectionで「最新base必須」の厳格なstatus checksと管理者への適用を確認できる場合に限る。保護設定がない、または取得できない場合はマージせず停止する。`strict: true` だけでは不十分で、REST APIの `required_status_checks.checks` または `contexts` に名前付きの必須チェックが1件以上あることも確認する。両方とも空、欠落、または有効なチェック名がない応答ではマージ要求を送らない。運用へ切り替える前に、PRのheadで実行されるCIチェックを用意し、mainの必須チェックとして登録したうえで最新base必須・管理者への適用を有効にする。設定変更はこのスクリプトでは行わない。マージ要求の受理やチェック待ちは完了ではなく、GitHubの `MERGED` を確認した場合だけパイプラインの `completed.merge` を設定する。
 
+### 必須CIを使わない運用での自動マージ
+
+`AGENT_QUEUE_MERGE_TRANSPORT=base-lease` を明示した実行では、前述のGitHub merge APIと必須CIの代わりに、Gitサーバーのatomic pushを使う。`--merge` の明示、記事・キュー・契約・差分の検証、実行SHA固定、他者のPR更新の拒否は共通。
+
+検証済みmainを第1親、承認済みPR headを含む履歴を第2親に持つマージコミットを作る。PRブランチにも承認済みheadを親とする同じ内容の追記コミットを作る。mainとPRブランチの両方に確認済みSHAのleaseを指定し、1回の `git push --atomic` で更新する。どちらか一方が更新・巻き戻しされていれば両方の更新を拒否する。mainだけの競合は最新baseから再検証し、PR headの他者変更やatomic非対応サーバーでは停止する。履歴の巻き戻しやatomicなしのpushへ自動切り替えはしない。
+
+この方式はマージコミットを使い、`--method` のsquash/rebase指定は適用しない。push後もGitHubがPRを `MERGED` と報告するまで完了としない。通信断やPR状態反映の遅れに備えて、push予定のhead・マージコミット・baseをreceiptへ先に記録する。再開時はremote baseにそのコミットが含まれることを確認し、同じ操作を二重にpushしない。
+
+```bash
+AGENT_QUEUE_MERGE_TRANSPORT=base-lease \
+  bash scripts/run-article-pipeline-worktree.sh -- \
+  scripts/agent-practice/recover-queue-pr.sh \
+  --pr <PR番号> --article articles/<slug>.md \
+  --expected-head <確認済みSHA> --state logs/queue-recovery-<PR番号>.json --merge
+```
+
+定期実行で使う場合は、そのLaunchAgentの `EnvironmentVariables` に同じ設定を入れる。未指定時は既存の `github` 方式を使う。必須CIの設定変更と実行方式の変更は別操作であり、CI解除だけでは方式は切り替わらない。
+
 ### 人による承認を待つ既存PR
 
 PRのhead SHAと差分を確認し、対象記事・レビュー済み本文・契約が意図したものか確認する。`--expected-head` はその確認済みSHAを明示する。新しいPRを作り直す必要はない。

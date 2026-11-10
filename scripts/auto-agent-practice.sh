@@ -111,9 +111,9 @@ RUN_RESULT_TOOL="scripts/validate-agent-run-result.mjs"
 GENERATED_PATH_TOOL="scripts/validate-agent-generated-paths.mjs"
 ARTIFACT_TOOL="scripts/isolated-artifacts.mjs"
 CLAUDE_LIMIT_TOOL="scripts/claude-usage-limit.mjs"
-RUN_LOG_FINDER="scripts/find-agent-run-log.mjs"
 REVIEW_HISTORY_TOOL="scripts/agent-review-history.mjs"
 REVIEW_SESSION_ID=""
+CLAUDE_SESSION_TOOL="scripts/claude-stage-session.mjs"
 TIMEOUT_BIN="$(command -v timeout || command -v gtimeout || true)"
 
 stage_timeout() {
@@ -136,7 +136,7 @@ if [ "$DRY_RUN" = 1 ]; then
   pipeline: $PIPE_DIR
   orchestrator: $AGENT_PIPELINE_ORCHESTRATOR ($([ "$AGENT_PIPELINE_ORCHESTRATOR" = codex ] && printf '%s' "$CODEX_BIN" || printf '%s' "$CLAUDE_BIN"), model=${AGENT_PIPELINE_MODEL:-CLI default}, effort=$AGENT_PIPELINE_EFFORT)
   experiment CLIs: $CLAUDE_BIN, $CODEX_BIN
-  policy: non-interactive, outer permissions=unrestricted, review sessions persisted; other stages ephemeral
+  policy: non-interactive, outer permissions=unrestricted, Claude stages persisted per session; Codex review persisted and other stages ephemeral
   search: $AGENT_PIPELINE_SEARCH
   scheduled: $SCHEDULED
   maximum revisions: $MAX_AGENT_REVIEW_ROUNDS (plus initial review and final confirmation)
@@ -193,7 +193,10 @@ command -v rg >/dev/null 2>&1 || die "ripgrep is required"
 [ -f "$GENERATED_PATH_TOOL" ] || die "agent generated-path validator is missing"
 [ -f "$ARTIFACT_TOOL" ] || die "isolated artifact helper is missing"
 [ -f "$CLAUDE_LIMIT_TOOL" ] || die "Claude usage limit parser is missing"
-[ -f "$RUN_LOG_FINDER" ] || die "agent execution log finder is missing"
+[ -f "$CLAUDE_SESSION_TOOL" ] || die "Claude session state helper is missing"
+if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ] && [ -n "${CLAUDE_CODE_SKIP_PROMPT_HISTORY:-}" ] && [ "${CLAUDE_CODE_SKIP_PROMPT_HISTORY}" != 0 ]; then
+  die "CLAUDE_CODE_SKIP_PROMPT_HISTORY disables the session persistence required for usage recovery"
+fi
 [ -f "$REVIEW_HISTORY_TOOL" ] || die "agent review history helper is missing"
 [ -f "$AGENT_EXPERIMENT_RUNNER" ] || die "agent experiment runner is missing"
 [ -x scripts/agent-practice/enqueue-reviewed-article.sh ] || die "queue helper is missing or not executable"
@@ -214,54 +217,38 @@ if ! mkdir "$LOCK" 2>/dev/null; then die "another AI agent practice pipeline hol
 trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
 
 restart_after_usage_limit() {
-  local stage="$1" events="$2" marker="$3"
-  local limit_info limit_rc wait_seconds reset_label resume_log next_count step remaining find_rc
-  local restart_cmd
+  local stage="$1" events="$2" session_state="$3"
+  local limit_info limit_rc wait_seconds reset_label next_count step remaining wait_policy
   set +e
   limit_info="$(node "$CLAUDE_LIMIT_TOOL" "$events" 2>>"$PLOG")"
   limit_rc=$?
   set -e
-  [ "$limit_rc" = 0 ] || return 1
-
+  [ "$limit_rc" != 1 ] || return 1
+  if [ "$limit_rc" != 0 ]; then
+    node "$CLAUDE_SESSION_TOOL" status "$session_state" usage_limit_parse_failed "see $events and $PLOG" || true
+    die "$stage usage-limit response could not be parsed; saved session and artifacts remain available; events: $events"
+  fi
   if [ "$AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT" != 1 ]; then
+    node "$CLAUDE_SESSION_TOOL" status "$session_state" usage_resume_disabled || true
     die "$stage hit the Claude usage limit and automatic resume is disabled; events: $events"
   fi
   if [ "$AGENT_PIPELINE_USAGE_RESUME_COUNT" -ge "$AGENT_PIPELINE_MAX_USAGE_RESUMES" ]; then
+    node "$CLAUDE_SESSION_TOOL" status "$session_state" usage_resume_exhausted || true
     die "$stage hit the Claude usage limit after $AGENT_PIPELINE_USAGE_RESUME_COUNT automatic resumes; events: $events"
   fi
-
   wait_seconds="$(printf '%s\n' "$limit_info" | sed -n '1p')"
   reset_label="$(printf '%s\n' "$limit_info" | sed -n '2p')"
+  wait_policy=provider-reset
   if [ -n "$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE" ]; then
     wait_seconds="$AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE"
-    reset_label="test override"
+    wait_policy=fixed-seconds
   else
     wait_seconds=$((wait_seconds + AGENT_PIPELINE_USAGE_RESET_GRACE_SECONDS))
   fi
-
-  resume_log="${RUN_LOG:-}"
-  if [ "$stage" = run ]; then
-    set +e
-    resume_log="$(node "$RUN_LOG_FINDER" "$marker" "$MANIFEST" "$ROOT" 2>>"$PLOG")"
-    find_rc=$?
-    set -e
-    [ "$find_rc" = 0 ] || die "run hit the Claude usage limit but no unique saved execution log matched $MANIFEST"
-  fi
-  if [ -n "$resume_log" ] && [ ! -f "$resume_log" ]; then
-    die "$stage selected a missing execution log for automatic resume: $resume_log"
-  fi
-  if [ -n "$resume_log" ] && [ -n "$ARTICLE_IDENTITY" ]; then
-    node "$IDENTITY_TOOL" verify --identity "$ARTICLE_IDENTITY" --state "$IDENTITY_STATE" \
-      --save "$(dirname "$resume_log")/article-identity.json" || die "usage-limit resume identity failed"
-  fi
-
   next_count=$((AGENT_PIPELINE_USAGE_RESUME_COUNT + 1))
-  log "PAUSE: $stage hit the Claude usage limit; reset=$reset_label, wait=${wait_seconds}s"
-  if [ -n "$resume_log" ]; then
-    log "saved execution log: $resume_log"
-  else
-    log "no reusable execution log exists yet; the pipeline will restart from research"
-  fi
+  node "$CLAUDE_SESSION_TOOL" wait "$session_state" "$reset_label" "$wait_seconds" "$wait_policy" "$next_count" \
+    || die "could not save usage-limit waiting state"
+  log "PAUSE: $stage hit the Claude usage limit; reset=$reset_label, policy=$wait_policy, wait=${wait_seconds}s, resume_at=$(node "$CLAUDE_SESSION_TOOL" get "$session_state" resume_at)"
   remaining="$wait_seconds"
   while [ "$remaining" -gt 0 ]; do
     step=60
@@ -273,31 +260,10 @@ restart_after_usage_limit() {
       log "usage-limit wait remaining: ${remaining}s"
     fi
   done
-
-  if [ "$stage" = review ] || [ "$stage" = revise ]; then
-    export AGENT_PIPELINE_USAGE_RESUME_COUNT="$next_count"
-    log "RESUME: retrying $stage in place; preserving review session, history and revision budget (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
-    return 0
-  fi
-
-  if [ -n "$resume_log" ]; then
-    log "RESTART: resuming from $resume_log (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
-  else
-    log "RESTART: restarting from research (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
-  fi
-  rmdir "$LOCK" 2>/dev/null || die "could not release pipeline lock before automatic resume"
-  trap - EXIT
   export AGENT_PIPELINE_USAGE_RESUME_COUNT="$next_count"
-  restart_cmd=(bash "$ROOT/scripts/auto-agent-practice.sh" --orchestrator "$AGENT_PIPELINE_ORCHESTRATOR")
-  restart_cmd+=(--max-rounds "$MAX_AGENT_REVIEW_ROUNDS")
-  if [ -n "$resume_log" ]; then
-    restart_cmd+=(--resume-after-run "$resume_log")
-  else
-    restart_cmd+=(--topic "$TOPIC")
-  fi
-  [ "$SCHEDULED" = 1 ] && restart_cmd+=(--scheduled)
-  [ "$AUTO_MERGE" = 1 ] && restart_cmd+=(--auto-merge) || restart_cmd+=(--pr-only)
-  exec "${restart_cmd[@]}"
+  node "$CLAUDE_SESSION_TOOL" resume "$session_state" || die "could not save session resume state"
+  log "RESUME: retrying $stage in place; preserving review session, history and revision budget (automatic resume $next_count/$AGENT_PIPELINE_MAX_USAGE_RESUMES)"
+  return 0
 }
 
 [ -x scripts/safe-sync-main.sh ] || die "safe sync helper is missing or not executable"
@@ -315,6 +281,8 @@ run_stage() {
   local reuse_after="${7:-}"
   local contract_repair="${8:-0}"
   local session_fallback="${9:-0}"
+  local session_state="${10:-}" usage_resume=0 stage_session_id=""
+  [ -z "$session_state" ] || usage_resume=1
   local resume_session=""
   [ "$stage" != review ] || resume_session="$REVIEW_SESSION_ID"
   local marker="$PIPE_DIR/.$idx-$stage.marker"
@@ -324,13 +292,21 @@ run_stage() {
   local schema="$PIPE_DIR/$idx-$stage.schema.json"
   local validation_error="$PIPE_DIR/$idx-$stage.validation.stderr"
   local seconds contract rc stage_prompt schema_json
-  case "$stage" in
-    draft|review|revise) prompt="$prompt $IDENTITY_PROMPT" ;;
-  esac
+  if [ "$usage_resume" = 0 ]; then
+    case "$stage" in
+      draft|review|revise) prompt="$prompt $IDENTITY_PROMPT" ;;
+    esac
+  fi
   seconds="$(stage_timeout "$stage")"
   node "$CONTRACT_TOOL" schema "$stage" "$schema" || die "$stage schema generation failed"
   contract="$(node "$CONTRACT_TOOL" prompt "$stage")" || die "$stage result prompt generation failed"
-  touch "$marker"
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ] && [ "$usage_resume" = 1 ]; then
+    resume_session="$(node "$CLAUDE_SESSION_TOOL" get "$session_state" session_id)" || die "missing usage resume session"
+    marker="$(node "$CLAUDE_SESSION_TOOL" get "$session_state" marker)" || die "missing initial stage marker"
+    [ -f "$marker" ] || die "initial stage marker was lost during usage recovery"
+  else
+    touch "$marker"
+  fi
 
   stage_prompt="Use \$$skill. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", artifact must be one existing safe repository-relative regular file under $allowed and reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
 
@@ -352,12 +328,20 @@ run_stage() {
   else
     schema_json="$(tr -d '\n' <"$schema")"
     stage_prompt="Read .agents/skills/$skill/SKILL.md completely, resolve its relative references from that skill directory, and follow it as the stage workflow. $prompt Do not ask questions, alter Git state, publish, or expose credentials. Your final response must be only the schema-conforming stage result JSON. For status \"ok\", artifact must be one existing safe repository-relative regular file under $allowed and reason must be empty. For status \"abort\", artifact must be empty, reason must state the precise blocker, and all metadata must be null. $contract"
+    if [ "$usage_resume" = 0 ]; then
+      session_state="$PIPE_DIR/$idx-$stage.session.json"
+      stage_session_id="$(node "$CLAUDE_SESSION_TOOL" init "$session_state" "$stage" "$idx" "$marker" "$resume_session" "$IDENTITY_STATE" "$AGENT_PIPELINE_MODEL" "$AGENT_PIPELINE_EFFORT" "$stage_prompt")" \
+        || die "could not initialize $stage session state"
+    else
+      stage_session_id="$resume_session"
+      stage_prompt="Resume this interrupted $stage in the same conversation after a Claude usage limit. Inspect the conversation and existing artifacts, complete only unfinished work, and do not repeat completed external actions. Preserve the current article identity, review round and revision budget. $stage_prompt"
+    fi
     cmd=("$CLAUDE_BIN" "-p" "$stage_prompt" "--output-format" "json" "--json-schema" "$schema_json")
     cmd+=("--safe-mode" "--permission-mode" "bypassPermissions")
     if [ -n "$resume_session" ]; then
       cmd+=("--resume" "$resume_session")
-    elif [ "$stage" != review ]; then
-      cmd+=("--no-session-persistence")
+    else
+      cmd+=("--session-id" "$stage_session_id")
     fi
     [ "$search" = 1 ] || cmd+=("--disallowedTools" "WebSearch,WebFetch")
     [ -z "$AGENT_PIPELINE_MODEL" ] || cmd+=("--model" "$AGENT_PIPELINE_MODEL")
@@ -379,20 +363,39 @@ run_stage() {
     fi
     die "$stage timed out; events: $events"
   fi
+  local response_rc=0
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
+    node "$CLAUDE_SESSION_TOOL" response "$session_state" "$events" 2>>"$PLOG" || response_rc=$?
+    if [ "$response_rc" != 0 ]; then
+      node "$CLAUDE_SESSION_TOOL" status "$session_state" resume_unavailable "response could not be verified" || true
+      # An ordinary re-review may fail before emitting JSON (for example a missing
+      # session). Keep its existing fallback, but never replace a quota recovery
+      # conversation or accept an explicitly different returned session ID.
+      if ! { [ "$response_rc" = 2 ] && [ "$usage_resume" = 0 ] && [ "$stage" = review ] \
+          && [ -n "$resume_session" ] && [ "$session_fallback" = 0 ] && [ "$rc" != 0 ]; }; then
+        die "$stage resume_unavailable: response/session ID could not be verified; events: $events"
+      fi
+    fi
+  fi
   # Inspect error envelopes, not successful article text mentioning usage limits.
   local provider_error=0
   if node "$REVIEW_HISTORY_TOOL" has-error "$AGENT_PIPELINE_ORCHESTRATOR" "$events" 2>/dev/null; then
     provider_error=1
   fi
   if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ] \
+      && [ "$response_rc" = 0 ] \
       && { [ "$rc" != 0 ] || [ "$provider_error" = 1 ]; }; then
-    if restart_after_usage_limit "$stage" "$events" "$marker"; then
+    if restart_after_usage_limit "$stage" "$events" "$session_state"; then
       run_stage "$stage" "$idx-usage-$AGENT_PIPELINE_USAGE_RESUME_COUNT" "$skill" "$allowed" "$search" \
-        "$prompt" "$reuse_after" "$contract_repair" "$session_fallback"
+        "$prompt" "$reuse_after" "$contract_repair" "$session_fallback" "$session_state"
       return
     fi
   fi
-  if [ -n "$resume_session" ] && [ "$session_fallback" = 0 ] \
+  if [ "$usage_resume" = 1 ] && { [ "$rc" != 0 ] || [ "$provider_error" = 1 ]; }; then
+    node "$CLAUDE_SESSION_TOOL" status "$session_state" resume_unavailable "provider rejected resumed call" || true
+    die "$stage resume_unavailable: same conversation could not complete; events: $events"
+  fi
+  if [ "$stage" = review ] && [ -n "$resume_session" ] && [ "$session_fallback" = 0 ] \
       && { [ "$rc" != 0 ] || { [ "$provider_error" = 1 ] && rg -qi '(session|thread|conversation).*(not found|does not exist|cannot|failed|invalid|corrupt)|no (conversation|session).*found|failed to (load|resume)' "$events" "$stderr_file"; }; }; then
     log "review session fallback: failed to resume $resume_session; starting replacement with article, evidence and full history=$REVIEW_HISTORY; events=$events stderr=$stderr_file"
     REVIEW_SESSION_ID=""
@@ -463,6 +466,9 @@ run_stage() {
     retry_pipeline system "stage-result-contract-$stage" "$stage returned an invalid result contract; another scheduled topic may be tried"
   fi
   [ "$result_rc" = 0 ] || die "$stage result contract failed: $result"
+  if [ "$AGENT_PIPELINE_ORCHESTRATOR" = claude ]; then
+    node "$CLAUDE_SESSION_TOOL" status "$session_state" completed || die "could not save completed session state"
+  fi
   STAGE_RESULT="$result"
   log "$stage complete: $STAGE_ARTIFACT"
 }

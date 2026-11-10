@@ -11,7 +11,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zenn-recovery-test-'));
 const checkout = path.join(root, 'checkout'), remote = path.join(root, 'remote.git'), bin = path.join(root, 'bin');
 const qpath = 'config/zenn-publish-queue.json';
 const run = (cmd, args, cwd = checkout, env = {}) => spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 60000,
-  env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 'Queue Test', GIT_AUTHOR_EMAIL: 'queue@example.invalid', GIT_COMMITTER_NAME: 'Queue Test', GIT_COMMITTER_EMAIL: 'queue@example.invalid', ARTICLE_PIPELINE_RUNTIME: '', ARTICLE_PIPELINE_RUN_DIR: '', ARTICLE_PIPELINE_MODE: 'normal', ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1', PATH: `${bin}:${process.env.PATH}`, TEST_REMOTE: remote, TEST_ROOT: root, AGENT_QUEUE_CHECK_INTERVAL_SECONDS: '0', ...env } });
+  env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_AUTHOR_NAME: 'Queue Test', GIT_AUTHOR_EMAIL: 'queue@example.invalid', GIT_COMMITTER_NAME: 'Queue Test', GIT_COMMITTER_EMAIL: 'queue@example.invalid', ARTICLE_PIPELINE_RUNTIME: '', ARTICLE_PIPELINE_RUN_DIR: '', ARTICLE_PIPELINE_MODE: 'normal', ARTICLE_PIPELINE_ISOLATED_WORKTREE: '1', PATH: `${bin}:${process.env.PATH}`, TEST_REMOTE: remote, TEST_ROOT: root, AGENT_QUEUE_CHECK_INTERVAL_SECONDS: '0', AGENT_QUEUE_MERGE_TRANSPORT: 'github', ...env } });
 const ok = r => { assert.equal(r.status, 0, `${r.stdout}\n${r.stderr}`); return r.stdout.trim(); };
 const git = (...args) => ok(run('git', args));
 const write = (p, content) => { fs.mkdirSync(path.dirname(path.join(checkout, p)), { recursive: true }); fs.writeFileSync(path.join(checkout, p), content); };
@@ -85,6 +85,10 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
   console.log(JSON.stringify({required_status_checks:{strict,...checks},enforce_admins:{enabled:strict}}));
 } else if (args[0] === 'pr' && args[1] === 'view') {
   p.views = (p.views || 0) + 1;
+  if (process.env.AGENT_QUEUE_MERGE_TRANSPORT === 'base-lease' && !process.env.TEST_ATOMIC_NO_CONFIRM
+      && git('merge-base', head(), 'main') === head()) {
+    p.state = 'MERGED'; p.mergeCommit = {oid:git('rev-parse', 'main')};
+  }
   if (process.env.TEST_RACE === 'main-always' && p.views >= 3) bumpMain();
   if (process.env.TEST_RACE === 'head' && p.views === 3) {
     const old = head(), next = git('commit-tree', git('rev-parse', old + '^{tree}'), '-p', old, '-m', 'another PR writer');
@@ -129,6 +133,32 @@ if (args[0] === 'api' && args[1].endsWith('/protection')) {
   fs.writeFileSync(path.join(bin, 'git'), `#!/usr/bin/env node
 const cp = require('node:child_process'), fs = require('node:fs');
 const args = process.argv.slice(2), actual = ${JSON.stringify(realGit)};
+if (process.env.TEST_ATOMIC_RACE && args[0] === 'push' && args.includes('--atomic')) {
+  const pr = JSON.parse(fs.readFileSync(process.env.TEST_PR)), remote = process.env.TEST_REMOTE;
+  const counter = process.env.TEST_ROOT + '/atomic-race-' + pr.number;
+  const count = fs.existsSync(counter) ? Number(fs.readFileSync(counter)) : 0;
+  fs.writeFileSync(counter, String(count + 1));
+  if (count === 0 || process.env.TEST_ATOMIC_RACE === 'main-always') {
+    const g = (...a) => cp.execFileSync(actual, ['--git-dir', remote, ...a], {encoding:'utf8'}).trim();
+    const ref = process.env.TEST_ATOMIC_RACE.startsWith('head') ? pr.branch : 'main';
+    const previous = g('rev-parse', ref);
+    let tree = g('rev-parse', previous + '^{tree}');
+    if (process.env.TEST_ATOMIC_RACE === 'main-body') {
+      const index = process.env.TEST_ROOT + '/atomic-body.index';
+      const env = {...process.env, GIT_INDEX_FILE:index};
+      const t = (...a) => cp.execFileSync(actual, ['--git-dir', remote, ...a], {encoding:'utf8', env}).trim();
+      t('read-tree', previous);
+      const article = 'articles/' + pr.name + '.md';
+      const content = t('show', previous + ':' + article) + '\\nLate unreviewed edit\\n';
+      const blob = cp.execFileSync(actual, ['--git-dir', remote, 'hash-object', '-w', '--stdin'], {input:content, encoding:'utf8'}).trim();
+      t('update-index', '--cacheinfo', '100644,' + blob + ',' + article);
+      tree = t('write-tree'); fs.rmSync(index, {force:true});
+    }
+    const replacement = process.env.TEST_ATOMIC_RACE.endsWith('rewind') ? g('rev-parse', previous + '^') :
+      g('commit-tree', tree, '-p', previous, '-m', 'atomic concurrent update');
+    g('update-ref', 'refs/heads/' + ref, replacement, previous);
+  }
+}
 if (process.env.TEST_PUSH_RACE && args[0] === 'push' && args.some(a => a.startsWith('--force-with-lease='))) {
   const pr = JSON.parse(fs.readFileSync(process.env.TEST_PR)), remote = process.env.TEST_REMOTE;
   const g = (...a) => cp.execFileSync(actual, ['--git-dir', remote, ...a], {encoding:'utf8'}).trim();
@@ -142,6 +172,7 @@ if (process.env.TEST_HEAD_LAG && args[0] === 'push' && args.some(a => a.startsWi
   fs.writeFileSync(process.env.TEST_ROOT + '/head-lag.json', JSON.stringify({previous: lease, remaining: Number(process.env.TEST_HEAD_LAG)}));
 }
 const result = cp.spawnSync(actual, args, {stdio:'inherit'});
+if (process.env.TEST_ATOMIC_LOST_RESPONSE && args[0] === 'push' && args.includes('--atomic') && result.status === 0) process.exit(1);
 process.exit(result.status ?? 1);
 `, { mode: 0o755 });
 
@@ -303,6 +334,62 @@ process.exit(result.status ?? 1);
   const dev = makePr('dev-blocked', base);
   assertFailure(recover(dev, ['--merge'], { ARTICLE_PIPELINE_MODE: 'development' }), /prohibited in development/);
   assert.equal(json(dev.metaFile).views, undefined);
+
+  // With explicitly selected base-lease transport, CI is not the concurrency
+  // guard: both the validated main and approved PR head are leased atomically.
+  const leaseEnv = { AGENT_QUEUE_MERGE_TRANSPORT: 'base-lease', TEST_PROTECTION: 'off' };
+  const leased = makePr('leased-article', base);
+  const leaseBefore = mainQueue();
+  ok(recover(leased, ['--merge'], leaseEnv));
+  assert.equal(json(leased.state).status, 'merged');
+  assert.equal(json(leased.state).merge_transport, 'base-lease');
+  assert.equal(json(leased.metaFile).checks, undefined);
+  assert.equal(json(leased.metaFile).merges, undefined, 'must not use the non-atomic GitHub merge API');
+  assert.deepEqual(mainQueue().entries.slice(0, -1), leaseBefore.entries);
+  assert.equal(git('merge-base', leased.head, json(leased.state).merge_commit), leased.head);
+  const leaseMain = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+  ok(recover(leased, ['--merge'], leaseEnv));
+  assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), leaseMain);
+
+  const leaseRetry = makePr('leased-base-race', base);
+  ok(recover(leaseRetry, ['--merge'], { ...leaseEnv, TEST_ATOMIC_RACE: 'main-once' }));
+  assert.equal(json(leaseRetry.state).attempts.length, 2);
+  const leaseForever = makePr('leased-base-forever', base);
+  const initialPrHead = leaseForever.head;
+  assertFailure(recover(leaseForever, ['--merge', '--attempts', '2'], { ...leaseEnv, TEST_ATOMIC_RACE: 'main-always' }), /retry limit reached/);
+  assert.equal(json(leaseForever.state).attempts.length, 2);
+  assert.ok(!mainQueue().entries.some(e => e.article === `articles/${leaseForever.name}.md`));
+  assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', leaseForever.metadata.branch])), json(leaseForever.state).expected_head);
+  assert.notEqual(json(leaseForever.state).expected_head, initialPrHead, 'ordinary PR reapply remains append-only');
+  for (const race of ['head-append', 'head-rewind']) {
+    const p = makePr(`leased-${race}`, base);
+    const beforeMain = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+    assertFailure(recover(p, ['--merge'], { ...leaseEnv, TEST_ATOMIC_RACE: race }), /another writer/);
+    assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), beforeMain, 'atomic rejection must not update main');
+  }
+  const rewound = makePr('leased-main-rewind', base);
+  assertFailure(recover(rewound, ['--merge'], { ...leaseEnv, TEST_ATOMIC_RACE: 'main-rewind' }), /base history was rewritten/);
+  assert.ok(!mainQueue().entries.some(e => e.article === `articles/${rewound.name}.md`));
+  const lateLeaseBase = advance(() => write('articles/leased-late-body.md', draft('leased-late-body')));
+  const lateLease = makePr('leased-late-body', lateLeaseBase);
+  assertFailure(recover(lateLease, ['--merge'], { ...leaseEnv, TEST_ATOMIC_RACE: 'main-body' }), /non-queue conflict/);
+  assert.ok(!mainQueue().entries.some(e => e.article === 'articles/leased-late-body.md'));
+  const unsupported = makePr('leased-unsupported-server', base);
+  const unsupportedMain = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+  ok(run('git', ['--git-dir', remote, 'config', 'receive.advertiseAtomic', 'false']));
+  assertFailure(recover(unsupported, ['--merge'], leaseEnv), /does not support --atomic/);
+  ok(run('git', ['--git-dir', remote, 'config', '--unset', 'receive.advertiseAtomic']));
+  assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), unsupportedMain);
+  const lost = makePr('leased-lost-response', base);
+  ok(recover(lost, ['--merge'], { ...leaseEnv, TEST_ATOMIC_LOST_RESPONSE: '1' }));
+  assert.equal(json(lost.state).status, 'merged');
+  const delayed = makePr('leased-delayed-confirmation', base);
+  assertFailure(recover(delayed, ['--merge'], { ...leaseEnv, TEST_ATOMIC_NO_CONFIRM: '1', AGENT_QUEUE_HEAD_SYNC_SECONDS: '0' }), /has not confirmed/);
+  assert.equal(json(delayed.state).status, 'recovery-failed');
+  const alreadyPushed = ok(run('git', ['--git-dir', remote, 'rev-parse', 'main']));
+  ok(recover(delayed, ['--merge'], leaseEnv));
+  assert.equal(json(delayed.state).status, 'merged');
+  assert.equal(ok(run('git', ['--git-dir', remote, 'rev-parse', 'main'])), alreadyPushed, 'receipt resume must not push twice');
   console.log('queue PR recovery tests passed');
 } finally {
   for (const name of fs.readdirSync(root).filter(n => /^receipt-.*\.json$/.test(n))) {
