@@ -235,6 +235,7 @@ case "$1 $2" in
     esac ;;
   "pr create")
     prev=""; for arg in "$@"; do [ "$prev" != --head ] || printf '%s' "$arg" >"${env.dir}/branch"; prev="$arg"; done
+    git --git-dir="${env.remote}" diff --name-only main "refs/heads/$(cat "${env.dir}/branch")" >"${env.dir}/pr-files"
     echo "https://example.invalid/pull/9"; exit 0 ;;
   "pr merge")
     if [ -f "${env.dir}/branch" ]; then cp "${env.dir}/branch" "${env.dir}/merged"
@@ -284,6 +285,8 @@ exit 2
     assert.ok(calls.findIndex((c) => c.startsWith("pr merge"))
       > calls.findLastIndex((c) => c.startsWith("pr checks")));
     assert.match(result.stdout, /Merge: merged/);
+    assert.deepEqual(fs.readFileSync(path.join(env.dir, "pr-files"), "utf8").trim().split("\n").sort(),
+      [retryArticle, queueRelative].sort(), "retry PR must include the article Markdown and queue state");
     assert.deepEqual(pushedBranches(env), [], "the merged queue branch must be deleted");
 
     // gh exits non-zero after a successful merge (its local branch cleanup
@@ -611,22 +614,44 @@ Test body.
     "decide", "--api-json", emptyApi, "--now", "2026-08-14T10:00:00.000Z",
   ]));
   assert.equal(retry.action, "retry");
+  const beforeRetry = fs.readFileSync(path.join(fixture, article), "utf8");
+  const otherArticleBeforeRetry = fs.readFileSync(path.join(fixture, secondArticle), "utf8");
   mustRun([
     "apply", "--action", "retry", "--slug", "queue-fixture",
     "--now", "2026-08-14T10:00:00.000Z",
   ]);
   assert.equal(readQueue().entries[0].attempts, 2);
+  const firstRetryText = fs.readFileSync(path.join(fixture, article), "utf8");
+  // Zenn synchronizes changed Markdown files. A queue-only retry cannot
+  // guarantee another synchronization of the article.
+  assert.notEqual(firstRetryText, beforeRetry, "retry must change the article Markdown");
+  const retryMarker = /\n<!-- zenn-publish-queue-retry: attempt=\d+ at=[^\n]+ -->\n$/;
+  assert.equal(firstRetryText.replace(retryMarker, ""), beforeRetry,
+    "retry must preserve the reviewed article, including code examples");
+  assert.match(firstRetryText, /attempt=2 at=2026-08-14T10:00:00.000Z/);
+  mustRun([
+    "apply", "--action", "retry", "--slug", "queue-fixture",
+    "--now", "2026-08-14T16:00:00.000Z",
+  ]);
+  const secondRetryText = fs.readFileSync(path.join(fixture, article), "utf8");
+  assert.notEqual(secondRetryText, firstRetryText, "each retry must change the article");
+  assert.equal(secondRetryText.replace(retryMarker, ""), beforeRetry);
+  assert.match(secondRetryText, /attempt=3 at=2026-08-14T16:00:00.000Z/);
+  assert.equal((secondRetryText.match(/<!-- zenn-publish-queue-retry:/g) || []).length, 1,
+    "retries must replace their own final marker rather than accumulating comments");
+  assert.equal(fs.readFileSync(path.join(fixture, secondArticle), "utf8"), otherArticleBeforeRetry,
+    "retry must only change the FIFO head article");
 
   const visibleApi = writeApi("visible.json", [
-    { slug: "queue-fixture", published_at: "2026-08-14T10:01:00.000Z" },
+    { slug: "queue-fixture", published_at: "2026-08-14T16:01:00.000Z" },
   ]);
   const reconcile = JSON.parse(mustRun([
-    "decide", "--api-json", visibleApi, "--now", "2026-08-14T10:02:00.000Z",
+    "decide", "--api-json", visibleApi, "--now", "2026-08-14T16:02:00.000Z",
   ]));
   assert.equal(reconcile.action, "reconcile");
   mustRun([
     "apply", "--action", "reconcile", "--slug", "queue-fixture",
-    "--now", "2026-08-14T10:02:00.000Z",
+    "--now", "2026-08-14T16:02:00.000Z",
   ]);
   assert.equal(readQueue().entries.length, 0);
 

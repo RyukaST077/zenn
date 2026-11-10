@@ -1,0 +1,38 @@
+{
+  "slug": "claude-code-login-expiry-signal-decision",
+  "topics": [
+    "claudecode",
+    "cli",
+    "aiagent",
+    "automation"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 75,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-11-04T16:30:19.057Z",
+    "contract": {
+      "targetReader": "Claude Code を claude.ai サブスクリプション認証のまま cron / launchd / CI で無人実行している人で、セッション失効を実行前に検知したい人",
+      "readerDecision": "無人実行の種類ごとに、ログイン失効の検知をどの地点（auth statusの事前確認／-pのJSON結果の参照／テキストモードの警告）に置くかを選べる",
+      "takeaway": "無人実行タイプ別の失効シグナル選択の決定表と、残り日数がしきい値を下回ったらジョブを中断する最小シェルスニペット",
+      "verificationItems": [
+        "claude auth status のデフォルト出力がJSONであり loginExpiresAt を含むことをローカル確認",
+        "claude -p --output-format json の credential_expires_at が auth status の値と一致することをローカル確認",
+        "claude -p のデフォルト/テキスト出力には stdout にも stderr にも失効シグナルが一切現れないことをローカル確認",
+        "事前チェック(auth status: 無課金・約0.2秒)と事後参照(-p実行: 実測$0.05)のコスト差を比較"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-11-04付の最新リリース(v2.1.318)で追加されたばかりの新フィールドで、公式ドキュメント上は一文の変更点記載しかなく、cron/launchd/CIでの無人実行設計への落とし込みは未解説。claudecodeトピックはD30の市場コホートを継続測定できる(topic-feedback.mjs: d30-45 n=400)。"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "slug": "node26-event-loop-window-monitor",
+  "topics": [
+    "nodejs",
+    "javascript",
+    "performance",
+    "observability",
+    "backend"
+  ],
+  "primaryTopic": "nodejs",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 35,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-09T02:43:28.270Z",
+    "contract": {
+      "targetReader": "Node.js APIの遅延がCPU使用率だけでは説明できず、イベントループ遅延を窓別にローカル計測したい新人Webエンジニア",
+      "readerDecision": "Node.js 26.11のsnapshot/diffを採用して既存のresetベース監視を置き換えるか決められる",
+      "takeaway": "コピペできるevent-loop-window-monitor.mjs全文と導入判断表",
+      "verificationItems": [
+        "idle・同期CPUブロック・非同期I/O待機の3条件で窓別p50・p99・max・count・ELUを比較する",
+        "snapshot/diff方式とread後reset方式を同一負荷で比較し窓の独立性と読み取り境界の差を確認する",
+        "snapshot間のresetを発生させresetCount不一致時のfallbackを確認する",
+        "resolution 1ms・10ms・20ms・samplePerIterationで監視コストとサンプル数を比較する",
+        "Node.js 26.10でfeature detectionが安全に停止することを確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-10-09時点でZennのnodejsトピックはtaggings_count 4089。2026-10-08生成の市場観測ではnodejsのd30-45コホートはn=139、p75=2、p90=3、5いいね以上8%で昇格根拠まで測れる。市場上位556本ではasset推定45本の平均が59.9いいね、最大693いいねだった。"
+    }
+  }
+}

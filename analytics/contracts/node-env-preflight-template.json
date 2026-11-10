@@ -1,0 +1,40 @@
+{
+  "slug": "node-env-preflight-template",
+  "topics": [
+    "nodejs",
+    "typescript",
+    "security",
+    "testing",
+    "configuration"
+  ],
+  "primaryTopic": "nodejs",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 46,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-16T17:32:20.476Z",
+    "contract": {
+      "targetReader": "Node.js 24 LTS以降とTypeScriptで小規模なWebサービスを開発し、.envやデプロイ先の環境変数の設定漏れ・型間違いをアプリ起動後に発覚させたくない新人から実務2年目のエンジニア",
+      "readerDecision": "Node.js標準APIだけで動く起動前検査テンプレートを自分のサービスへ採用するか決められる",
+      "takeaway": "記事本文だけからコピーして実行できる依存ゼロのenv.tsとnode:testによるenv.test.tsの全文、最小.env.example、schema編集・導入チェックリスト",
+      "verificationItems": [
+        "正常な.envをURL・port・boolean・enumを持つtyped configへ正規化し、同名のruntime環境変数だけがfile値を上書きすること",
+        "必須値欠落、不正URL、0・65536・非数のportがすべてnon-zeroで終了し、アプリ本体の開始markerを作らないこと",
+        ".env内の未知キーtypoは拒否する一方でPATHなど明示schema外のOS環境変数は拒否も列挙もしないこと",
+        "固定canaryをsecret値にした失敗caseでもstdout・stderr・保存logのいずれにも値そのものが出ないこと",
+        "同じtest suiteがNode.js v24.22.0 LTSとv26.12.0 Currentで同じ判定になること"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-10-17のZenn topic APIでnodejsは4,155件、typescriptは18,252件、securityは6,074件。analytics/topic-feedback.mdのd30-45市場コホートはnodejs n=192で昇格根拠まで測れる。国内検索ではNode標準--env-file移行記事が9いいね、Node.js/Next.jsの環境変数検査記事や2026年のZod記事が継続して見つかり、海外でも2026-03更新のVarlock guide、Envalid repository、2026-08のruntime config validation議論が欠落・型変換・schema drift・secret非表示を現行課題として扱う。市場上位ではコピー可能な設定assetが735いいね、TypeScript成果物assetが281いいねだったが、これらは需要の観測でありasset型やタイトルの因果効果とは解釈しない。"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "slug": "node-bench-reproducible-template",
+  "topics": [
+    "nodejs",
+    "javascript",
+    "performance",
+    "benchmark",
+    "cli"
+  ],
+  "primaryTopic": "nodejs",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 43,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-02T11:02:24.468Z",
+    "contract": {
+      "targetReader": "Node.jsで小さな性能改善PRを書くが、performance.now()の単発計測しか経験がなく、再現可能なベンチの残し方を決められない新人Webエンジニア",
+      "readerDecision": "自分の性能改善PRにNode.js標準だけで再実行できるベンチ一式を添付できるか決められる",
+      "takeaway": "コピーして計測対象だけ差し替えられるbenchmark.mjs、process isolation付きpackage.json scripts、JSONL保存・ノイズ確認スクリプト、結果の読み方チェックリスト一式",
+      "verificationItems": [
+        "setupを計測区間の外へ置き、十分なoperationsとwarmupを与えた場合にsummaryとraw samplesが得られること",
+        "既定のprocess isolationとisolation noneでmodule・heap状態の持ち越しが変わること",
+        "spec reporterがサンプル数・平均rate・95%信頼区間・中央値とnoisyまたはskewedの判断材料を表示すること",
+        "json reporterがbenchmark内のstdoutとstderrをdiagnostic recordとして扱い、JSONL出力を壊さないこと",
+        "同じ結果を返す2実装のassertとraw sample保存を含む一式が別directoryでも再実行できること"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-10-02閲覧時のZenn Node.jsトピックは記事3503本で、リポジトリ観測でもnodejsのd30-45市場コホートは117本（昇格根拠に使える）。国内の『Webアプリのベンチマークについて』はマイクロベンチを実務上の3分類の1つとして扱いmitataの手順を詳説しており、計測手法への需要がある。Node.js 26.9.0が2026-09-16に標準のnode:benchを追加し、TypeScript.fmも2026-09-24の週次ニュースで独立項目として扱った一方、既存87記事と登録済み契約29件にはnode:benchの再現テンプレートがない。"
+    }
+  }
+}

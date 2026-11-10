@@ -3,7 +3,7 @@ title: "codex mcp-serverが消えた後、Claude Codeとの配線をどう直す
 emoji: "🔌"
 type: tech
 topics: ["claudecode", "codex", "cli", "aiagent"]
-published: false
+published: true
 ---
 
 Codex CLIを `codex mcp-server` としてMCPサーバーに見立て、Claude Codeの `.mcp.json` に

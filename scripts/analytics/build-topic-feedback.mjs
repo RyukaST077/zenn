@@ -21,6 +21,7 @@ import {
   fail,
   OBSERVATION_ARCHETYPES,
   guessValueArchetype,
+  isMaturedBasis,
   parseArgs,
   parseInstant,
   readJsonIfExists,
@@ -420,7 +421,7 @@ if (!experiment) {
   push("_実施中の実験はありません。_");
 } else {
   const assigned = ledger.filter((entry) => entry.classification?.experimentId === experiment.id);
-  const matured = assigned.filter((entry) => entry.observations?.d30?.basis === "measured");
+  const matured = assigned.filter((entry) => isMaturedBasis(entry.observations?.d30?.basis));
   push(`- ${experiment.id}: ${experiment.title}`);
   push(`- 仮説: ${experiment.hypothesis}`);
   push(`- 割り付け済み: ${assigned.length} / ${experiment.design?.treatment?.n ?? "?"} 本`);
