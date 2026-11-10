@@ -1,0 +1,39 @@
+{
+  "slug": "claude-code-autocompact-headless-decision",
+  "topics": [
+    "claudecode",
+    "cli",
+    "aiagent",
+    "automation"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 47,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-11-08T21:08:48.496Z",
+    "contract": {
+      "targetReader": "claude -p をcron・launchd・CIで無人実行している人、または長時間開きっぱなしのTUIセッションを運用している人で、auto-compact/idle-compactionの設定（autoCompactWindow・autoCompactEnabled・idleCompaction・CLAUDE_AUTOCOMPACT_PCT_OVERRIDE等）のうちどれが自分の実行形態で実際に効くのか分からない人",
+      "readerDecision": "自分の実行形態（対話TUIの長時間セッション／-pの1ショットcronジョブ／--resumeで再開する長時間セッション）に対して、auto-compact関連のどの設定項目が実際に効き、どれが無言で無視されるかを踏まえて設定の置き場所と動作確認方法を決められる",
+      "takeaway": "実行形態×設定項目（autoCompactEnabled・autoCompactWindow・idleCompaction・CLAUDE_AUTOCOMPACT_PCT_OVERRIDE・CLAUDE_CODE_AUTO_COMPACT_WINDOW・--autocompactフラグ）の決定表と、claude -p \"/context\" --output-format json を使ったヘッドレス自己点検コマンド",
+      "verificationItems": [
+        "--autocompactフラグに範囲外の値を渡すとCLIパース時点でエラー終了(exit 1)すること",
+        ".claude/settings.jsonのautoCompactWindowに範囲外値・型違反を書いてもclaude -pは無言でexit 0になること",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOWとCLAUDE_AUTOCOMPACT_PCT_OVERRIDEの不正値について、公式チェンジログが明記する警告がclaude -pのstderrには出ないこと",
+        "claude -p \"/context\" --output-format jsonがモデル別トークン使用量とカテゴリ別内訳を機械可読に返すこと",
+        "idleCompaction設定が-pの1ショット実行の応答・終了コードに影響を与えないこと"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "claudecodeトピックはanalytics/topic-feedback.mdのd30-45コホートがn=400で昇格根拠まで測れる最大級トピック。2026-10〜11のChangelog(2.1.287〜2.1.319)はauto-compact/idle-compaction関連の修正だけで30件以上を占め、2026-10-14にidle compactionが新規追加されるなど直近の話題性が高い一方、このリポジトリの既存95記事・研究レポート11件にcompaction設定自体を扱ったものは0件。公式ドキュメント(settings-reference.md/env-vars.md/changelog.md、2026-11-09取得)はTUIでの警告表示を前提にした記述のみで、cron/launchd等のヘッドレス実行での可視性には触れておらず、ここに未文書化のギャップがある。"
+    }
+  }
+}
