@@ -10,6 +10,7 @@ import { isDeepStrictEqual as equal } from 'node:util';
 
 const code = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const options = {};
+const mergeTransport = process.env.AGENT_QUEUE_MERGE_TRANSPORT || 'github';
 for (let i = 2; i < process.argv.length; i++) {
   const arg = process.argv[i];
   if (arg === '--merge') options.merge = true;
@@ -115,18 +116,48 @@ const waitForRequiredChecks = () => {
 // the head we just replaced is expected; any other head still fails verifyPr.
 const waitForPrHead = previous => {
   const deadline = Date.now() + Number(process.env.AGENT_QUEUE_HEAD_SYNC_SECONDS || 60) * 1000;
-  while (pr().headRefOid === previous && Date.now() < deadline) sleep(2000);
+  for (;;) {
+    const current = pr();
+    if (current.state === 'MERGED' || current.headRefOid !== previous || Date.now() >= deadline) return;
+    sleep(2000);
+  }
 };
 const verifyPr = () => {
   const current = pr();
-  if (current.headRefOid !== state.expected_head || current.headRefName !== state.branch || current.baseRefName !== state.base || current.isCrossRepository)
+  const mergedPrevious = current.state === 'MERGED' && state.pending_atomic_merge?.previous_head === current.headRefOid;
+  if ((!mergedPrevious && current.headRefOid !== state.expected_head) || current.headRefName !== state.branch || current.baseRefName !== state.base || current.isCrossRepository)
     fail('PR changed by another writer; refusing to overwrite or merge it');
   if (!['OPEN', 'MERGED'].includes(current.state)) fail(`PR is ${current.state}`);
   return current;
 };
+const confirmAtomicMerge = () => {
+  const pending = state.pending_atomic_merge;
+  const remoteBase = fetchRef(state.base);
+  if (run('git', ['merge-base', '--is-ancestor', pending.commit, remoteBase], process.cwd(), false).status !== 0)
+    fail('atomic merge is not present on the remote base; manual recovery required');
+  state.expected_head = pending.head;
+  delete state.pending_head;
+  save('atomic-pushed');
+  waitForPrHead(pending.previous_head);
+  const deadline = Date.now() + Number(process.env.AGENT_QUEUE_HEAD_SYNC_SECONDS || 60) * 1000;
+  for (;;) {
+    const observed = verifyPr();
+    if (observed.state === 'MERGED') {
+      state.merge_commit = observed.mergeCommit?.oid || pending.commit;
+      state.merge_guard_head = pending.head;
+      state.expected_head = observed.headRefOid;
+      delete state.pending_atomic_merge;
+      save('merged');
+      return;
+    }
+    if (Date.now() >= deadline) fail('atomic push completed but GitHub has not confirmed the PR merge; resume this receipt');
+    sleep(1000);
+  }
+};
 try {
   if (process.env.ARTICLE_PIPELINE_MODE === 'development') fail('publication prohibited in development mode');
   if (process.env.ARTICLE_PIPELINE_ISOLATED_WORKTREE !== '1') fail('use recover-queue-pr.sh through the committed runtime');
+  if (!['github', 'base-lease'].includes(mergeTransport)) fail('invalid AGENT_QUEUE_MERGE_TRANSPORT');
   assertControls();
   if (!/^articles\/[a-z0-9-]+\.md$/.test(article || '') || !sha(options['expected-head']) || !options.pr) fail('--pr, --article and --expected-head SHA are required');
   const limit = Number(options.attempts || 3);
@@ -153,7 +184,11 @@ try {
   if (!state.branch.startsWith(`queue/${slug}`)) fail('expected an article queue PR branch');
   git('check-ref-format', `refs/heads/${state.branch}`); git('check-ref-format', `refs/heads/${state.base}`);
   const initial = verifyPr();
-  if (initial.state === 'MERGED') {
+  if (state.pending_atomic_merge && options.merge) {
+    // A successful atomic push may have preceded a lost response or receipt
+    // update. Confirm it instead of constructing a second enqueue operation.
+    confirmAtomicMerge();
+  } else if (initial.state === 'MERGED') {
     state.merge_commit = initial.mergeCommit?.oid; save('merged');
   } else {
     save('pr-created');
@@ -260,6 +295,39 @@ try {
       if (remoteHead(state.base) !== base) { save('retrying', 'base advanced after recovery'); continue; }
       if (!options.merge) { save('awaiting-approval', 'no merge authorization supplied'); finished = true; break; }
       assertControls();
+      if (mergeTransport === 'base-lease') {
+        // Advance both refs in one server transaction. The guard commit keeps
+        // the PR history append-only and makes its approved head participate in
+        // the compare-and-swap, including concurrent rewinds of either branch.
+        const previous = state.expected_head;
+        const guarded = git('commit-tree', tree, '-p', previous, '-m', `queue: guard approved ${slug} head`);
+        const commit = git('commit-tree', tree, '-p', base, '-p', guarded, '-m', `Merge reviewed queue PR for ${slug}`);
+        state.pending_atomic_merge = { commit, head: guarded, previous_head: previous, base };
+        state.pending_head = guarded;
+        state.merge_transport = 'base-lease';
+        save('merging-atomic');
+        const pushed = run('git', ['push', '--atomic',
+          `--force-with-lease=refs/heads/${state.base}:${base}`,
+          `--force-with-lease=refs/heads/${state.branch}:${previous}`, 'origin',
+          `${commit}:refs/heads/${state.base}`, `${guarded}:refs/heads/${state.branch}`], process.cwd(), false);
+        if (pushed.status !== 0) {
+          const remoteBase = fetchRef(state.base);
+          if (run('git', ['merge-base', '--is-ancestor', commit, remoteBase], process.cwd(), false).status !== 0) {
+            delete state.pending_atomic_merge;
+            delete state.pending_head;
+            verifyPr();
+            if (remoteBase !== base) {
+              if (run('git', ['merge-base', '--is-ancestor', base, remoteBase], process.cwd(), false).status !== 0)
+                fail('base history was rewritten before atomic merge; manual recovery required');
+              save('retrying', 'base advanced before atomic merge; neither ref updated'); continue;
+            }
+            fail(`atomic merge push rejected: ${pushed.stderr || pushed.error || pushed.stdout}`);
+          }
+        }
+        confirmAtomicMerge();
+        finished = true;
+        break;
+      }
       requireStrictBase();
       waitForRequiredChecks();
       verifyPr();
