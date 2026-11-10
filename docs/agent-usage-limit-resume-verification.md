@@ -43,4 +43,12 @@ Claude Code 2.1.321、`claude-sonnet-5` / medium、隔離した一時ディレ�
 
 適用SHA・PR・元のlaunchd設定・切り替え後の確認結果は、Git管理対象外の `<git-common-dir>/article-runtime/adoptions/claude-usage-resume-20261110/` に保存する。採用時はモデルを使わない通常モードのdry-runで選択SHAを確認し、実際の記事実行は次回のrunログと照合する。
 
+### 必須CIの解除と自動マージの維持
+
+反映時にGitHub Actionsが課金問題のアカウントロックで起動できず、必須CIがマージを阻んだ。利用者の指示により `article-pipeline-tests` の必須マージ条件を解除した。CI workflow自体と、それ以外のブランチ保護は維持する。
+
+利用者は記事の自動マージ維持も指定したため、公開処理に明示設定 `AGENT_QUEUE_MERGE_TRANSPORT=base-lease` を追加した。定期実行用LaunchAgentでこの設定を使い、必須CIに代えて検証済みmainと承認済みPR headの両方をatomic pushのleaseで照合する。既定の `github` 方式は変更しない。詳しくは[必須CIなしの自動マージ](article-runtime.md#必須ciを使わない運用での自動マージ)を参照。
+
+追加の回帰検証は、必須CIなしの正常マージ、base更新時の再検証、競合回数上限、PR headの変更・巻き戻し、baseの巻き戻し、検証直後の記事本文変更、atomic非対応サーバー、push応答喪失、GitHubのマージ状態反映遅延後のreceipt再開を対象とする。ローカルbare remoteと模擬GitHub CLIを使い、公開記事の実マージはテストに使わない。
+
 記事の生成・公開を伴う本番パイプラインの起動、公開キューへの実追加、スケジュール変更は行っていない。
