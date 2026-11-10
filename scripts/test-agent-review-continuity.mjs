@@ -37,22 +37,53 @@ const stateFile = 'fake-state.json';
 const state = fs.existsSync(stateFile) ? JSON.parse(fs.readFileSync(stateFile)) : { sessions: 0, failed: false };
 const resumed = provider === 'claude' ? args[args.indexOf('--resume') + 1] : args.at(-2);
 const isResume = provider === 'claude' ? args.includes('--resume') : args.includes('resume');
-const session = isResume ? resumed : 'fake-session-' + (++state.sessions);
+const session = isResume ? resumed : provider === 'claude' ? args[args.indexOf('--session-id') + 1] : 'fake-session-' + (++state.sessions);
 const round = Number(prompt.match(/review-history\/round-(\d+)/)?.[1] || 0);
 const scenario = process.env.SCENARIO;
 fs.appendFileSync('calls.jsonl', JSON.stringify({ provider, stage, args, prompt, session, isResume, round }) + '\n');
 function save() { fs.writeFileSync(stateFile, JSON.stringify(state)); }
-if (stage === 'review' && isResume && !state.failed && ['fallback', 'fallback-zero'].includes(scenario)) {
+const usageStage = scenario === 'usage-review-first' || scenario === 'usage-unavailable' || scenario === 'usage-id-mismatch' ? 'review'
+  : scenario === 'usage-rc1' || scenario === 'usage-no-reset' || scenario === 'usage-exhausted' || scenario === 'usage-disabled' ? 'plan'
+  : scenario === 'usage-prewritten' ? 'draft' : scenario.replace('usage-', '');
+if (scenario.startsWith('usage-') && (!state.failed || scenario === 'usage-exhausted') && stage === usageStage
+    && (scenario !== 'usage-review' || round === 2)) {
   state.failed = true; save();
-  console.log(JSON.stringify({ is_error: true, result: 'No conversation found with session ID ' + session }));
+  const pipeline = fs.readdirSync('logs/agent').find(name => name.startsWith('pipeline-'));
+  const sessionFiles = fs.readdirSync('logs/agent/' + pipeline).filter(name => name.endsWith('.session.json'));
+  const saved = sessionFiles.map(name => JSON.parse(fs.readFileSync('logs/agent/' + pipeline + '/' + name))).find(item => item.session_id === session && item.status === 'running');
+  if (!saved) throw new Error('session must be recorded before initial call');
+  if (!fs.existsSync('.agent-practice-pipeline.lock')) throw new Error('usage recovery must retain pipeline lock');
+  state.initialMarkerMtime = fs.statSync(saved.marker).mtimeMs; state.usageSession = session; save();
+  if (scenario === 'usage-prewritten') {
+    fs.mkdirSync('articles', { recursive: true });
+    fs.writeFileSync('articles/review-continuity-fixture.md', 'draft\n');
+  }
+  console.log(JSON.stringify({ type: 'result', session_id: session, is_error: true, api_error_status: 429, api_error: 'usage_limit_reached',
+    result: scenario === 'usage-no-reset' ? 'Usage allowance exhausted' : "You've hit your 5-hour limit · resets 2pm (Asia/Tokyo)" }));
+  process.exit(scenario === 'usage-rc1' ? 1 : 0);
+}
+if (scenario.startsWith('usage-') && isResume && session === state.usageSession && prompt.includes('Resume this interrupted')) {
+  const pipeline = fs.readdirSync('logs/agent').find(name => name.startsWith('pipeline-'));
+  const states = fs.readdirSync('logs/agent/' + pipeline).filter(name => name.endsWith('.session.json')).map(name => JSON.parse(fs.readFileSync('logs/agent/' + pipeline + '/' + name)));
+  const active = states.find(item => item.session_id === session && item.status === 'running');
+  if (!active || fs.statSync(active.marker).mtimeMs !== state.initialMarkerMtime) throw new Error('must preserve initial marker');
+  if (!fs.existsSync('.agent-practice-pipeline.lock')) throw new Error('must retain lock after wait');
+}
+if (state.failed && isResume && scenario === 'usage-unavailable') {
+  console.log(JSON.stringify({ type: 'result', session_id: session, is_error: true, result: 'No conversation found with session ID ' + session }));
+  process.exit(1);
+}
+if (state.failed && isResume && scenario === 'usage-id-mismatch') {
+  console.log(JSON.stringify({ type: 'result', session_id: '11111111-1111-4111-8111-111111111111' }));
+  process.exit(0);
+}
+if (stage === 'review' && isResume && !state.failed && ['fallback', 'fallback-zero', 'fallback-empty'].includes(scenario)) {
+  state.failed = true; save();
+  if (scenario !== 'fallback-empty') console.log(JSON.stringify({ is_error: true, result: 'No conversation found with session ID ' + session }));
   console.error('session not found');
   process.exit(scenario === 'fallback-zero' ? 0 : 1);
 }
-if (!state.failed && ((scenario === 'usage-review' && stage === 'review' && round === 2) || (scenario === 'usage-revise' && stage === 'revise'))) {
-  state.failed = true; save();
-  console.log(JSON.stringify({ type: 'result', is_error: true, result: "You've hit your session limit · resets 2pm (Asia/Tokyo)" }));
-  process.exit(0);
-}
+
 save();
 let slug = 'review-continuity-fixture';
 if ((scenario === 'slug-draft' && stage === 'draft' && !state.slugFailed)
@@ -79,7 +110,7 @@ if (stage === 'search') {
   result.artifact = 'logs/agent/analysis.md'; result.metadata = { verdict: 'confirmed', action: 'draft', slug: null };
   write(result.artifact, 'verdict: confirmed\naction: draft\n');
 } else if (stage === 'draft') {
-  result.artifact = article; result.metadata.slug = slug; write(article, 'draft\n');
+  result.artifact = article; result.metadata.slug = slug; if (!(scenario === 'usage-prewritten' && isResume)) write(article, 'draft\n');
   if (scenario === 'contract-mutation') {
     const file = 'analytics/contracts/' + slug + '.json';
     const registration = JSON.parse(fs.readFileSync(file));
@@ -109,7 +140,9 @@ else {
 `;
 
 function runCase(provider, scenario, development = false) {
-  const fresh = scenario.startsWith('fresh-');
+  if (process.argv.length > 2 && !process.argv.slice(2).some(filter => `${provider}/${scenario}`.startsWith(filter))) return;
+  const fresh = scenario.startsWith('fresh-') || scenario.startsWith('usage-');
+  const usageFatal = ['usage-unavailable', 'usage-id-mismatch', 'usage-no-reset', 'usage-exhausted', 'usage-disabled'].includes(scenario);
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-review-'));
   const write = (file, content, executable = false) => {
     const full = path.join(temporary, file);
@@ -127,6 +160,7 @@ function runCase(provider, scenario, development = false) {
     write('scripts/agent-practice/run-experiment.mjs', `
 import fs from 'node:fs';
 const directory = 'logs/agent/run-fixture-20260929-000000';
+fs.appendFileSync('experiment-calls.jsonl', JSON.stringify({ preflight: process.argv.includes('--preflight-only') }) + '\\n');
 fs.mkdirSync(directory, { recursive: true });
 if (process.argv.includes('--preflight-only')) {
   fs.writeFileSync(directory + '/preflight-summary.json', '{}');
@@ -165,21 +199,30 @@ if (process.argv.includes('--preflight-only')) {
       env: { ...process.env, ARTICLE_PIPELINE_ISOLATED_WORKTREE: "1", ARTICLE_PIPELINE_MODE: development ? "development" : "normal", PATH: path.join(temporary, 'bin') + ':' + process.env.PATH,
         CODEX_BIN: path.join(temporary, 'bin/codex'), CLAUDE_BIN: path.join(temporary, 'bin/claude'),
         SCENARIO: scenario, AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE: '0',
-        AGENT_PIPELINE_USAGE_RESUME_COUNT: '0', AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT: '1',
+        AGENT_PIPELINE_USAGE_RESUME_COUNT: '0', AGENT_PIPELINE_AUTO_RESUME_USAGE_LIMIT: scenario === 'usage-disabled' ? '0' : '1',
         AGENT_PIPELINE_MAX_USAGE_RESUMES: '2', MAX_AGENT_STAGE_CONTRACT_REPAIRS: '1',
         ARTICLE_PIPELINE_LOCK_ROOT: temporary, ARTICLE_PIPELINE_SHARED_ARTIFACT_SNAPSHOT: '',
         ARTICLE_PIPELINE_SHARED_ROOT: '', ARTICLE_PIPELINE_ARTIFACT_BASELINE: '',
         AGENT_PIPELINE_RETRY_SIGNAL_FILE: path.join(temporary, 'retry.txt') },
     });
     const identityFatal = ['resume-missing-contract', 'contract-mutation', 'fresh-unregistered', 'fresh-collision'].includes(scenario);
-    const expectedFail = identityFatal || ['final-fail', 'low-score', 'missing-revision-log', 'slug-unrepaired'].includes(scenario);
-    assert.equal(result.status, identityFatal ? 1 : expectedFail ? 20 : 0, `${provider}/${scenario}\n${result.stdout}\n${result.stderr}`);
+    const expectedFail = usageFatal || identityFatal || ['final-fail', 'low-score', 'missing-revision-log', 'slug-unrepaired'].includes(scenario);
+    assert.equal(result.status, identityFatal || usageFatal ? 1 : expectedFail ? 20 : 0, `${provider}/${scenario}\n${result.stdout}\n${result.stderr}`);
     assert.equal(fs.existsSync(path.join(temporary, 'queued.txt')), !expectedFail && !development);
     if (scenario === 'resume-missing-contract') {
       assert.equal(fs.existsSync(path.join(temporary, 'calls.jsonl')), false, 'invalid resume must not call the model');
       console.log(`PASS ${provider}/${scenario}`); return;
     }
     const calls = fs.readFileSync(path.join(temporary, 'calls.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+    if (usageFatal) {
+      assert.equal(fs.existsSync(path.join(temporary, 'retry.txt')), false, 'usage recovery failures must not switch topics');
+      const pipeline = fs.readdirSync(path.join(temporary, 'logs/agent')).find(name => name.startsWith('pipeline-'));
+      const states = fs.readdirSync(path.join(temporary, 'logs/agent', pipeline)).filter(name => name.endsWith('.session.json')).map(name => JSON.parse(fs.readFileSync(path.join(temporary, 'logs/agent', pipeline, name))));
+      const failed = states.find(item => item.status !== 'completed');
+      assert.equal(failed.status, scenario === 'usage-no-reset' ? 'usage_limit_parse_failed' : scenario === 'usage-exhausted' ? 'usage_resume_exhausted' : scenario === 'usage-disabled' ? 'usage_resume_disabled' : 'resume_unavailable');
+      assert.equal(calls.filter(call => call.stage === failed.stage && !call.isResume).length, 1, 'must not replace interrupted session');
+      console.log(`PASS ${provider}/${scenario}`); return;
+    }
     const reviews = calls.filter(c => c.stage === 'review');
     const revisions = calls.filter(c => c.stage === 'revise');
     if (['fresh-unregistered', 'fresh-collision'].includes(scenario)) {
@@ -193,7 +236,7 @@ if (process.argv.includes('--preflight-only')) {
     }
     if (!fresh) assert.equal(fs.readFileSync(registeredFile, 'utf8'), registeredBefore, 'resume and repair must preserve registration');
     else {
-      assert.deepEqual(calls.slice(0, 3).map(c => c.stage), ['search', 'plan', 'analyze']);
+      assert.deepEqual(calls.filter(c => !c.isResume).slice(0, 3).map(c => c.stage), ['search', 'plan', 'analyze']);
       assert.ok(fs.existsSync(path.join(temporary, 'logs/agent/run-fixture-20260929-000000/article-identity.json')));
     }
     assert.equal(fs.readdirSync(path.dirname(registeredFile)).length, 1, 'no duplicate registration');
@@ -202,10 +245,10 @@ if (process.argv.includes('--preflight-only')) {
       assert.ok(calls.filter(c => ['draft', 'revise', 'review'].includes(c.stage)).every(c => c.prompt.includes('Registered article identity:')));
     }
     assert.equal(reviews[0].isResume, false);
-    assert.ok(calls.filter(c => c.stage !== 'review').every(c => !c.isResume && c.session !== reviews[0].session));
+    assert.ok(calls.filter(c => c.stage !== 'review').every(c => (provider === 'claude' || !c.isResume) && c.session !== reviews[0].session));
     for (const call of calls) {
       const ephemeral = call.args.includes(provider === 'claude' ? '--no-session-persistence' : '--ephemeral');
-      assert.equal(ephemeral, call.stage !== 'review', 'only review should persist');
+      assert.equal(ephemeral, provider === 'codex' && call.stage !== 'review', 'all Claude stages should persist');
       if (provider === 'codex' && call.isResume) {
         assert.ok(call.args.indexOf('-C') < call.args.indexOf('resume'), 'exec parent options must precede resume');
         assert.ok(call.args.includes('--output-schema'));
@@ -238,7 +281,31 @@ if (process.argv.includes('--preflight-only')) {
     }
     if (scenario.startsWith('usage')) {
       assert.match(result.stderr, /preserving review session, history and revision budget/);
-      assert.equal(calls.filter(c => c.stage === 'draft').length, 1);
+      assert.equal(calls.filter(c => c.stage === 'draft').length, ['usage-draft', 'usage-prewritten'].includes(scenario) ? 2 : 1);
+      const interruptedStage = scenario === 'usage-review-first' ? 'review' : scenario === 'usage-rc1' ? 'plan' : scenario === 'usage-prewritten' ? 'draft' : scenario.replace('usage-', '');
+      const stageCalls = calls.filter(call => call.stage === interruptedStage);
+      const first = interruptedStage === 'review' && scenario === 'usage-review' ? stageCalls[1] : stageCalls[0];
+      const resumed = stageCalls[stageCalls.indexOf(first) + 1];
+      assert.equal(resumed.session, first.session);
+      assert.equal(resumed.isResume, true);
+      assert.match(resumed.prompt, /Resume this interrupted/);
+      for (const option of ['--json-schema', '--permission-mode', '--safe-mode']) assert.ok(resumed.args.includes(option));
+      const pipelineDir = path.join(temporary, 'logs/agent', fs.readdirSync(path.join(temporary, 'logs/agent')).find(name => name.startsWith('pipeline-')));
+      const state = fs.readdirSync(pipelineDir).filter(name => name.endsWith('.session.json')).map(name => JSON.parse(fs.readFileSync(path.join(pipelineDir, name)))).find(item => item.usage_resumes > 0);
+      assert.equal(state.status, 'completed');
+      assert.equal(state.attempts, 2);
+      assert.equal(state.session_id, first.session);
+      assert.equal(state.wait_policy, 'fixed-seconds');
+      assert.equal(state.reset_label, '2pm (Asia/Tokyo)');
+      assert.equal(state.usage_limit_reason, 'usage_limit_reached');
+      assert.ok(fs.existsSync(path.join(temporary, state.usage_limit_events)));
+      assert.ok(fs.existsSync(path.join(temporary, state.prompt_file)));
+      assert.equal(fs.statSync(path.join(temporary, state.prompt_file)).mode & 0o777, 0o600);
+      assert.equal(fs.statSync(path.join(pipelineDir, fs.readdirSync(pipelineDir).find(name => name.endsWith('.session.json') && JSON.parse(fs.readFileSync(path.join(pipelineDir, name))).session_id === state.session_id))).mode & 0o777, 0o600);
+      assert.ok(fs.existsSync(path.join(temporary, state.marker)));
+      assert.equal(calls.filter(call => call.stage === 'search').length, scenario === 'usage-search' ? 2 : 1);
+      const experimentCalls = fs.readFileSync(path.join(temporary, 'experiment-calls.jsonl'), 'utf8').trim().split('\n').map(JSON.parse);
+      assert.equal(experimentCalls.filter(call => !call.preflight).length, 1, 'must not repeat completed experiment');
     }
     if (scenario === 'final-fail') {
       assert.match(result.stderr, /final confirmation did not pass after 2 revisions; unresolved: F-002/);
@@ -260,8 +327,8 @@ for (const provider of ['codex', 'claude']) {
 }
 runCase('codex', 'normal', true);
 runCase('claude', 'normal', true);
-runCase('claude', 'usage-review');
-runCase('claude', 'usage-revise');
+runCase('claude', 'fallback-empty');
+for (const scenario of ['usage-search', 'usage-plan', 'usage-analyze', 'usage-draft', 'usage-review-first', 'usage-review', 'usage-revise', 'usage-rc1', 'usage-prewritten', 'usage-unavailable', 'usage-id-mismatch', 'usage-no-reset', 'usage-exhausted', 'usage-disabled']) runCase('claude', scenario);
 for (const provider of ['codex', 'claude']) {
   for (const scenario of ['fresh-normal', 'fresh-unregistered', 'fresh-collision']) runCase(provider, scenario);
 }

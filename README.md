@@ -460,11 +460,18 @@ AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
 
 実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
 
-Claudeオーケストレーターがusage/session limitで終了した場合、表示されたリセット時刻まで待って
-自動再開する。review・revise段では同じ工程を再試行し、レビューセッション・指摘履歴・修正回数を保持する。
-それ以外のrun段以降ではmanifestに一致する`logs/agent/run-*/execution-log.md`を検出し、
-`--resume-after-run`付きで分析段から続行する。実行ログがまだ無いsearch・plan段では、待機後に
-researchから安全に再始動する。リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
+Claudeオーケストレーターのsearch・plan・analyze・draft・review・reviseは会話を保存し、
+初回呼び出し前にセッションIDを`pipeline-*/<工程>.session.json`へ記録する。
+利用上限で終了すると、親スクリプトが待機した後、同じIDを指定した
+`claude -p "再開指示" --resume <ID>`でその工程を続ける。人による追加チャットは不要。
+定期実行は既定で上限到達から5時間待ち、直接実行は表示リセット時刻の30秒後まで待つ。
+`AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE`で待機秒数を指定できる（テストでは`0`）。
+ログと状態には表示リセット時刻・待機方針・実際の再開予定時刻を分けて記録する。
+レビュー履歴・修正回数・初回マーカーを保持し、既存の成果物検証を通った場合だけ次工程へ進む。
+ID不一致・会話の復元不能・リセット時刻の解析失敗・再開回数上限では停止し、別会話への置換を再開成功と扱わない。
+実験runは独立したランナーであり、この会話継続のために再実行しない。
+待機中の親スクリプトが動き続ける前提で、Mac再起動後の無人復旧は対象外。
+根拠と検証方針は[会話継続計画](docs/agent-usage-limit-resume-plan.md)を参照。
 調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、
 `articles/`へ保存する。
 
