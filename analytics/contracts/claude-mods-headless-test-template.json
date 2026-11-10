@@ -1,0 +1,42 @@
+{
+  "slug": "claude-mods-headless-test-template",
+  "topics": [
+    "claudecode",
+    "aiagent",
+    "cli",
+    "typescript"
+  ],
+  "primaryTopic": "claudecode",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "asset",
+    "titleFeatures": {
+      "length": 75,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": true
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": "EXP-001",
+    "arm": "B-payload",
+    "registeredAt": "2026-10-02T15:58:20.978Z",
+    "contract": {
+      "targetReader": "Claude Mods の入門記事を読んで自分の mod を書き始めたが、変更のたびにセッションを立ち上げ直して目視で確認しており、どこまで自動で確かめられるか分かっていない人",
+      "readerDecision": "自分の mod のどの挙動を claude plugin test で自動検証に回し、どれを実セッションでの目視確認に残すかを決められる",
+      "takeaway": "コピーすればそのまま claude plugin test が通る最小 mod ディレクトリ一式（plugin.json / hooks.json / register.js / tests/*.test.ts）と、サーフェス別に『フックが動くか・描画が出るか・テストで再現できるか』を埋めた判断表",
+      "verificationItems": [
+        "Claude Code 2.1.284 では --plugin-dir の mod が読まれず、2.1.287 以降で読まれるバージョン境界",
+        "claude plugin validate の hooks: / calls: 行が、最小 mod に対して実際に何を列挙するか",
+        "claude plugin test がネットワーク遮断下・サインイン無しで通るか（公式の主張の実測）",
+        "$.model.complete を stub してモデル課金ゼロでテストできるか",
+        "mock.clock でタイマーを実時間待たずにテストできるか",
+        "tool.call で { deny: reason } を返すガード mod がテストで再現できるか",
+        "claude -p 非対話実行で tool.call フックが発火し、ui.render の描画が出ないこと",
+        "テスト失敗時の終了コードが 1 になり CI ゲートに使えるか"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "Zenn API 実測（2026-10-03）: claudecode の taggings_count は 15034。Mods 関連記事は3本で「Claude Mods 入門」(2026-09-19) が 90いいね、「完全版 Claude Mods 入門」(2026-10-02) が 5いいね、「Claude Code Mods を5分で動かして…」(2026-09-24) が 3いいね。claudecode の d0-1 市場は 0いいね率60% / p90=2 / 5+到達率4% なので 90いいねは明確に上位層で、Mods への需要は実証済み。一方 Zenn 検索で claude plugin test に言及した記事は0件で、入門の次の層が空いている。市場の勝ち型は asset 型（上位485本中 n=48 / 平均45.9 / 最大693「202608個人的claude code設定」）。"
+    }
+  }
+}

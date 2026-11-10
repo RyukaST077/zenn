@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from "node:fs";
+import { claudeResult } from './claude-response.mjs';
 
 const [inputFile, outputFile] = process.argv.slice(2);
 
@@ -15,7 +16,7 @@ if (!inputFile || !outputFile) {
 
 let envelope;
 try {
-  envelope = JSON.parse(fs.readFileSync(inputFile, "utf8"));
+  envelope = claudeResult(fs.readFileSync(inputFile, "utf8"));
 } catch (error) {
   fail(`invalid Claude JSON output: ${error.message}`);
 }

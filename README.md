@@ -19,7 +19,7 @@ bash scripts/run-article-pipeline-worktree.sh --resume-run <run-id> -- \
 
 未コミットの試行には `--dev-file <path>` をファイルごとに指定します。開発モードの `--auto-merge` / `--pr-only` / `--pr` は拒否されます。恒久改修は開発ブランチで検証し、PR・マージ後に通常運用へ採用します。保存先、台帳、分析データの日次更新、旧保存先からの移行、衝突時の復旧、launchd切り替えは [実行基盤の運用手順](docs/article-runtime.md) を参照してください。
 
-公開キューPRは作成後の競合も復旧します。最新mainのキューへ対象記事の追加だけを適用し直し、他記事・再試行情報・公開／保留状態を保持します。検証したheadのマージ完了を確認するまで完了扱いにしません。既存の承認待ちPRは `recover-queue-pr.sh --pr <番号> --article articles/<slug>.md --expected-head <確認済みSHA> --state logs/queue-recovery-<番号>.json` で復旧でき、明示的な `--merge` がある場合だけマージします。`--merge` にはmainの厳格な最新base必須チェック、1件以上の名前付き必須ステータスチェック、管理者へのbranch protection適用が必要で、確認できない場合は停止します。再試行は既定3回（`--attempts` は1〜10回）。失敗時はrun内の `publication.jsonl` と指定したstate JSONを確認し、`--resume-run` で再開します。詳しい[承認・復旧・マージ手順](docs/article-runtime.md#公開キューprの競合復旧承認マージ)を参照してください。
+公開キューPRは作成後の競合も復旧します。最新mainのキューへ対象記事の追加だけを適用し直し、他記事・再試行情報・公開／保留状態を保持します。検証したheadのマージ完了を確認するまで完了扱いにしません。既存の承認待ちPRは `recover-queue-pr.sh --pr <番号> --article articles/<slug>.md --expected-head <確認済みSHA> --state logs/queue-recovery-<番号>.json` で復旧でき、明示的な `--merge` がある場合だけマージします。既定のGitHub merge方式はmainの厳格な最新base必須チェック、名前付き必須ステータスチェック、管理者へのbranch protection適用を必要とします。必須CIを使わない運用では `AGENT_QUEUE_MERGE_TRANSPORT=base-lease` を明示し、検証したmainとPR headの両方を条件にしたatomic pushでマージします。再試行は既定3回（`--attempts` は1〜10回）。失敗時はrun内の `publication.jsonl` と指定したstate JSONを確認し、`--resume-run` で再開します。詳しい[承認・復旧・マージ手順](docs/article-runtime.md#公開キューprの競合復旧承認マージ)を参照してください。
 
 以下の `logs/` 等のパスは実行worktree内の相対パスです。終了後は当該runの `files/` 配下で確認します。`--dry-run` / `--help` は設定表示専用です。
 
@@ -460,11 +460,18 @@ AGENT_PRACTICE_ARGS="--scheduled --dry-run" \
 
 実行ログは`logs/agent/launchd/auto-agent-practice-YYYYMMDD-HHMMSS.log`へ保存する。
 
-Claudeオーケストレーターがusage/session limitで終了した場合、表示されたリセット時刻まで待って
-自動再開する。review・revise段では同じ工程を再試行し、レビューセッション・指摘履歴・修正回数を保持する。
-それ以外のrun段以降ではmanifestに一致する`logs/agent/run-*/execution-log.md`を検出し、
-`--resume-after-run`付きで分析段から続行する。実行ログがまだ無いsearch・plan段では、待機後に
-researchから安全に再始動する。リセット時刻を解釈できない場合、または再起動上限に達した場合は停止する。
+Claudeオーケストレーターのsearch・plan・analyze・draft・review・reviseは会話を保存し、
+初回呼び出し前にセッションIDを`pipeline-*/<工程>.session.json`へ記録する。
+利用上限で終了すると、親スクリプトが待機した後、同じIDを指定した
+`claude -p "再開指示" --resume <ID>`でその工程を続ける。人による追加チャットは不要。
+定期実行は既定で上限到達から5時間待ち、直接実行は表示リセット時刻の30秒後まで待つ。
+`AGENT_PIPELINE_USAGE_WAIT_SECONDS_OVERRIDE`で待機秒数を指定できる（テストでは`0`）。
+ログと状態には表示リセット時刻・待機方針・実際の再開予定時刻を分けて記録する。
+レビュー履歴・修正回数・初回マーカーを保持し、既存の成果物検証を通った場合だけ次工程へ進む。
+ID不一致・会話の復元不能・リセット時刻の解析失敗・再開回数上限では停止し、別会話への置換を再開成功と扱わない。
+実験runは独立したランナーであり、この会話継続のために再実行しない。
+待機中の親スクリプトが動き続ける前提で、Mac再起動後の無人復旧は対象外。
+根拠と検証方針は[会話継続計画](docs/agent-usage-limit-resume-plan.md)を参照。
 調査・実験・分析などの成果物は通常どおり`research/agent/`、`practice/agent/`、`logs/agent/`、
 `articles/`へ保存する。
 

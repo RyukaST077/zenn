@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { claudeEvents, claudeResult, claudeError } from './claude-response.mjs';
 
 const read = (file) => fs.readFileSync(file, 'utf8');
 const json = (file) => JSON.parse(read(file));
@@ -49,12 +50,13 @@ export function validateFindings(current, previous, verdict, report) {
 }
 
 function eventsFor(provider, raw) {
-  return provider === 'claude' ? [JSON.parse(raw)] : raw.trim().split('\n').map((line) => {
+  return provider === 'claude' ? claudeEvents(raw) : raw.trim().split('\n').map((line) => {
     try { return JSON.parse(line); } catch { return {}; }
   });
 }
 
 export function hasProviderError(provider, raw) {
+  if (provider === 'claude') return claudeError(claudeResult(raw));
   const events = eventsFor(provider, raw);
   // A Codex transient error may recover before the turn completes.
   const terminal = events.findLast((event) => ['turn.completed', 'turn.failed'].includes(event.type));
