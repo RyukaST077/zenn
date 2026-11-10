@@ -3,7 +3,7 @@ title: "Claude Mods のテストをセッション抜きで回す最小テンプ
 emoji: "🧪"
 type: "tech"
 topics: ["claudecode", "aiagent", "cli", "typescript"]
-published: false
+published: true
 ---
 
 <!-- 前提: 出典ログ logs/run-claude-mods-headless-test-template-20261003-0753/execution-log.md / 記事タイプ: 検証ログ（持ち帰りテンプレート付き） / published: false -->

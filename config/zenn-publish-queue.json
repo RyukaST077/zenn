@@ -8,8 +8,8 @@
     {
       "article": "articles/claude-mods-headless-test-template.md",
       "enqueuedAt": "2026-10-02T23:17:06.205Z",
-      "attempts": 0,
-      "lastAttemptAt": null
+      "attempts": 1,
+      "lastAttemptAt": "2026-11-10T22:02:45.304Z"
     },
     {
       "article": "articles/codex-approval-profile-decision.md",
