@@ -1,0 +1,40 @@
+{
+  "slug": "npm-audit-osv-scanner-decision",
+  "topics": [
+    "security",
+    "nodejs",
+    "npm",
+    "cli",
+    "supplychain"
+  ],
+  "primaryTopic": "security",
+  "classification": {
+    "source": "contract",
+    "valueArchetype": "decision",
+    "titleFeatures": {
+      "length": 49,
+      "hasNumber": false,
+      "hasVersion": false,
+      "hasQuantifiedOutcome": false,
+      "framedAsVerification": false
+    },
+    "policyVersion": "2026-09-05.1",
+    "experimentId": null,
+    "arm": "exploration",
+    "registeredAt": "2026-11-19T21:16:59.559Z",
+    "contract": {
+      "targetReader": "Node.jsの依存関係をCIで検査したいが、npm auditだけで十分か、OSV-Scannerを足すべきか判断できていないジュニア〜中級Web開発者",
+      "readerDecision": "Node.jsプロジェクトの依存脆弱性チェックを、npm auditだけ、OSV-Scannerだけ、または併用のどれでCIに組み込むかを、パッケージマネージャーと必要なカバレッジに応じて決められる",
+      "takeaway": "npm audit・OSV-Scanner・併用を条件別に選べるコンパクトな決定表と、固定lockfile・JSON出力・終了コードを本文だけで比較できるインライン実行手順",
+      "verificationItems": [
+        "同一の脆弱版package-lock.jsonをnpm audit 12.2.3とOSV-Scanner 2.7.1で同じ時刻帯に走査し、advisory IDのaliasを正規化して共通・片方のみ・範囲外を比較する",
+        "同じdirect dependencyとversionを固定したpackage-lock.json・pnpm-lock.yaml・yarn.lockに両scannerを実行し、対応・明示的失敗・判定不能を比較する",
+        "脆弱版fixtureとpatched clean controlでJSON findingsとexit codeを比較し、npmのaudit-levelとOSV-ScannerのCI failure semanticsを確認する",
+        "壊したlockfile・unsupported input・network failureを与え、scan失敗が脆弱性0件として扱われないことを確認する",
+        "隔離run directoryだけでfixture作成から結果保存まで再実行し、cleanup後にrepository root・global npm・HOMEへ変更がないことを確認する"
+      ],
+      "quantifiedMetric": null,
+      "demandEvidence": "2026-11-20のZenn APIでsecurityは7,365件、nodejsは4,363件で、analytics/topic-feedback.mdのsecurity d30-45 cohortはn=400。2026-11-17公開の『Critical脆弱性があるのにnpm auditには出なかった』は、公開済みVite advisoryが同日のnpm auditに現れない具体的な困りごとを示した。npm公式はregistry advisoryを使うこと、OSV公式はOSV databaseとpackage-lock/pnpm-lock/yarn.lock/bun.lock対応を明記しており、npm audit単独・OSV-Scanner単独・併用の選択は実在する。"
+    }
+  }
+}
