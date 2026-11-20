@@ -84,7 +84,7 @@ osv-scanner scan -L package-lock.json --format json
 | npm audit | 1 | 脆弱なpackage 3件 |
 | OSV-Scanner | 1 | vulnerability record 30件 |
 
-この2つの件数は、そのまま比較できません。npm側はpackageを単位にした出力を含み、OSV側はvulnerability recordを返すためです。そこで、packageごとにGHSA、CVE、OSVのalias集合を大文字へ正規化して照合しました。
+この2つの件数は、そのまま比較できません。npm側はpackageを単位にした出力を含み、OSV側はvulnerability recordを返すためです。そこで、保存済みの両JSONと同じ`package-lock.json`を入力にし、packageごとにGHSA、CVE、OSVのalias集合を大文字へ正規化して照合しました。さらに、lockfileから解決したversionをnpm advisory rangeとOSVのnpm `affected` rangeへ個別に照合しました。
 
 正規化後は次の結果でした。
 
@@ -93,10 +93,446 @@ osv-scanner scan -L package-lock.json --format json
 | 両者共通 | 30 |
 | npmのみ | 0 |
 | OSVのみ | 0 |
-| version range外 | 0 |
+| npm range外 / 判定不能 | 0 / 0 |
+| OSV range外 / 判定不能 | 0 / 0 |
 | alias未解決 | 0 |
 
-このsnapshotでは完全に重なりました。ただし、advisory databaseは更新されます。今回の一致から、2つのdatabaseが恒常的に同じ、または一方が不要だとは判断できません。件数の多さも製品の優劣や安全性の順位には使えません。
+lockfileで解決されたversionはaxios `0.21.1`、lodash `4.17.20`、minimist `0.2.0`です。npm 12.2.3同梱の`semver@7.8.6`で、保存済みnpm advisory 30件のrangeと、対応するOSVのnpm `affected` 30件を評価したところ、両側とも30件すべてがrange内でした。`false`と`unknown`を分けて数え、どちらも0件です。
+
+この値には訂正経緯があります。最初の比較結果にあった「range外0件」は、旧normalizerがversionとrangeを代入しておらず、測定値ではありませんでした。上表の0件は、その後に同じ保存済み入力をhash照合し、全30行へ`installedVersion`、`npmRange`、`osvAffectedIntervals`、両側の判定値を出した補足検証だけに基づきます。
+
+実データのOSV rangeに現れたのは`introduced` / `fixed`です。`last_affected`、`limit`、open interval、複数interval、unsupported typeは11件の固定synthetic boundary caseで検証し、122件の実データ境界caseと合わせて133件がpassしました。synthetic caseはadvisory件数へ混ぜていません。
+
+このsnapshotでは30件が完全に重なりました。ただし、advisory databaseは更新されます。今回の一致から、2つのdatabaseが恒常的に同じ、または一方が不要だとは判断できません。件数の多さも製品の優劣や安全性の順位には使えません。
+
+## 保存済みsnapshotのrange・alias比較を再現する
+
+補足検証はscannerを再実行せず、元の観測windowで保存したJSONとlockfileをhash照合して使いました。入力のSHA-256はnpm JSONが`c6f84dc3d1d6032c7ecd3d5ce36207187253d6bbc90d63f9eca17fcdb811de36`、OSV JSONが`2178badc1353051cf31b098f787379efe17814b71a6fcc9c3ba2c2eef808684d`、lockfileが`cb06593380cf3402cd08ad5397dc5ac42e46d3623afa15c03193f810ebc056c4`です。
+
+実行時は、後掲のfull reproductionと同じ公式Node.js v26.13.1 archiveとnpm 12.2.3 tarballをchecksum/SRI照合して作業ディレクトリへ展開し、npm同梱の`semver@7.8.6`を絶対pathから読み込みました。保存済み入力を次のlayoutへ置き、出力先を指定します。
+
+```text
+input/
+└── old-run/evidence/
+    ├── raw/v1-npm-audit.json
+    ├── raw/v1-osv.json
+    └── fixtures/npm-vulnerable/package-lock.json
+```
+
+実際の呼び出しは次の形です。`<absolute-npm-root>`はchecksum確認済みnpm 12.2.3の展開rootです。
+
+```bash
+node inline-range-check.mjs input <absolute-npm-root> results
+cat results/range-verification.json
+```
+
+以下は省略していない実行済みcheckerです。OSVはmatching npm entryだけを対象にし、explicit `versions`と全SEMVER intervalをOR結合します。不正・未対応・欠落は`false`ではなく`unknown`です。
+
+```js:inline-range-check.mjs
+#!/usr/bin/env node
+// Complete invocation for this saved snapshot:
+// node inline-range-check.mjs <input-dir> <absolute-npm-root> <output-dir>
+// input-dir must contain old-run/evidence/raw/v1-{npm-audit,osv}.json and
+// old-run/evidence/fixtures/npm-vulnerable/package-lock.json. npm-root must be
+// the checksum-verified, extracted npm 12.2.3 tree; its bundled semver is used.
+
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const [inputArgument, npmRootArgument, outputArgument] = process.argv.slice(2);
+if (!inputArgument || !npmRootArgument || !outputArgument) {
+  throw new Error('usage: node inline-range-check.mjs <input-dir> <absolute-npm-root> <output-dir>');
+}
+const inputDir = path.resolve(inputArgument);
+const npmRoot = path.resolve(npmRootArgument);
+const outputDir = path.resolve(outputArgument);
+if (!path.isAbsolute(npmRootArgument)) throw new Error('npm-root must be absolute');
+
+const semverEntry = path.join(npmRoot, 'node_modules', 'semver', 'index.js');
+const semverPackagePath = path.join(npmRoot, 'node_modules', 'semver', 'package.json');
+const require = createRequire(import.meta.url);
+const semver = require(semverEntry);
+const semverPackage = JSON.parse(fs.readFileSync(semverPackagePath, 'utf8'));
+if (typeof semver.validRange !== 'function' || typeof semver.satisfies !== 'function') {
+  throw new Error('bundled semver API unavailable');
+}
+
+const source = {
+  npm: path.join(inputDir, 'old-run/evidence/raw/v1-npm-audit.json'),
+  osv: path.join(inputDir, 'old-run/evidence/raw/v1-osv.json'),
+  lock: path.join(inputDir, 'old-run/evidence/fixtures/npm-vulnerable/package-lock.json'),
+};
+for (const file of Object.values(source)) {
+  if (!fs.statSync(file).isFile()) throw new Error(`missing input: ${file}`);
+}
+const npmAudit = JSON.parse(fs.readFileSync(source.npm, 'utf8'));
+const osvScan = JSON.parse(fs.readFileSync(source.osv, 'utf8'));
+const lockfile = JSON.parse(fs.readFileSync(source.lock, 'utf8'));
+
+function sha256(file) {
+  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+}
+
+function normalizeAlias(value) {
+  const alias = String(value ?? '').trim().toUpperCase();
+  return /^(GHSA|CVE|OSV)-[A-Z0-9-]+$/.test(alias) ? alias : null;
+}
+
+function aliasesFromNpmAdvisory(advisory) {
+  const values = [];
+  for (const candidate of [advisory.id, advisory.url, advisory.source]) {
+    const text = String(candidate ?? '');
+    const matches = text.match(/(?:GHSA|CVE|OSV)-[A-Za-z0-9-]+/gi) ?? [];
+    values.push(...matches);
+  }
+  return [...new Set(values.map(normalizeAlias).filter(Boolean))].sort();
+}
+
+function triOr(values) {
+  if (values.includes(true)) return true;
+  if (values.includes('unknown')) return 'unknown';
+  return false;
+}
+
+function parseOsvRange(range) {
+  if (range?.type !== 'SEMVER') {
+    return { status: 'unknown', reason: `unsupported range type: ${range?.type ?? 'missing'}`, intervals: [] };
+  }
+  if (!Array.isArray(range.events) || range.events.length === 0) {
+    return { status: 'unknown', reason: 'missing SEMVER events', intervals: [] };
+  }
+  const intervals = [];
+  let current = null;
+  for (const event of range.events) {
+    const keys = Object.keys(event);
+    if (keys.length !== 1 || !['introduced', 'fixed', 'last_affected', 'limit'].includes(keys[0])) {
+      return { status: 'unknown', reason: 'unsupported or ambiguous event', intervals: [] };
+    }
+    const kind = keys[0];
+    const version = String(event[kind]);
+    if (kind === 'introduced') {
+      if (current !== null) return { status: 'unknown', reason: 'introduced before previous interval closed', intervals: [] };
+      if (version !== '0' && !semver.valid(version)) {
+        return { status: 'unknown', reason: `invalid introduced version: ${version}`, intervals: [] };
+      }
+      current = { introduced: version === '0' ? null : version, upper: null, upperKind: null, upperInclusive: null };
+      continue;
+    }
+    if (current === null) return { status: 'unknown', reason: `${kind} without introduced`, intervals: [] };
+    if (!semver.valid(version)) return { status: 'unknown', reason: `invalid ${kind} version: ${version}`, intervals: [] };
+    current.upper = version;
+    current.upperKind = kind;
+    current.upperInclusive = kind === 'last_affected';
+    intervals.push(current);
+    current = null;
+  }
+  if (current !== null) intervals.push(current);
+  return { status: 'ok', reason: null, intervals };
+}
+
+function evaluateInterval(version, interval) {
+  if (!semver.valid(version)) return 'unknown';
+  if (interval.introduced !== null && !semver.gte(version, interval.introduced)) return false;
+  if (interval.upper === null) return true;
+  return interval.upperInclusive ? semver.lte(version, interval.upper) : semver.lt(version, interval.upper);
+}
+
+function evaluateParsedRange(version, parsed) {
+  if (parsed.status !== 'ok') return 'unknown';
+  return triOr(parsed.intervals.map((interval) => evaluateInterval(version, interval)));
+}
+
+function evaluateAffected(version, affectedEntries, packageName) {
+  const matching = affectedEntries.filter((entry) => entry?.package?.ecosystem === 'npm' && entry?.package?.name === packageName);
+  if (matching.length === 0) {
+    return { value: 'unknown', intervals: [], reasons: ['no matching npm affected entry'] };
+  }
+  const values = [];
+  const intervals = [];
+  const reasons = [];
+  for (const affected of matching) {
+    let hadSupportedData = false;
+    if (Array.isArray(affected.versions) && affected.versions.length > 0) {
+      hadSupportedData = true;
+      const validVersions = affected.versions.filter((item) => semver.valid(item));
+      if (validVersions.length !== affected.versions.length) {
+        values.push('unknown');
+        reasons.push('invalid explicit version');
+      } else {
+        values.push(validVersions.some((item) => semver.eq(version, item)));
+      }
+    }
+    for (const range of affected.ranges ?? []) {
+      hadSupportedData = true;
+      const parsed = parseOsvRange(range);
+      intervals.push(...parsed.intervals);
+      values.push(evaluateParsedRange(version, parsed));
+      if (parsed.reason) reasons.push(parsed.reason);
+    }
+    if (!hadSupportedData) {
+      values.push('unknown');
+      reasons.push('affected entry has neither versions nor ranges');
+    }
+  }
+  return { value: triOr(values), intervals, reasons: [...new Set(reasons)] };
+}
+
+const directDependencies = lockfile.packages?.['']?.dependencies;
+if (!directDependencies || Object.keys(directDependencies).length !== 3) {
+  throw new Error('fixture must have exactly three direct dependencies');
+}
+const installedVersions = {};
+for (const packageName of Object.keys(directDependencies).sort()) {
+  const versions = new Set();
+  for (const [packagePath, metadata] of Object.entries(lockfile.packages ?? {})) {
+    if (!packagePath || !metadata?.version) continue;
+    const inferredName = metadata.name ?? packagePath.split('node_modules/').at(-1);
+    if (inferredName === packageName) versions.add(metadata.version);
+  }
+  if (versions.size !== 1) throw new Error(`missing or multiple lockfile versions for ${packageName}`);
+  const [version] = versions;
+  if (!semver.valid(version)) throw new Error(`invalid installed version for ${packageName}: ${version}`);
+  installedVersions[packageName] = version;
+}
+
+const npmTransitions = [];
+const npmRows = [];
+for (const [packageName, vulnerability] of Object.entries(npmAudit.vulnerabilities ?? {})) {
+  if (!(packageName in installedVersions)) throw new Error(`npm vulnerability is not a direct fixture dependency: ${packageName}`);
+  for (const via of vulnerability.via ?? []) {
+    if (typeof via === 'string') {
+      npmTransitions.push({ package: packageName, viaPackage: via });
+      continue;
+    }
+    const validRange = semver.validRange(via.range);
+    if (validRange === null) throw new Error(`invalid npm advisory range for ${packageName}: ${via.range}`);
+    npmRows.push({
+      source: 'npm',
+      package: packageName,
+      id: aliasesFromNpmAdvisory(via)[0] ?? `NPM-SOURCE-${via.source}`,
+      aliases: aliasesFromNpmAdvisory(via),
+      npmRange: via.range,
+      installedVersion: installedVersions[packageName],
+      npmInRange: semver.satisfies(installedVersions[packageName], validRange),
+      sourceNumber: via.source,
+      title: via.title,
+    });
+  }
+}
+
+const osvRows = [];
+for (const result of osvScan.results ?? []) {
+  for (const packageRecord of result.packages ?? []) {
+    const packageName = packageRecord?.package?.name;
+    if (!(packageName in installedVersions)) throw new Error(`OSV package is not a direct fixture dependency: ${packageName}`);
+    if (packageRecord.package.ecosystem !== 'npm') throw new Error(`OSV parent ecosystem mismatch for ${packageName}`);
+    if (packageRecord.package.version !== installedVersions[packageName]) throw new Error(`OSV/lock version mismatch for ${packageName}`);
+    for (const vulnerability of packageRecord.vulnerabilities ?? []) {
+      const aliases = [...new Set([vulnerability.id, ...(vulnerability.aliases ?? [])].map(normalizeAlias).filter(Boolean))].sort();
+      const evaluation = evaluateAffected(installedVersions[packageName], vulnerability.affected ?? [], packageName);
+      osvRows.push({
+        source: 'osv',
+        package: packageName,
+        id: normalizeAlias(vulnerability.id) ?? vulnerability.id,
+        aliases,
+        installedVersion: installedVersions[packageName],
+        osvAffectedIntervals: evaluation.intervals,
+        osvInRange: evaluation.value,
+        osvRangeReasons: evaluation.reasons,
+      });
+    }
+  }
+}
+
+const comparisonRows = [];
+const consumedOsv = new Set();
+for (const npmRow of npmRows) {
+  if (npmRow.aliases.length === 0) {
+    comparisonRows.push({ ...npmRow, classification: 'unresolved', osvAffectedIntervals: null, osvInRange: null, unresolvedReason: 'npm advisory has no normalized alias' });
+    continue;
+  }
+  const candidates = osvRows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => row.package === npmRow.package && row.aliases.some((alias) => npmRow.aliases.includes(alias)));
+  if (candidates.length === 1) {
+    const { row: osvRow, index } = candidates[0];
+    consumedOsv.add(index);
+    comparisonRows.push({
+      package: npmRow.package,
+      canonicalId: npmRow.aliases.find((alias) => osvRow.aliases.includes(alias)),
+      npmAliases: npmRow.aliases,
+      osvAliases: osvRow.aliases,
+      classification: 'common',
+      npmRange: npmRow.npmRange,
+      osvAffectedIntervals: osvRow.osvAffectedIntervals,
+      installedVersion: npmRow.installedVersion,
+      npmInRange: npmRow.npmInRange,
+      osvInRange: osvRow.osvInRange,
+      osvRangeReasons: osvRow.osvRangeReasons,
+    });
+  } else if (candidates.length === 0) {
+    comparisonRows.push({
+      package: npmRow.package,
+      canonicalId: npmRow.id,
+      npmAliases: npmRow.aliases,
+      osvAliases: [],
+      classification: 'npm-only',
+      npmRange: npmRow.npmRange,
+      osvAffectedIntervals: null,
+      installedVersion: npmRow.installedVersion,
+      npmInRange: npmRow.npmInRange,
+      osvInRange: null,
+    });
+  } else {
+    comparisonRows.push({ ...npmRow, classification: 'unresolved', osvAffectedIntervals: null, osvInRange: null, unresolvedReason: 'multiple OSV alias matches' });
+  }
+}
+for (const [index, osvRow] of osvRows.entries()) {
+  if (consumedOsv.has(index)) continue;
+  comparisonRows.push({
+    package: osvRow.package,
+    canonicalId: osvRow.id,
+    npmAliases: [],
+    osvAliases: osvRow.aliases,
+    classification: osvRow.aliases.length > 0 ? 'osv-only' : 'unresolved',
+    npmRange: null,
+    osvAffectedIntervals: osvRow.osvAffectedIntervals,
+    installedVersion: osvRow.installedVersion,
+    npmInRange: null,
+    osvInRange: osvRow.osvInRange,
+    osvRangeReasons: osvRow.osvRangeReasons,
+  });
+}
+comparisonRows.sort((left, right) => `${left.package}:${left.canonicalId}`.localeCompare(`${right.package}:${right.canonicalId}`));
+
+const actualOsvBoundaryTests = [];
+for (const row of osvRows) {
+  for (const [index, interval] of row.osvAffectedIntervals.entries()) {
+    if (interval.introduced !== null) {
+      actualOsvBoundaryTests.push({
+        name: `${row.package}:${row.id}:interval-${index}:introduced-inclusive`,
+        kind: 'actual-osv-introduced',
+        input: interval.introduced,
+        expected: true,
+        actual: evaluateInterval(interval.introduced, interval),
+      });
+    }
+    if (interval.upper !== null) {
+      actualOsvBoundaryTests.push({
+        name: `${row.package}:${row.id}:interval-${index}:${interval.upperKind}`,
+        kind: `actual-osv-${interval.upperKind}`,
+        input: interval.upper,
+        expected: interval.upperInclusive,
+        actual: evaluateInterval(interval.upper, interval),
+      });
+    } else {
+      const probe = semver.inc(interval.introduced ?? '0.0.0', 'major');
+      actualOsvBoundaryTests.push({
+        name: `${row.package}:${row.id}:interval-${index}:open-upper`,
+        kind: 'actual-osv-open-upper',
+        input: probe,
+        expected: true,
+        actual: evaluateInterval(probe, interval),
+      });
+    }
+  }
+}
+
+const actualNpmBoundaryTests = [];
+for (const row of npmRows) {
+  const parsedRange = new semver.Range(row.npmRange);
+  for (const comparatorSet of parsedRange.set) {
+    for (const comparator of comparatorSet) {
+      if (!comparator.value) continue;
+      const operator = comparator.operator || '=';
+      const boundary = comparator.semver.version;
+      const expected = operator === '>=' || operator === '<=' || operator === '=';
+      actualNpmBoundaryTests.push({
+        name: `${row.package}:${row.id}:${operator}${boundary}`,
+        kind: 'actual-npm-comparator-boundary',
+        sourceRange: row.npmRange,
+        input: boundary,
+        expected,
+        actual: semver.satisfies(boundary, `${operator}${boundary}`),
+      });
+    }
+  }
+}
+
+function evaluateSynthetic(events, version, type = 'SEMVER') {
+  return evaluateParsedRange(version, parseOsvRange({ type, events }));
+}
+const fixedBoundaryTests = [
+  { name: 'npm-lower-inclusive', expected: true, actual: semver.satisfies('1.0.0', '>=1.0.0 <2.0.0') },
+  { name: 'npm-upper-exclusive', expected: false, actual: semver.satisfies('2.0.0', '>=1.0.0 <2.0.0') },
+  { name: 'osv-introduced-zero-before-fixed', expected: true, actual: evaluateSynthetic([{ introduced: '0' }, { fixed: '1.0.0' }], '0.9.9') },
+  { name: 'osv-fixed-exclusive', expected: false, actual: evaluateSynthetic([{ introduced: '0' }, { fixed: '1.0.0' }], '1.0.0') },
+  { name: 'osv-last-affected-inclusive', expected: true, actual: evaluateSynthetic([{ introduced: '0' }, { last_affected: '1.0.0' }], '1.0.0') },
+  { name: 'osv-limit-exclusive', expected: false, actual: evaluateSynthetic([{ introduced: '0' }, { limit: '1.0.0' }], '1.0.0') },
+  { name: 'osv-open-interval', expected: true, actual: evaluateSynthetic([{ introduced: '1.0.0' }], '9.0.0') },
+  { name: 'osv-multiple-interval-first', expected: true, actual: evaluateSynthetic([{ introduced: '0' }, { fixed: '1.0.0' }, { introduced: '2.0.0' }, { fixed: '3.0.0' }], '0.5.0') },
+  { name: 'osv-multiple-interval-gap', expected: false, actual: evaluateSynthetic([{ introduced: '0' }, { fixed: '1.0.0' }, { introduced: '2.0.0' }, { fixed: '3.0.0' }], '1.5.0') },
+  { name: 'osv-multiple-interval-second', expected: true, actual: evaluateSynthetic([{ introduced: '0' }, { fixed: '1.0.0' }, { introduced: '2.0.0' }, { fixed: '3.0.0' }], '2.5.0') },
+  { name: 'osv-unsupported-type-unknown', expected: 'unknown', actual: evaluateSynthetic([{ introduced: '0' }], '1.0.0', 'ECOSYSTEM') },
+];
+const boundaryTests = [...fixedBoundaryTests, ...actualNpmBoundaryTests, ...actualOsvBoundaryTests];
+for (const test of boundaryTests) {
+  test.passed = test.actual === test.expected;
+}
+
+const counts = {
+  common: comparisonRows.filter((row) => row.classification === 'common').length,
+  npmOnly: comparisonRows.filter((row) => row.classification === 'npm-only').length,
+  osvOnly: comparisonRows.filter((row) => row.classification === 'osv-only').length,
+  unresolved: comparisonRows.filter((row) => row.classification === 'unresolved').length,
+  npmOutOfRange: comparisonRows.filter((row) => row.npmInRange === false).length,
+  osvOutOfRange: comparisonRows.filter((row) => row.osvInRange === false).length,
+  npmUnknown: comparisonRows.filter((row) => row.npmInRange === 'unknown').length,
+  osvUnknown: comparisonRows.filter((row) => row.osvInRange === 'unknown').length,
+};
+const verification = {
+  schemaVersion: 1,
+  sourceSnapshot: 'run-npm-audit-osv-scanner-20261120T001419Z',
+  directDependencyCount: Object.keys(directDependencies).length,
+  installedVersions,
+  npmAdvisoryCount: npmRows.length,
+  npmTransitionCount: npmTransitions.length,
+  osvVulnerabilityCount: osvRows.length,
+  comparisonRowCount: comparisonRows.length,
+  counts,
+  boundaryTestCount: boundaryTests.length,
+  boundaryTestsPassed: boundaryTests.every((test) => test.passed),
+  contractSatisfied:
+    comparisonRows.length >= 3 &&
+    counts.unresolved === 0 &&
+    counts.npmUnknown === 0 &&
+    counts.osvUnknown === 0 &&
+    boundaryTests.every((test) => test.passed),
+  correction: 'The old finding-matrix out-of-range=0 was an unimplemented placeholder; only this executed matrix supplies range evidence.',
+  scope: 'Saved release-version fixture snapshot only; no guarantee for other versions or future advisory database states.',
+};
+
+fs.mkdirSync(outputDir, { recursive: true });
+fs.writeFileSync(path.join(outputDir, 'comparison-matrix.json'), JSON.stringify(comparisonRows, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'range-verification.json'), JSON.stringify(verification, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'boundary-tests.json'), JSON.stringify(boundaryTests, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'npm-transition-via.json'), JSON.stringify(npmTransitions, null, 2) + '\n');
+fs.writeFileSync(path.join(outputDir, 'input-tool-sha256.json'), JSON.stringify({
+  inputs: Object.fromEntries(Object.entries(source).map(([name, file]) => [name, { path: file, sha256: sha256(file) }])),
+  npmVersion: '12.2.3',
+  semverVersion: semverPackage.version,
+  semverEntry,
+  semverPackageJsonSha256: sha256(semverPackagePath),
+  scriptSha256: sha256(new URL(import.meta.url)),
+}, null, 2) + '\n');
+console.log(JSON.stringify(verification));
+if (!verification.contractSatisfied) process.exitCode = 2;
+```
+
+このcheckerは同じ入力で再実行し、5つのJSON出力がbyte単位で一致しました。別validatorも固定11件と実データ由来122件の境界期待値を検査し、`contractSatisfied: true`になっています。なお、この再現は保存済みsnapshotのrange判定用です。現在のadvisory databaseへ再問い合わせする手順ではありません。
+
 
 ## pnpmとYarnのlockfileを扱うならOSV-Scannerが選択肢になる
 
@@ -144,17 +580,20 @@ OSV-Scannerの2つの失敗は、どちらもexit 127でした。ただし、実
 
 npmのnetwork errorはvalid JSONを返しましたが、`error`を含みexit 1です。JSONとしてparseできることと、scan成功は同義ではありません。
 
-最低限、CIの分類は次の考え方にします。
+最低限、CIの分類はscan errorを最初に判定します。今回、正常なfinding/cleanとして観測したのは、起動成功、期待するJSON schema、top-level errorなし、exit 0または1を満たす応答です。exitだけでは原因を決めません。
 
 ```text
-finding > 0                         => finding
-exit == 0 && JSON valid && no error => clean
-それ以外                            => scan-error
+起動失敗・timeout・JSON不正・schema不正・errorあり・exit 0/1以外 => scan-error
+上記なし && finding > 0                                     => finding
+上記なし && exit == 0 && finding == 0                        => clean
+それ以外                                                     => scan-error
 ```
+
+「errorを持ちながらfindingも持つ」などの合成応答はscannerの実測には含めていません。上の順序は、そのような部分応答をfindingへ誤分類しないためのfail-closedな運用規則です。
 
 ## 本文だけで再現する
 
-以下は検証で実際に空ディレクトリから実行し、脆弱版、clean、malformed、unsupported、network errorの分類を再現した手順です。Node.js、npm、OSV-Scannerを固定し、checksumも確認します。
+以下は検証で実際に空ディレクトリから使った取得・実行手順です。Node.js、npm、OSV-Scannerを固定し、checksumも確認します。末尾のnormalizerだけはreview後にscan error優先へ修正しており、この修正版全体は再実行していません。後掲の結果は元の実行で観測した値であり、修正版normalizerの新しい実測とは扱いません。
 
 前提はDarwin/Linuxの対応architecture、公開HTTPSへの接続、`curl`、`shasum`、`tar`、Python 3、および継承された`ASTRO_TELEMETRY_DISABLED=1`です。引数には**存在しないか、空である専用ディレクトリ**を指定してください。`HOME`と`CODEX_HOME`は変更しません。
 
@@ -216,7 +655,7 @@ capture malformed-osv "$TARGET/fixtures/malformed" "$OSV" scan -L package-lock.j
 capture unsupported-osv "$TARGET/fixtures/unsupported" "$OSV" scan -L unsupported.txt --format json
 capture network-npm "$TARGET/fixtures/vulnerable" "$NPM" audit --json --fetch-timeout=1000 --fetch-retries=0 --registry=http://127.0.0.1:9
 "$NODE" --input-type=module - "$TARGET" >"$TARGET/raw/normalized.json" <<'JS'
-import fs from'node:fs';import path from'node:path';const r=process.argv[2],read=n=>fs.readFileSync(path.join(r,'raw',n),'utf8'),parse=n=>{try{return JSON.parse(read(n+'.json'))}catch{return null}},exit=n=>Number(read(n+'.exit').trim()),nc=o=>o?.metadata?.vulnerabilities?.total??Object.keys(o?.vulnerabilities??{}).length,oc=o=>(o?.results??[]).flatMap(x=>x.packages??[]).flatMap(x=>x.vulnerabilities??[]).length;const out={};for(const[n,t]of[['vulnerable-npm','npm'],['vulnerable-osv','osv'],['clean-npm','npm'],['clean-osv','osv'],['malformed-osv','osv'],['unsupported-osv','osv'],['network-npm','npm']]){const j=parse(n),e=exit(n),c=t==='npm'?nc(j):oc(j);out[n]={exit:e,jsonValid:!!j,findings:c,status:c>0?'finding':e===0&&j&&!j.error?'clean':'scan-error'};}console.log(JSON.stringify(out,null,2));if(out['clean-npm'].status!=='clean'||out['clean-osv'].status!=='clean'||out['malformed-osv'].status!=='scan-error'||out['unsupported-osv'].status!=='scan-error'||out['network-npm'].status!=='scan-error')process.exit(1);
+import fs from'node:fs';import path from'node:path';const r=process.argv[2],read=n=>fs.readFileSync(path.join(r,'raw',n),'utf8'),parse=n=>{try{return JSON.parse(read(n+'.json'))}catch{return null}},exit=n=>Number(read(n+'.exit').trim()),nc=o=>o?.metadata?.vulnerabilities?.total??Object.keys(o?.vulnerabilities??{}).length,oc=o=>(o?.results??[]).flatMap(x=>x.packages??[]).flatMap(x=>x.vulnerabilities??[]).length,shape=(o,t)=>t==='npm'?!!o&&o.metadata?.vulnerabilities&&o.vulnerabilities&&typeof o.vulnerabilities==='object':!!o&&Array.isArray(o.results);const out={};for(const[n,t]of[['vulnerable-npm','npm'],['vulnerable-osv','osv'],['clean-npm','npm'],['clean-osv','osv'],['malformed-osv','osv'],['unsupported-osv','osv'],['network-npm','npm']]){const j=parse(n),e=exit(n),c=t==='npm'?nc(j):oc(j),bad=!j||j.error||!shape(j,t)||![0,1].includes(e);out[n]={exit:e,jsonValid:!!j,findings:c,status:bad?'scan-error':c>0?'finding':e===0?'clean':'scan-error'};}console.log(JSON.stringify(out,null,2));if(out['clean-npm'].status!=='clean'||out['clean-osv'].status!=='clean'||out['malformed-osv'].status!=='scan-error'||out['unsupported-osv'].status!=='scan-error'||out['network-npm'].status!=='scan-error')process.exit(1);
 JS
 rm -rf "$TARGET/cache" "$TARGET/config" "$TARGET/data" "$TARGET/downloads" "$TARGET/tmp" "$TARGET/tools" "$TARGET/bin"
 test "$HOME" = "$ORIGINAL_HOME"; test "${CODEX_HOME-}" = "$ORIGINAL_CODEX_HOME"; test "$ASTRO_TELEMETRY_DISABLED" = 1
