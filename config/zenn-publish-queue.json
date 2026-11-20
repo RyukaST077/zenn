@@ -22,6 +22,12 @@
       "enqueuedAt": "2026-11-08T21:27:32.111Z",
       "attempts": 0,
       "lastAttemptAt": null
+    },
+    {
+      "article": "articles/npm-audit-osv-scanner-decision.md",
+      "enqueuedAt": "2026-11-20T00:29:50.495Z",
+      "attempts": 0,
+      "lastAttemptAt": null
     }
   ],
   "blocked": []
